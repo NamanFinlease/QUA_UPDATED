@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.5;
+            }
+            div {
+                page-break-before: always;
+            }
+            h1 {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+            .kfs {
+                width: 100%;
+                border-collapse: collapse;
+                margin: auto;
+            }
+            .kfs,
+            .kfs-th,
+            .kfs-td {
+                border: 1px solid #000;
+            }
+            .kfs-th,
+            .kfs-td {
+                text-align: left;
+            }
+            .details {
+                margin-bottom: 20px;
+            }
+            .signature {
+                margin-top: 20px;
+                text-align: left;
+            }
+            #data {
+                width: 50%;
+            }
+        </style>
+    </head>
+    <body>
+        <div
+            style="
+                font-family: Arial, Helvetica, sans-serif;
+                line-height: 25px;
+                font-size: 14px;
+                border: solid 1px #ddd;
+                padding: 8px;
+                width: 90%;
+                margin: auto;
+            "
+        >
+            <table
+                class="kfs"
+                style="
+                    border: 1px solid #000;
+                    width: 60%;
+                    border-collapse: collapse;
+                    margin: auto;
+                "
+            >
+                <tr>
+                  <td colspan="4">
+                      <p style="color: #0363a3; font-size: 18px">
+                          <img
+                              src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/Header.webp"
+                              alt="Sanctionletter-header"
+                              width="100%"
+                              height="123"
+                              border="0"
+                          />
+                      </p>
+                  </td>
+                </tr>
+                <tr>
+                    <th colspan="12" style="text-align: center" class="kfs-th">
+                        <strong>Key Fact Statement</strong>
+                    </th>
+                </tr>
+                <tr>
+                    <th class="kfs-th">S.No.</th>
+                    <th class="kfs-th">Parameters</th>
+                    <th class="kfs-th">Details</th>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(I)</td>
+                    <td class="kfs-td" id="data">Name</td>
+                    <td class="kfs-td" id="data">{{fullname}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(II)</td>
+                    <td class="kfs-td" id="data">Loan Amount</td>
+                    <td class="kfs-td" id="data">₹ {{loanAmount}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(III)</td>
+                    <td class="kfs-td" id="data">ROI (in % per day)</td>
+                    <td class="kfs-td" id="data">{{roi}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(IV)</td>
+                    <td class="kfs-td" id="data">
+                        Total interest charge during the entire Tenure of the
+                        loan
+                    </td>
+                    <td class="kfs-td" id="data">₹ {{totalInterest}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(V)</td>
+                    <td class="kfs-td" id="data">
+                        Processing Fee (Including 18% GST)
+                    </td>
+                    <td class="kfs-td" id="data">₹ {{processingFee}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(VI)</td>
+                    <td class="kfs-td" id="data">
+                        Insurance charges, if any (in ₹)
+                    </td>
+                    <td class="kfs-td" id="data">Nil</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(VII)</td>
+                    <td class="kfs-td" id="data">Others (if any) (in ₹)</td>
+                    <td class="kfs-td" id="data">Nil</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(VIII)</td>
+                    <td class="kfs-td" id="data">Net disbursed amount</td>
+                    <td class="kfs-td" id="data">₹ {{disbursalAmount}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(IX)</td>
+                    <td class="kfs-td" id="data">Total Repayment Amount</td>
+                    <td class="kfs-td" id="data">₹ {{repaymentAmount}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(X)</td>
+                    <td class="kfs-td" id="data">
+                        Annual Percentage Rate - Effective annualized interest
+                        rate (in %)
+                    </td>
+                    <td class="kfs-td" id="data">{{annualPercentage}}</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XI)</td>
+                    <td class="kfs-td" id="data">Tenure of the Loan (days)</td>
+                    <td class="kfs-td" id="data">{{tenure}} Days</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XII)</td>
+                    <td class="kfs-td" id="data">
+                        Repayment frequency by the borrower
+                    </td>
+                    <td class="kfs-td" id="data">One Time Only</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XIII)</td>
+                    <td class="kfs-td" id="data">
+                        Number of installments of repayment
+                    </td>
+                    <td class="kfs-td" id="data">1</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XIV)</td>
+                    <td class="kfs-td" id="data">
+                        Amount of each installment of repayment (in ₹)
+                    </td>
+                    <td class="kfs-td" id="data">(IX)</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td" colspan="12">
+                        <strong>Details about Contingent Charges</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XV)</td>
+                    <td class="kfs-td" id="data">
+                        Rate of annualized penal charges in case of delayed
+                        payments (if any)
+                    </td>
+                    <td class="kfs-td" id="data">Double the (III)</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td" colspan="12">
+                        <strong>Details about Contingent Charges</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XVI)</td>
+                    <td class="kfs-td" id="data">
+                        Cooling off/look-up period during which borrower shall
+                        not be charged any penalty on prepayment of loan
+                    </td>
+                    <td class="kfs-td" id="data">3 Days</td>
+                </tr>
+                <tr>
+                    <td class="kfs-td">(XVII)</td>
+                    <td class="kfs-td" id="data">
+                        Name, designation, Address and phone number of nodal
+                        grievance redressal officer designated specifically to
+                        deal with FinTech/ digital lending related complaints/
+                        issues
+                    </td>
+                    <td class="kfs-td" id="data">
+                        Nitin Vaid<br />Mobile: +91-9355016290<br />Address:
+                        S-370, Panchsheel Park, New Delhi - 110017
+                    </td>
+                </tr>
+                <tr>
+                  <td colspan="4">
+                      <img
+                          src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/letterhead_footer.webp"
+                          alt="Sanctionletter-footer"
+                          width="100%"
+                          height="104"
+                      />
+                  </td>
+              </tr>
+            </table>
+        </div>
+        <div
+            style="
+                font-family: Arial, Helvetica, sans-serif;
+                line-height: 12px;
+                font-size: 12px;
+                border: solid 1px #ddd;
+                margin-top: 10px !important;
+                width: 90%;
+                margin: auto;
+            "
+        >
+            <table
+                width="60%"
+                align="center"
+            >
+                <tbody>
+                    <tr>
+                        <td colspan="2">
+                            <p style="color: #0363a3; font-size: 18px">
+                                <img
+                                    src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/Header.webp"
+                                    alt="Sanctionletter-header"
+                                    width="100%"
+                                    height="123"
+                                    border="0"
+                                />
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            align="right"
+                            style="color: #0363a3; font-size: 15px"
+                        >
+                            Date: {{sanctionDate}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>To,</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{title}}</strong> {{fullname}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{residenceAddress}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{stateCountry}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact No. :</strong> +91-{{mobile}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Thank you for showing your interest in Qualoan and
+                            giving us an opportunity to serve you.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            We are pleased to inform you that your loan
+                            application has been approved as per the below
+                            mentioned terms and conditions.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>
+                                S-370, Panchsheel Park, Delhi, 110017, India
+                            </strong>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            This sanction will be subject to the following Terms
+                            and Conditions:
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table
+                                border="0"
+                                style="
+                                    width: 100%;
+                                    border: 1px solid #ddd;
+                                    border-spacing: 2px;
+                                    background-color: #ddd;
+                                "
+                            >
+                                <tbody>
+                                    <tr>
+                                        <td
+                                            width="43%"
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Loan Number
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{loanNo}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            width="43%"
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Customer Name
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{fullname}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            width="43%"
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            PAN
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{pan}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Sanctioned Loan Amount (Rs.)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #d9534f;
+                                            "
+                                        >
+                                            {{loanAmount}} /-
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Rate of Interest (%)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #5bc0de;
+                                            "
+                                        >
+                                            {{roi}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Date of Disbursal
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{disbursalDate}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Total Repayment Amount (Rs.)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #d9534f;
+                                            "
+                                        >
+                                            {{repaymentAmount}}/-
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Tenure in Days
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{tenure}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Repayment Date
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{repaymentDate}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Penal Interest (%)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{penalInterest}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Processing Fee (Rs.)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{processingFee}} /- (Inclusive of
+                                            GST)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Repayment Cheque(s)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            -
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Cheque drawn on (name of the Bank)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            -
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #0363a3;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Cheque and NACH Bouncing Charges
+                                            (Rs.)
+                                        </td>
+                                        <td
+                                            style="
+                                                background-color: #ffffff;
+                                                padding: 8px;
+                                                color: #333;
+                                            "
+                                        >
+                                            {{bouncedCharges}} /- per
+                                            bouncing/dishonour
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Henceforth, visiting (physically) your Workplace and
+                            Residence has your concurrence on it.
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Kindly request you to go through above mentioned
+                            terms and conditions and provide your kind
+                            acceptance over E-mail so that we can process your
+                            loan for final disbursement.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <strong style="color: #0363a3"
+                                >Best Regards,</strong
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <strong style="color: #0363a3">Team Qualoan</strong>
+                        </td>
+                    </tr>
+                    <tr></tr>
+                    <tr>
+                        <td>
+                            If you are not able to click on the accept button
+                            then please copy and paste this url in browser to
+                            proceed or click here .
+                            <a href="https://qualoan.com"> Qualoan </a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>Kindly Note:</strong></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            You can Prepay/Repay the loan amount using our link
+                            REPAY LOAN
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Non-payment of loan on time will adversely affect
+                            your Credit score, further reducing your chances of
+                            getting loan again Upon approval the processing fee
+                            will be deducted from your Sanction amount and
+                            balance amount will be disbursed to your account.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            This Sanction letter is valid for 24 Hours only.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <img
+                                src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/letterhead_footer.webp"
+                                alt="Sanctionletter-footer"
+                                width="100%"
+                                height="104"
+                            />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div
+            style="
+                font-family: Arial, Helvetica, sans-serif;
+                line-height: 25px;
+                font-size: 14px;
+                border: solid 1px #ddd;
+                padding: 8px;
+                width: 90%;
+                margin: auto;
+            "
+        >
+          <div
+            style="
+              width:60%;
+              margin:0px auto;
+              border:1px solid #000;
+              padding:2px
+            "
+          >
+
+            <p style="color: #0363a3; font-size: 18px">
+                <img
+                    src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/Header.webp"
+                    alt="Sanctionletter-header"
+                    width="100%"
+                    height="123"
+                    border="0"
+                />
+            </p>
+            <h1>Terms and Conditions</h1>
+            <p>
+                The Borrower confirms to have read and understood these Terms of
+                Agreement before accepting a personal loan (“Loan”) offer with
+                us. By clicking on the "eSign" button, the Borrower shall be
+                deemed to have electronically accepted these Terms of Agreement.
+                To the extent of any inconsistency, these Terms of Agreement
+                shall prevail.
+            </p>
+
+            <ol>
+                <li>
+                    The Loan shall carry a fixed rate of interest specified at
+                    the time of applying for the loan.
+                </li>
+                <li>
+                    The Loan amount shall be disbursed, after debiting
+                    processing fees, in Borrower’s account only with the Bank on
+                    accepting the Personal Loan Terms of Agreement.
+                </li>
+                <li>
+                    The repayment amount shall consist of principal and interest
+                    components. The Borrower confirms to repay the repayment
+                    amount on the specified repayment date.
+                </li>
+                <li>
+                    If repayment is not done by the specified date, the Borrower
+                    will be liable for penal interest.
+                </li>
+                <li>
+                    If any repayment cheque is not honored, the Borrower will be
+                    liable for dishonor charges and penal interest.
+                </li>
+                <li>
+                    The Borrower agrees to pay the processing fee, payment
+                    dishonor charges, etc.
+                </li>
+                <li>
+                    Any overdue payment incurs interest at the penal interest
+                    rate (which is higher than the usual interest rate). We may
+                    change the interest rate if required by the
+                    statutory/regulatory authority.
+                </li>
+                <li>
+                    The Borrower agrees that fees and charges specified may be
+                    revised from time to time and binding on the Borrower.
+                </li>
+                <li>
+                    The Borrower agrees to pay applicable Goods and Service Tax.
+                </li>
+            </ol>
+            <p>
+                <strong>Borrower Representations</strong> - The Borrower
+                represents and covenants that the Borrower:
+            </p>
+            <ul>
+                <li>Will use the Loan amount for legitimate purposes.</li>
+                <li>
+                    Will not use the Loan for any speculative, antisocial, or
+                    prohibited purposes. If the Loan funds have been used for
+                    such purposes, we shall be entitled to take necessary
+                    actions to comply with its policies. The Borrower agrees to
+                    bear all costs and expenses incurred as a result.
+                </li>
+                <li>
+                    Shall notify, within 7 calendar days, if any information
+                    given by the Borrower changes. In the event of a change in
+                    address, the Borrower shall intimate the new address as soon
+                    as possible but no later than 15 days of such a change.
+                </li>
+                <li>
+                    Confirms that the information provided is correct, complete,
+                    and updated.
+                </li>
+                <li>
+                    Has read and understood the Privacy Policy available on our
+                    website.
+                </li>
+            </ul>
+            <p>
+                <strong>Notice</strong> - We may send Loan-related notices,
+                statements, or communication to the Borrower by in-app messages,
+                SMS, email, ordinary prepaid post, or personal delivery to
+                Borrower’s registered address. Communication sent via electronic
+                means will be considered as delivered on the same day
+                irrespective of carrier delays.
+            </p>
+
+            <p class="section-title"><strong>Consent to Disclose</strong></p>
+            <ul>
+                <li>
+                    The Borrower has no objection in and gives consent for
+                    sharing Loan details including Borrower’s personal details
+                    to branches, affiliates, services providers, agents,
+                    contractors, surveyors, agencies, credit bureaus, etc. in or
+                    outside India, to enable us to provide services under the
+                    arrangement with the third parties including customized
+                    solutions and marketing services. The Borrower confirms that
+                    the authorization given above shall be valid till written
+                    communication of withdrawal of Borrower’s consent is
+                    acknowledged by us.
+                </li>
+                <li>
+                    The Borrower understands and accepts the risks involved in
+                    sharing personal information including sensitive personal
+                    information like account details with a third party.
+                </li>
+                <li>
+                    The Borrower consents to share Borrower’s personal
+                    information with third parties for processing, statistical
+                    or risks analysis, conducting credit or anti-money
+                    laundering checks, designing financial services or related
+                    products, marketing financial services or related products,
+                    customer recognition on our website/app, offering relevant
+                    product and service offers to customers, etc.
+                </li>
+                <li>
+                    The Borrower agrees that we may disclose Borrower’s
+                    information to the Reserve Bank of India, other
+                    statutory/regulatory authorities, arbitrator, credit
+                    bureaus, local authorities, credit rating agency,
+                    information utility, marketing agencies, and service
+                    providers if required.
+                </li>
+                <li>
+                    The Borrower authorizes to provide monthly details of the
+                    Loan Account and the credit facilities extended to the
+                    Borrower to credit information companies. We may obtain
+                    information on credit facilities availed by the Borrower
+                    from other financial institutions to determine whether we
+                    can extend additional credit facilities. On the
+                    regularization of the Borrowers account, we will update the
+                    credit information companies accordingly.
+                </li>
+                <li>
+                    The Borrower authorizes to verify any of the information of
+                    the Borrower including Borrower’s credit standing from
+                    anyone we may consider appropriate including credit bureaus,
+                    local authority, credit rating agencies etc.
+                </li>
+                <li>
+                    The Borrower authorizes us to inform Borrower’s employer of
+                    any default in repayment and agrees to do things necessary
+                    to fulfill Borrower’s obligations.
+                </li>
+                <li>
+                    Our records about the Loan shall be conclusive and binding
+                    on the Borrower.
+                </li>
+                <li>
+                    In case of default in repayment of the Loan amount, Borrower
+                    authorizes us and our collection assistance specialist
+                    engaged, to contact Borrower over phone, office or visit
+                    Borrower’s residence or such other place where Borrower is
+                    located.
+                </li>
+            </ul>
+            <p>
+                <strong>Effective Date</strong> - These Terms of Agreement shall
+                be effective from the date of disbursal of the loan amount.
+            </p>
+            <p>
+                <strong>Assignment</strong> - The Borrower agrees that we may
+                sell or assign the Loan and outstanding dues to any third party
+                without prior notice. This will bind the Borrower to the new
+                creditor as directed.
+            </p>
+            <p>
+                <strong>Governing Law & Jurisdiction</strong> - The Loan shall
+                be governed by the laws of India, and disputes shall be settled
+                through arbitration in New Delhi. The arbitration language shall
+                be English or Hindi.
+            </p>
+            <p>
+              <img
+                src="https://ramleela.s3.ap-south-1.amazonaws.com/QUALOAN+Header+Footer+/letterhead_footer.webp"
+                alt="Sanctionletter-footer"
+                width="100%"
+                height="104"
+              />
+            </p>
+          </div>
+        </div>
+    </body>
+</html>
