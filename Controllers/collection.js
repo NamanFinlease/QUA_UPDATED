@@ -225,8 +225,8 @@ export const activeLeads = asyncHandler(async (req, res) => {
                                 $divide: [
                                     {
                                         $subtract: [
-                                            "$camDetails.repaymentDate",
-                                            "$$NOW"
+                                            "$$NOW",
+                                            "$camDetails.repaymentDate"
                                         ]
                                     },
                                     86400000
