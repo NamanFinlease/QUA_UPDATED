@@ -118,7 +118,7 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
     },
-    mobile: { type: String, unique: true, sparse: true }, // Ensure uniqueness but allow null initially
+    mobile: { type: String},
     personalDetails: {
       type: personalDetailsSchema,
     },
