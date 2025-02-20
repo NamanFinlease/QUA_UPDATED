@@ -310,7 +310,7 @@ export const getAllLeads = asyncHandler(async (req, res) => {
     const query = {
         $or: [{ screenerId: { $exists: false } }, { screenerId: null }],
         isRecommended: { $ne: true },
-        isRejected: { $eq: true },
+        isRejected: { $ne: true },
     };
 
     const leads = await Lead.find(query)
