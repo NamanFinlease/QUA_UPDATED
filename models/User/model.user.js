@@ -34,7 +34,7 @@ const personalDetailsSchema = new mongoose.Schema(
 const residenceSchema = new mongoose.Schema({
   address: {
     type: String,
-    required: true,
+    // required: true,
   },
 
   landmark: {
@@ -43,15 +43,15 @@ const residenceSchema = new mongoose.Schema({
 
   city: {
     type: String,
-    required: true,
+    // required: true,
   },
   state: {
     type: String,
-    required: true,
+    // required: true,
   },
   pincode: {
     type: String,
-    required: true,
+    // required: true,
   },
   residingSince: {
     type: String,
@@ -73,7 +73,7 @@ const incomeDetailsSchema = new mongoose.Schema({
 
   monthlyIncome: {
     type: Number,
-    required: true,
+    // required: true,
   },
   obligations: {
     type: Number,
