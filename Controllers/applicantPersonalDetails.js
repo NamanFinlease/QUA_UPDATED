@@ -43,17 +43,17 @@ export const applicantDetails = async (details = null, session) => {
                 pan: details.pan,
                 aadhaar: details.aadhaar,
             },
-            // residence: details.extraDetails.residenceDetails || {},
-            // incomeDetails: details.extraDetails.incomeDetails || {},
+            residence: details?.extraDetails?.residenceDetails || {},
+            incomeDetails: details?.extraDetails?.incomeDetails || {},
             employment: {
-                companyName: details.extraDetails.employeDetails.companyName || "",
-                companyAddress: details.extraDetails.employeDetails.officeAddrress || "",
-                state: details.extraDetails.employeDetails.state || "",
-                city: details.extraDetails.employeDetails.city || "",
-                pincode: details.extraDetails.employeDetails.pincode || "",
-                department: details.extraDetails.employeDetails.companyType || "",
-                designation: details.extraDetails.employeDetails.designation || "",
-                employedSince: details.extraDetails.employeDetails.employedSince || ""
+                companyName: details?.extraDetails?.employeDetails?.companyName || "",
+                companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || "",
+                state: details?.extraDetails?.employeDetails?.state || "",
+                city: details?.extraDetails?.employeDetails?.city || "",
+                pincode: details?.extraDetails?.employeDetails?.pincode || "",
+                department: details?.extraDetails?.employeDetails?.companyType || "",
+                designation: details?.extraDetails?.employeDetails?.designation || "",
+                employedSince: details?.extraDetails?.employeDetails?.employedSince || ""
             },
         };
 
@@ -66,30 +66,30 @@ export const applicantDetails = async (details = null, session) => {
         console.log("details---->")
 
         let addBankDetails
-        let disbursalBankDetails = details.extraDetails.disbursalBankDetails
+        let disbursalBankDetails = details?.extraDetails?.disbursalBankDetails
         const isAlreadyBankAccount = await Bank.findOne({ borrowerId: applicant._id }).session(session)
         if (isAlreadyBankAccount) {
             addBankDetails = await Bank.findOneAndUpdate(
                 { borrowerId: applicant._id },
                 {
-                    beneficiaryName: disbursalBankDetails.beneficiaryName || "",
-                    bankAccNo: disbursalBankDetails.accountNumber || "",
-                    accountType: disbursalBankDetails.accountType || "",
-                    ifscCode: disbursalBankDetails.ifscCode || "",
-                    bankName: disbursalBankDetails.bankName || "",
-                    branchName: disbursalBankDetails.branchName || "",
+                    beneficiaryName: disbursalBankDetails?.beneficiaryName || "",
+                    bankAccNo: disbursalBankDetails?.accountNumber || "",
+                    accountType: disbursalBankDetails?.accountType || "",
+                    ifscCode: disbursalBankDetails?.ifscCode || "",
+                    bankName: disbursalBankDetails?.bankName || "",
+                    branchName: disbursalBankDetails?.branchName || "",
                 },
                 { session, new: true }
             );
         } else {
             addBankDetails = new Bank({
                 borrowerId: applicant._id,
-                beneficiaryName: disbursalBankDetails.beneficiaryName || "",
-                bankAccNo: disbursalBankDetails.accountNumber || "",
-                accountType: disbursalBankDetails.accountType || "",
-                ifscCode: disbursalBankDetails.ifscCode || "",
-                bankName: disbursalBankDetails.bankName || "",
-                branchName: disbursalBankDetails.branchName || "",
+                beneficiaryName: disbursalBankDetails?.beneficiaryName || "",
+                bankAccNo: disbursalBankDetails?.accountNumber || "",
+                accountType: disbursalBankDetails?.accountType || "",
+                ifscCode: disbursalBankDetails?.ifscCode || "",
+                bankName: disbursalBankDetails?.bankName || "",
+                branchName: disbursalBankDetails?.branchName || "",
             });
             addBankDetails.save({ session })
         }
