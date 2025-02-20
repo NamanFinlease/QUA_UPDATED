@@ -205,9 +205,9 @@ export const checkAadhaarDetails = asyncHandler(async (req, res) => {
 
     const lead = await Lead.findById(id);
     const { aadhaar } = lead;
-    const uniqueId = `${aadhaar}`;
+    // const uniqueId = `${aadhaar}`;
     const data = await AadhaarDetails.findOne({
-        "uniqueId": aadhaar,
+        "details.adharNumber": aadhaar,
     });
 
     res.json({
