@@ -13,6 +13,7 @@ import LoanApplication from "../../models/User/model.loanApplication.js";
 import { sessionAsyncHandler } from "../../middleware/sessionAsyncHandler.js";
 import Lead from "../../models/Leads.js";
 import { postLogs } from "../logs.js";
+import LeadStatus from "../../models/LeadStatus.js";
 dotenv.config();
 
 
@@ -245,7 +246,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         {
             logDate: new Date(),
             status: "Callback URL hit",
-            leadRemark: `${callbackResponse}`
+            leadRemark: `${JSON.stringify(callbackResponse)}`
         },
     )
     console.log("logData--->", logData)
@@ -274,7 +275,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
     console.log("data--->", data);
 
 
-    //  const {amount} = req.body
+    // //  const {amount} = req.body
     //  let data = {
     //     status: "success",
     //     order: {
@@ -286,8 +287,8 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
     //       amount: 101,
     //       created_at: "2025-02-13 12:34:56",
     //       notes: {
-    //         "udf1": "AVZPC6217D", 
-    //         "udf2": "QUALON0000038",  
+    //         "udf1": "LIOPK3645N", 
+    //         "udf2": "QUALON0001030",  
     //       }
     //     }
     //   }
@@ -332,7 +333,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         console.log('loan number-->', loanNo)
 
         let isPartialPaid;
-        const collectionData = await Collection.findOne({ loanNo })
+        const collectionData = await Collection.findOne({ loanNo : loanNo })
 
 
         if (!collectionData) {
@@ -416,8 +417,8 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             }
 
             // Update Logs
-            const collectionData = await Collection.findOne({ loanNo: loanNo }, { session })
-            const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, { session })
+            const collectionData = await Collection.findOne({ loanNo: loanNo }, null,{ session })
+            const lead = await Lead.findOne({ leadNo: collectionData.leadNo },null, { session })
 
             // update leadStatus 
             await LeadStatus.findOneAndUpdate({
@@ -452,7 +453,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         await LogHistory.create({
             logDate: new Date(),
             status: "Payment verification failed By Payment Gateway",
-            leadRemark: `Order ID: ${callbackResponse}`,
+            leadRemark: `Order ID: ${JSON.stringify(callbackResponse)}`,
         },);
 
         return res.status(400).json({
