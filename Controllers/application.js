@@ -15,7 +15,7 @@ import Lead from "../models/Leads.js";
 // @route GET /api/applications
 // @access Private
 export const getAllApplication = asyncHandler(async (req, res) => {
-    if (req.activeRole === "screener") {
+    if (req.activeRole === "screener"||req.activeRole === "admin") {
         res.status(401);
         throw new Error("Screeners doesn't have the authorization.");
     }

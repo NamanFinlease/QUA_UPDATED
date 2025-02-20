@@ -50,7 +50,7 @@ export const createActiveLead = async (pan, loanNo, leadNo) => {
 // @route GET /api/collections/active
 // @access Private
 export const activeLeads = asyncHandler(async (req, res) => {
-    if (req.activeRole === "collectionExecutive") {
+    if (req.activeRole === "collectionExecutive"|| req.activeRole === "admin") {
         // const page = parseInt(req.query.page) || 1; // current page
         // const limit = parseInt(req.query.limit) || 10; // items per page
         // const skip = (page - 1) * limit;
@@ -461,8 +461,8 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             }
 
             // update logs and leadStatus
-            const collectionData = await Collection.findOne({ loanNo: loanNo },null, { session })
-            const lead = await Lead.findOne({ leadNo: collectionData.leadNo },null, { session })
+            const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
+            const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
             const employee = await Employee.findById(collectionEmpId, null, { session })
             await LeadStatus.findOneAndUpdate({
                 leadNo: lead.leadNo
@@ -912,62 +912,86 @@ export const getClosedList = asyncHandler(async (req, res) => {
 
             {
                 $lookup: {
-                    from: "leads",
-                    localField: "disbursalDetails.leadNo",
-                    foreignField: "leadNo",
-                    as: "leadDetails"
+                    from: "sanctions",
+                    localField: "disbursalDetails.sanction",
+                    foreignField: "_id",
+                    as: "sanctionData"
                 }
             },
 
-            { $unwind: "$leadDetails" },
+            { $unwind: "$sanctionData" },
+            {
+                $lookup: {
+                    from: "applications",
+                    localField: "sanctionData.application",
+                    foreignField: "_id",
+                    as: "applicationData"
+                }
+            },
+
+            { $unwind: "$applicationData" },
+
+            {
+                $lookup: {
+                    from: "leads",
+                    localField: "applicationData.lead",
+                    foreignField: "_id",
+                    as: "leadData"
+                }
+            },
+
+            { $unwind: "$leadData" },
             {
                 $lookup: {
                     from: "camdetails",
-                    localField: "disbursalDetails.leadNo",
-                    foreignField: "leadNo",
-                    as: "sanctionDetails"
+                    localField: "leadData._id",
+                    foreignField: "leadId",
+                    as: "camData"
                 }
             },
+
+            { $unwind: "$camData" },
             {
-                $unwind: "$sanctionDetails"
+                $match: {
+                    "camData.repaymentAmount": { $gt: 0 }
+                }
             },
             {
                 $lookup: {
                     from: "payments",
                     localField: "disbursalDetails.loanNo",
                     foreignField: "loanNo",
-                    as: "paymentDetails"
+                    as: "paymentData"
                 }
             },
             {
-                $unwind: "$paymentDetails"
+                $unwind: "$paymentData"
             },
-
             {
                 $project: {
                     _id: 0,
                     pan: 1,
                     loanNo: "$data.loanNo",
                     sanctionAmount:
-                        "$sanctionDetails.loanRecommended",
+                        "$sanctionData.loanRecommended",
                     requestedStatus: "$data.requestedStatus",
                     isSettled: "$data.isSettled",
                     isWriteOff: "$data.isWriteOff",
                     defaulted: "$data.defaulted",
-                    leadNo: "$leadDetails.leadNo",
-                    fName: "$leadDetails.fName",
-                    mName: "$leadDetails.mName",
-                    lName: "$leadDetails.lName",
-                    gender: "$leadDetails.gender",
-                    dob: "$leadDetails.dob",
-                    mobile: "$leadDetails.mobile",
-                    email: "$leadDetails.personalEmail",
-                    state: "$leadDetails.state",
-                    city: "$leadDetails.city",
+                    leadNo: "$leadData.leadNo",
+                    fName: "$leadData.fName",
+                    mName: "$leadData.mName",
+                    lName: "$leadData.lName",
+                    gender: "$leadData.gender",
+                    dob: "$leadData.dob",
+                    mobile: "$leadData.mobile",
+                    email: "$leadData.personalEmail",
+                    state: "$leadData.state",
+                    city: "$leadData.city",
                     totalReceivedAmount:
-                        "$paymentDetails.totalReceivedAmount"
+                        "$paymentData.totalReceivedAmount"
                 }
-            }
+            },
         ]
 
         const closedList = await Closed.aggregate(pipeline)
@@ -1015,7 +1039,7 @@ export const allocate = asyncHandler(async (req, res) => {
 // list of  allocated collectionLead by a  collection executive  
 export const getAllocatedList = asyncHandler(async (req, res) => {
     console.log('collectionExecutive')
-    if (req.activeRole === "collectionExecutive"||req.activeRole === "admin") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
         let collectionExecutiveId = req.employee._id.toString();
 
         const pipeline = [
@@ -1323,7 +1347,7 @@ export const preAllocate = asyncHandler(async (req, res) => {
 
 export const getPreAllocatedList = asyncHandler(async (req, res) => {
     console.log('collectionExecutive')
-    if (req.activeRole === "collectionExecutive"||req.activeRole === "admin") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
         let preCollectionExecutiveId = req.employee._id.toString();
 
         const pipeline = [

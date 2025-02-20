@@ -26,7 +26,7 @@ import { sessionAsyncHandler } from "../middleware/sessionAsyncHandler.js";
 export const getNewDisbursal = asyncHandler(async (req, res) => {
     if (
         req.activeRole === "disbursalManager" ||
-        req.activeRole === "disbursalHead"
+        req.activeRole === "disbursalHead" || req.activeRole === "admin"
     ) {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
