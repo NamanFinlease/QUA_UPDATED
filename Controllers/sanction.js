@@ -312,7 +312,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                 `Sanction approved by ${req.employee.fName} ${req.employee.lName}`
             );
 
-            return res.json({ success: true, logs });
+            return res.json({ success: true, logs , leadNo :lead.leadNo , loanNo : loanDetails.loanNo });
         } catch (error) {
             console.log("error", error);
             res.status(500);
