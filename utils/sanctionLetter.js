@@ -8,6 +8,7 @@ export function sanctionLetter(
     sanctionDate,
     title,
     fullname,
+    loanNo,
     pan,
     mobile,
     residenceAddress,
@@ -48,18 +49,18 @@ export function sanctionLetter(
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
             )}`,
-           
+
             disbursalAmount: `${new Intl.NumberFormat().format(
-                camDetails?.details.netDisbursalAmount
+                camDetails?.netDisbursalAmount
             )}`,
             // repaymentCheques: `${camDetails?.details.repaymentCheques || "-"}`,
             // bankName: `${bankName || "-"}`,
             bouncedCharges: "1000",
             annualPercentage: `${
-                ((Number(camDetails?.details?.roi) / 100) *
-                    Number(camDetails?.details.eligibleTenure) +
-                    Number(camDetails?.details?.adminFeePercentage) / 100) *
-                (365 / Number(camDetails?.details.eligibleTenure)) *
+                ((Number(camDetails?.roi) / 100) *
+                    Number(camDetails?.eligibleTenure) +
+                    Number(camDetails?.adminFeePercentage) / 100) *
+                (365 / Number(camDetails?.eligibleTenure)) *
                 100
             }%`,
         };
@@ -71,6 +72,7 @@ export function sanctionLetter(
         // header =
         //     "https://publicramlella.s3.ap-south-1.amazonaws.com/public_assets/Header.jpg";
 
+        console.log("htmlToSend ", htmlToSend);
         return htmlToSend;
     } catch (error) {
         return {
