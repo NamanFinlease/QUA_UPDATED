@@ -15,7 +15,7 @@ import Payment from '../models/Payment.js';
 import Collection from '../models/Collection.js';
 import moment from 'moment';
 import { calculateReceivedPayment } from '../utils/calculateReceivedPayment.js';
-import OTP from '../models/User/model.otp.js'
+import OTP from '../models/User/model.Otp.js'
 
 // Configuration
 const BATCH_SIZE = 200;
