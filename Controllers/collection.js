@@ -50,7 +50,7 @@ export const createActiveLead = async (pan, loanNo, leadNo) => {
 // @route GET /api/collections/active
 // @access Private
 export const activeLeads = asyncHandler(async (req, res) => {
-    if (req.activeRole === "collectionExecutive"|| req.activeRole === "admin") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
         // const page = parseInt(req.query.page) || 1; // current page
         // const limit = parseInt(req.query.limit) || 10; // items per page
         // const skip = (page - 1) * limit;
@@ -226,7 +226,7 @@ export const activeLeads = asyncHandler(async (req, res) => {
                                     {
                                         $subtract: [
                                             "$camDetails.repaymentDate",
-                                            "$camDetails.disbursalDate"
+                                            "$$NOW"
                                         ]
                                     },
                                     86400000
@@ -239,7 +239,9 @@ export const activeLeads = asyncHandler(async (req, res) => {
             },
             {
                 $match: {
-                    collectionExecutiveId: { $exists: false }
+                    collectionExecutiveId: {
+                        $exists: false
+                    }
                 }
             },
             {
@@ -322,7 +324,11 @@ export const activeLeads = asyncHandler(async (req, res) => {
                     city: "$leadDetails.city",
                     salary: "$leadDetails.salary",
                     leadNo: "$leadDetails.leadNo",
-                    loanNo: 1
+                    loanNo: 1,
+                    repaymentDetails:
+                        "$camDetails.repaymentDate",
+                    disbursalDetails:
+                        "$camDetails.disbursalDate"
                 }
             }
         ]
@@ -1115,6 +1121,11 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
                 $unwind: "$camDetails"
             },
             {
+                $match: {
+                    "camDetails.repaymentAmount": { $gt: 0 }
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     disbursedBy: {
@@ -1176,7 +1187,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             {
                                                 $subtract: [
                                                     "$camDetails.repaymentDate",
-                                                    "$camDetails.disbursalDate"
+                                                    "$$NOW"
                                                 ]
                                             },
                                             86400000
@@ -1192,7 +1203,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             {
                                                 $subtract: [
                                                     "$camDetails.repaymentDate",
-                                                    "$camDetails.disbursalDate"
+                                                    "$$NOW"
                                                 ]
                                             },
                                             86400000
@@ -1205,7 +1216,6 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                     }
                 }
             },
-
             {
                 $match: {
                     collectionExecutiveId: {
@@ -1296,9 +1306,11 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                     city: "$leadDetails.city",
                     salary: "$leadDetails.salary",
                     leadNo: "$leadDetails.leadNo",
-                    loanNo: 1
+                    loanNo: 1,
+                    repaymentDate: "$camDetails.repaymentDate",
+                    disbursalDate: "$camDetails.disbursalDate"
                 }
-            }
+            },
         ]
 
         const activeLeads = await Collection.aggregate(pipeline)
@@ -1421,6 +1433,11 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
             },
             {
                 $unwind: "$camDetails"
+            },
+            {
+                $match: {
+                    "camDetails.repaymentAmount": { $gt: 0 }
+                }
             },
             {
                 $project: {

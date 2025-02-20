@@ -19,8 +19,8 @@ import OTP from '../models/User/model.Otp.js'
 
 // Configuration
 const BATCH_SIZE = 200;
-const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
 // const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
+const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -986,6 +986,343 @@ async function createCollectionData() {
   // logProgress('colection',documents);
 }
 
+async function updateCollectionData() {
+  console.log('Starting Creating Collections...');
+
+  const payments = await Payment.find()
+
+
+  progress.collections.total = payments.length;
+  let collectiondocs = []
+  let collectionBulk = [];
+  for (let collectionData of payments) {
+    let { _id, loanNo, pan, paymentHistory, interestDiscount, penaltyDiscount, principalDiscount, interestReceived, penaltyReceived, principalReceived } = collectionData
+    const disbursal = await Disbursal.aggregate([
+      {
+        $match: { loanNo }
+      },
+
+      {
+        $lookup: {
+          from: "sanctions",
+          localField: "sanction",
+          foreignField: "_id",
+          as: "sanctionData"
+        }
+      },
+      {
+        $unwind: {
+          path: "$sanctionData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "applications",
+          localField: "sanctionData.application",
+          foreignField: "_id",
+          as: "applicationData"
+        }
+      },
+
+      {
+        $unwind: {
+          path: "$applicationData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "leads",
+          localField: "applicationData.lead",
+          foreignField: "_id",
+          as: "leadData"
+        }
+      },
+
+      {
+        $unwind: {
+          path: "$leadData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "camdetails",
+          localField: "leadData._id",
+          foreignField: "leadId",
+          as: "camData"
+        }
+      },
+      {
+        $addFields: {
+          camData: {
+            $filter: {
+              input: "$camData",
+              as: "cam",
+              cond: { "$gt": ["$$cam.details.repaymentAmount", null] }
+            }
+          }
+        }
+      },
+
+
+      {
+        $unwind: {
+          path: "$camData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "closeds",
+          localField: "_id",
+          foreignField: "data.disbursal",
+          as: "closedData"
+        }
+      },
+
+      {
+        $unwind: {
+          path: "$closedData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          isDisbursed: 1,
+          loanNo: 1,
+          leadNo: "$leadData.leadNo",
+          camData: {
+
+            roi: "$camData.roi",
+            tenure: "$camData.eligibleTenure",
+            disbursalDate: "$camData.disbursalDate",
+            repaymentDate: "$camData.repaymentDate",
+            sanctionedAmount: "$camData.loanRecommended",
+          },
+          camDetails: "$camData._id",
+          closed: "$closedData._id",
+          disbursedBy: 1,
+
+        }
+      }
+
+
+    ])
+
+    console.log("loan nummmmberr ----->", loanNo, _id)
+
+
+    if (disbursal.length === 0) continue
+
+    let { _id: disbursalId, leadNo, isDisbursed, disbursedBy, camDetails, closed, camData: { roi, tenure, sanctionedAmount, disbursalDate, repaymentDate } } = disbursal[0]
+
+
+
+
+    let receivedAmount = 0;
+    let paymentDate = null;
+    let closingType = '';
+
+    if (Array.isArray(paymentHistory) && paymentHistory.length > 0) {
+      receivedAmount = paymentHistory[0]?.receivedAmount || 0;
+      closingType = paymentHistory[0]?.closingType || 0;
+      paymentDate = paymentHistory[0]?.paymentDate ? moment.utc(paymentHistory[0].paymentDate).clone().local() : null;
+    }
+
+
+
+    let localDisbursedDate = moment.utc(new Date(disbursalDate)).clone().local();
+    let localPaymentDate = moment.utc(paymentDate).clone().local();
+    const today = moment.utc(new Date()).clone().local();
+    let penalRate = 2
+    let dpd
+    let interest = 0
+    let penalty = 0
+    let principalAmount = sanctionedAmount
+
+
+    const elapseDays = (closingType === "closed" || closingType === "settled" || closingType === "partPayment") ?
+      localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
+    if (elapseDays > tenure) {
+      dpd = elapseDays - tenure
+      penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
+      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
+    } else {
+      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays).toFixed(2))
+    }
+
+
+    let calculatedData = await calculateReceivedPayment([{
+      filteredPaymentHistory: [{ receivedAmount }],
+      camDetails,
+      interest,
+      penalty,
+      penaltyDiscount,
+      interestDiscount,
+      principalDiscount,
+      penaltyReceived,
+      principalAmount,
+      interestReceived,
+      principalAmount,
+      principalReceived,
+    }])
+
+    let outstandingAmount = calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount
+
+    if (closingType === "settled") {
+      calculatedData.principalDiscount += outstandingAmount
+      calculatedData.principalAmount = 0
+      outstandingAmount = 0
+
+    }
+    // if (closingType === "partPayment" || closingType === "") {
+    //   if(paymentDate)
+    //   calculatedData.principalDiscount += outstandingAmount
+    //   calculatedData.principalAmount = 0
+    //   outstandingAmount = 0
+
+    // }
+
+
+    collectiondocs.push({
+      ...calculatedData,
+      pan,
+      loanNo,
+      leadNo,
+      elapseDays,
+      tenure,
+      closingType,
+      repaymentDate,
+      paymentDate,
+      sanctionedAmount,
+      dpd,
+      isDisbursed,
+      disbursedBy,
+      disbursal: disbursalId,
+      payment: _id,
+      camDetails,
+      closed,
+      outstandingAmount,
+
+    })
+
+    let updatedPayment = await Payment.findOneAndUpdate(
+      {
+        loanNo,
+        // "paymentHistory.transactionId": paymentHistory[0].transactionId,
+      },
+      {
+
+        $inc: {
+          penaltyDiscount: Number(calculatedData.penaltyDiscount.toFixed(2)),
+          interestDiscount: Number(calculatedData.interestDiscount.toFixed(2)),
+          principalDiscount: Number(calculatedData.principalDiscount.toFixed(2)),
+          penaltyReceived: Number(calculatedData.penaltyReceived.toFixed(2)),
+          interestReceived: Number(calculatedData.interestReceived.toFixed(2)),
+          principalReceived: Number(calculatedData.principalReceived.toFixed(2)),
+          totalReceivedAmount: Number(calculatedData.receivedAmount.toFixed(2)),
+
+        }
+
+      },
+      { new: true, runValidators: true, }
+    );
+
+    if (outstandingAmount < 1) {
+
+      const closed = await Closed.findOneAndUpdate(
+        {
+          pan: pan,
+          "data.loanNo": loanNo
+        },
+        {
+          $set: {
+            "data.$[elem].isClosed": true,
+            "data.$[elem].isActive": false
+          }
+        },
+        {
+          arrayFilters: [{ "elem.loanNo": loanNo }],
+          returnDocument: 'after',
+        }
+      );
+    }
+
+
+
+
+    collectionBulk.push({
+      updateOne: {
+        filter: { _id: collectionData._id },
+        update: {
+          $set: {
+            ...calculatedData,
+            pan,
+            loanNo,
+            leadNo,
+            elapseDays,
+            tenure,
+            closingType,
+            repaymentDate,
+            paymentDate,
+            sanctionedAmount,
+            dpd,
+            isDisbursed,
+            disbursedBy,
+            disbursal: `ObjectId('${disbursalId}')`,
+            payment: `ObjectId('${_id}')`,
+            camDetails: `ObjectId('${camDetails}')`,
+            closed: `ObjectId('${closed}')`,
+            outstandingAmount: (calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount),
+
+          }
+        }
+      }
+    });
+
+    // if (collectionBulk.length >= BATCH_SIZE) {
+    //   await Collection.bulkWrite(collectionBulk);
+    //   progress.collections.processed += collectionBulk.length;
+    //   collectionBulk.length = 0;
+    //   logProgress('collections');
+
+    // }
+    if (elapseDays <= tenure) {
+      await Collection.findOneAndUpdate(
+        { loanNo: loanNo },
+        {
+          $set: {
+            principalAmount: calculatedData.principalAmount,
+            penalty: calculatedData.penalty,
+            interest: calculatedData.interest,
+            outstandingAmount
+          }
+        }
+      );
+
+    }
+
+  }
+
+  // if (collectionBulk.length >= 0) {
+  //   await Collection.bulkWrite(collectionBulk);
+  //   progress.collections.processed += collectionBulk.length;
+  //   collectionBulk.length = 0;
+
+  // }
+
+  // console.log("jsonData", jsonData);
+
+
+  fs.writeFileSync('collectionData.json', JSON.stringify(collectiondocs, null, 2));
+  logProgress('collections');
+  // await Collection.insertMany(collectiondocs);
+  // logProgress('colection',documents);
+}
+
+
 async function runMigration() {
   try {
     await mongoose.connect(MONGO_URI);
@@ -995,16 +1332,18 @@ async function runMigration() {
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
     // await withRetry(() => migrateCamDetails());
-    await withRetry(() => createPaymentCollection());
+    // await withRetry(() => createPaymentCollection());
     // await withRetry(() => createCollectionData());
+    await withRetry(() => updateCollectionData());
+
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
     // console.log('OTP:', progress.otp);
     // console.log('Loans:', progress.loans);
     // console.log('CAM Details:', progress.camDetails);
-    console.log('Payments:', progress.payments);
-    // console.log('Collection:', progress.collections);
+    // console.log('Payments:', progress.payments);
+    console.log('Collection:', progress.collections);
 
   } catch (error) {
     console.error('Migration failed:', error);
