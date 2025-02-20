@@ -15,11 +15,12 @@ import Payment from '../models/Payment.js';
 import Collection from '../models/Collection.js';
 import moment from 'moment';
 import { calculateReceivedPayment } from '../utils/calculateReceivedPayment.js';
+import OTP from '../models/User/model.otp.js'
 
 // Configuration
 const BATCH_SIZE = 200;
-// const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting?retryWrites=true&w=majority&appName=Cluster0';
 const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
+// const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -602,6 +603,7 @@ async function createPaymentCollection() {
         totalReceivedAmount: 0,
 
         paymentHistory: doc.PAID_AMT > 0 ? [{
+          _id: new mongoose.Types.ObjectId(),
           receivedAmount: doc.PAID_AMT || 0,
           paymentDate: new Date(doc.PAID_DATE) || null,
           paymentMode: "offline",
@@ -629,12 +631,12 @@ async function createPaymentCollection() {
 
       paymentFile.push(updatedDoc)
 
-      updateOperations.push({
-        updateOne: {
-          filter: { _id: doc._id },
-          update: { $set: { ...updatedDoc } },
-        },
-      });
+      // updateOperations.push({
+      //   updateOne: {
+      //     filter: { _id: doc._id },
+      //     update: { $set: { ...updatedDoc } },
+      //   },
+      // });
 
 
       // if (updateOperations.length >= BATCH_SIZE) {
@@ -649,19 +651,19 @@ async function createPaymentCollection() {
     }
   }
 
-  // if (updateOperations.length > 0) {
-  //   try {
+  if (updateOperations.length > 0) {
+    // try {
 
-  //     await Payment.insertMany(paymentFile);
-  //     progress.payments.processed += updateOperations.length;
-  //   } catch (error) {
+    //   await Payment.insertMany(paymentFile);
+    //   progress.payments.processed += updateOperations.length;
+    // } catch (error) {
 
-  //     console.log('bulk erroro', error)
+    //   console.log('bulk erroro', error)
 
-  //   }
-  // }
-  // await Payment.insertMany(paymentFile)
-  fs.writeFileSync('paymentsData.json', JSON.stringify(paymentFile, null, 2));
+    // }
+  }
+  await Payment.insertMany(paymentFile)
+  // fs.writeFileSync('paymentsData.json', JSON.stringify(paymentFile, null, 2));
   logProgress('payments');
 }
 
@@ -993,16 +995,16 @@ async function runMigration() {
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
     // await withRetry(() => migrateCamDetails());
-    // await withRetry(() => createPaymentCollection());
-    await withRetry(() => createCollectionData());
+    await withRetry(() => createPaymentCollection());
+    // await withRetry(() => createCollectionData());
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
     // console.log('OTP:', progress.otp);
     // console.log('Loans:', progress.loans);
     // console.log('CAM Details:', progress.camDetails);
-    // console.log('Payments:', progress.payments);
-    console.log('Collection:', progress.collections);
+    console.log('Payments:', progress.payments);
+    // console.log('Collection:', progress.collections);
 
   } catch (error) {
     console.error('Migration failed:', error);

@@ -13,7 +13,7 @@ import equifax from "../utils/fetchCibil.js";
 import { checkApproval } from "../utils/checkApproval.js";
 import { postCamDetails } from "./application.js";
 import cibilPdf from "../utils/cibilPdf.js";
-import Otp from "../models/User/model.Otp.js";
+import Otp from "../models/Otp.js";
 import {
     nextSequence,
     checkSequence,
