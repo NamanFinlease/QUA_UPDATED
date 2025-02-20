@@ -8,6 +8,7 @@ export function sanctionLetter(
     sanctionDate,
     title,
     fullname,
+    loanNo,
     pan,
     mobile,
     residenceAddress,
