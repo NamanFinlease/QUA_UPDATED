@@ -51,16 +51,16 @@ export function sanctionLetter(
             )}`,
 
             disbursalAmount: `${new Intl.NumberFormat().format(
-                camDetails?.details.netDisbursalAmount
+                camDetails?.netDisbursalAmount
             )}`,
             // repaymentCheques: `${camDetails?.details.repaymentCheques || "-"}`,
             // bankName: `${bankName || "-"}`,
             bouncedCharges: "1000",
             annualPercentage: `${
-                ((Number(camDetails?.details?.roi) / 100) *
-                    Number(camDetails?.details.eligibleTenure) +
-                    Number(camDetails?.details?.adminFeePercentage) / 100) *
-                (365 / Number(camDetails?.details.eligibleTenure)) *
+                ((Number(camDetails?.roi) / 100) *
+                    Number(camDetails?.eligibleTenure) +
+                    Number(camDetails?.adminFeePercentage) / 100) *
+                (365 / Number(camDetails?.eligibleTenure)) *
                 100
             }%`,
         };
