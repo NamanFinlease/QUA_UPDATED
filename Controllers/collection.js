@@ -50,7 +50,7 @@ export const createActiveLead = async (pan, loanNo, leadNo) => {
 // @route GET /api/collections/active
 // @access Private
 export const activeLeads = asyncHandler(async (req, res) => {
-    if (req.activeRole === "collectionExecutive") {
+    if (req.activeRole === "collectionExecutive"|| req.activeRole === "admin") {
         // const page = parseInt(req.query.page) || 1; // current page
         // const limit = parseInt(req.query.limit) || 10; // items per page
         // const skip = (page - 1) * limit;

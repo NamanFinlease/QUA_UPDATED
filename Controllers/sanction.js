@@ -21,7 +21,7 @@ import LoanApplication from "../models/User/model.loanApplication.js";
 // @route GET /api/sanction/recommended
 // @access Private
 export const getPendingSanctions = asyncHandler(async (req, res) => {
-    if (req.activeRole === "sanctionHead") {
+    if (req.activeRole === "sanctionHead"||req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;
@@ -59,7 +59,7 @@ export const getPendingSanctions = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/eSignPending
 // @access Private
 export const getPendingESign = asyncHandler(async (req, res) => {
-    if (req.activeRole === "sanctionHead") {
+    if (req.activeRole === "sanctionHead"||req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;
@@ -99,7 +99,7 @@ export const getPendingESign = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/recommended
 // @access Private
 export const recommendedApplications = asyncHandler(async (req, res) => {
-    if (req.activeRole === "creditManager") {
+    if (req.activeRole === "creditManager"||req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;

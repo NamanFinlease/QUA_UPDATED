@@ -259,7 +259,7 @@ export const getPendingPaymentVerification = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Loan number is required" })
     }
 
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead"|| req.activeRole === "admin") {
 
         const pipeline = [
             {
