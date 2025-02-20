@@ -329,7 +329,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         let excessAmount = 0
         let paymentDate = new Date(data.order.created_at.replace(" ", "T"));
 
-        console.log('loan number', loanNo)
+        console.log('loan number-->', loanNo)
 
         let isPartialPaid;
         const collectionData = await Collection.findOne({ loanNo })
