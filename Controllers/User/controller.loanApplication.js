@@ -369,6 +369,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         if (userDetails.incomeDetails.employementType === "SELF EMPLOYED") {
             newLead.isRejected = true;
             updatedLoanDetails.applicationStatus = "REJECTED",
+            updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             remarks.push("User is SELF EMPLOYED");
         }
@@ -376,6 +377,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         if (userDetails.incomeDetails.incomeMode === "CASH" || userDetails.incomeDetails.incomeMode === "OTHERS") {
             newLead.isRejected = true;
             updatedLoanDetails.applicationStatus = "REJECTED",
+            updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             remarks.push(`User income mode is ${userDetails.incomeDetails.incomeMode}`);
         }
@@ -383,6 +385,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         if (userDetails.incomeDetails.monthlyIncome < 35000) {
             newLead.isRejected = true;
             updatedLoanDetails.applicationStatus = "REJECTED",
+            updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             remarks.push(`User monthly income is ${userDetails.incomeDetails.monthlyIncome}`);
         }
@@ -393,7 +396,6 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
         updatedLoanDetails.leadNo = newLead.leadNo;
         updatedLoanDetails.leadId = newLead._id;
-        updatedLoanDetails.sanction = "REJECTED"
         await updatedLoanDetails.save({ session });
         await newLead.save({ session });
     }
