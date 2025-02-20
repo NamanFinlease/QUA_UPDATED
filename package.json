@@ -1,14 +1,14 @@
 {
-  "name": "preprod-crm.crm-backend",
+  "name": "quanew-crm-backend",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "pm2 start index.js --name preprod-crm.crm-backend",
-    "restart": "pm2 restart preprod-crm.crm-backend",
-    "stop": "pm2 stop preprod-crm.crm-backend",
-    "logs": "pm2 logs preprod-crm.crm-backend",
-    "delete": "pm2 delete preprod-crm.crm-backend",
+    "start": "pm2 start index.js --name quanew-crm-backend",
+    "restart": "pm2 restart quanew-crm-backend",
+    "stop": "pm2 stop quanew-crm-backend",
+    "logs": "pm2 logs quanew-crm-backend",
+    "delete": "pm2 delete quanew-crm-backend",
     "dev": "nodemon index.js"
   },
   "keywords": [],
