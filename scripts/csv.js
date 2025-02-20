@@ -3,7 +3,7 @@ import csv from 'csv-parser';
 import fs from 'fs';
 
 // MongoDB connection configuration
-const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
 const MONGO_OPTIONS = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
