@@ -473,16 +473,14 @@ export const approveDisbursal = sessionAsyncHandler(async (req, res, session) =>
 
         const objectId = new mongoose.Types.ObjectId(id);
         const closed = await Closed.findOneAndUpdate(
-            { "data.disbursal": objectId },
+            { "data.disbursal": objectId }, // Find the document where data.disbursal matches
             {
-                $set: {
-                    "data.$.isDisbursed": true,
-                },
+                $set: { "data.$[elem].isDisbursed": true } // Use array filter reference
             },
             {
-                arrayFilters: [{ "elem.disbursal": objectId }],
-                returnDocument: 'after',
-                session: session
+                arrayFilters: [{ "elem.disbursal": objectId }], // Filter the correct array element
+                returnDocument: 'after', // Return the updated document
+                session: session // Include transaction session if needed
             }
         );
 
