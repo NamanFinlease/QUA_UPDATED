@@ -8,7 +8,7 @@ import { checkApproval } from "../utils/checkApproval.js";
 import CamDetails from "../models/CAM.js";
 import Sanction from "../models/Sanction.js";
 import BRE from "../models/BRE.js";
-import { calculateRepaymentAmount } from "../utils/repaymentCalculation.js"
+import { calculateRepaymentAmount } from "../utils/repaymentCalculation.js";
 import Lead from "../models/Leads.js";
 
 // @desc Get all applications
@@ -113,6 +113,7 @@ export const getAllApplication = asyncHandler(async (req, res) => {
                 updatedAt: 1,
 
                 // Fields from 'lead'
+                "lead.leadNo": "$lead.leadNo",
                 "lead.fName": "$lead.fName",
                 "lead.mName": "$lead.mName",
                 "lead.lName": "$lead.lName",
@@ -188,18 +189,20 @@ export const allocateApplication = asyncHandler(async (req, res) => {
     const employee = await Employee.findOne({ _id: creditManagerId });
 
     // update Lead stage
-    await LeadStatus.findOneAndUpdate({
-        leadNo: application.leadNo
-    },
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: application.leadNo,
+        },
         {
             stage: "APPLICATION",
-            subStage: "APPLICATION IN PROCESS"
+            subStage: "APPLICATION IN PROCESS",
         }
-    )
+    );
     const logs = await postLogs(
         application.lead._id,
         "APPLICATION IN PROCESS",
-        `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+        `${application.lead.fName}${
+            application.lead.mName && ` ${application.lead.mName}`
         }${application.lead.lName && ` ${application.lead.lName}`}`,
         `Application allocated to ${employee.fName} ${employee.lName}`
     );
@@ -299,6 +302,7 @@ export const allocatedApplications = asyncHandler(async (req, res) => {
                 updatedAt: 1,
 
                 // Lead Fields
+                "lead.leadNo": "$lead.leadNo",
                 "lead.fName": "$leadData.fName",
                 "lead.mName": "$leadData.mName",
                 "lead.lName": "$leadData.lName",
@@ -333,17 +337,23 @@ export const allocatedApplications = asyncHandler(async (req, res) => {
 
 // @desc Adding CAM details
 // @access Private
-export const postCamDetails = async (leadId, cibilScore, loanAmount, leadNo, pan , session) => {
-
+export const postCamDetails = async (
+    leadId,
+    cibilScore,
+    loanAmount,
+    leadNo,
+    pan,
+    session
+) => {
     // need to add logic details come from lead
     const camDetails = new CamDetails({
         pan: pan,
         leadNo: leadNo,
         leadId: leadId,
         cibilScore: cibilScore,
-        loanAmount: loanAmount
+        loanAmount: loanAmount,
     });
-    camDetails.save({session})
+    camDetails.save({ session });
 
     return { success: true };
 };
@@ -389,7 +399,6 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
         req.employee._id.toString() ===
         application.creditManagerId._id.toString()
     ) {
-
         // Find the CamDetails associated with the application (if needed)
         let cam = await CamDetails.findOne({
             leadId: application.lead._id,
@@ -399,21 +408,30 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
             return res.json({ success: false, message: "No CAM found!!" });
         }
 
-        // recheck calculation of repayment 
-        const repaymentAmount = await calculateRepaymentAmount(details.repaymentDate, details.disbursalDate, details.loanRecommended, details.roi)
+        // recheck calculation of repayment
+        const repaymentAmount = await calculateRepaymentAmount(
+            details.repaymentDate,
+            details.disbursalDate,
+            details.loanRecommended,
+            details.roi
+        );
         if (repaymentAmount.toFixed(2) !== details.repaymentAmount.toFixed(2)) {
-            res.status(400)
-            return res.json({ success: false, message: "Repayment amount is not correct!! from frontend" });
+            res.status(400);
+            return res.json({
+                success: false,
+                message: "Repayment amount is not correct!! from frontend",
+            });
         }
 
         // Update only the fields that are sent from the frontend
-        Object.assign(cam,details)
+        Object.assign(cam, details);
         await cam.save();
 
         const logs = await postLogs(
             application.lead._id,
             "APPLICATION IN PROCESS",
-            `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+            `${application.lead.fName}${
+                application.lead.mName && ` ${application.lead.mName}`
             }${application.lead.lName && ` ${application.lead.lName}`}`,
             `CAM details added by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`,
             `${cam?.loanAmount} ${cam?.loanRecommended} ${cam?.netDisbursalAmount} ${cam?.disbursalDate} ${cam?.repaymentDate} ${cam?.eligibleTenure} ${cam?.repaymentAmount}`
@@ -496,7 +514,8 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
             const logs = await postLogs(
                 application.lead._id,
                 "APPLICATION FORWARDED. TRANSFERED TO SACNTION HEAD",
-                `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+                `${application.lead.fName}${
+                    application.lead.mName && ` ${application.lead.mName}`
                 }${application.lead.lName && ` ${application.lead.lName}`}`,
                 `Application forwarded by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`
             );

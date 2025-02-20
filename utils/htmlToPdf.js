@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import { uploadDocs } from "./docsUploadAndFetch.js";
 
 export async function htmlToPdf(docs, htmlResponse, fieldName) {
+    console.log("htmlResponse ", htmlResponse);
     let browser;
     let pdfBuffer;
 

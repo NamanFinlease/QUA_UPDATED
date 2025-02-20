@@ -48,7 +48,7 @@ export function sanctionLetter(
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
             )}`,
-           
+
             disbursalAmount: `${new Intl.NumberFormat().format(
                 camDetails?.details.netDisbursalAmount
             )}`,
@@ -71,6 +71,7 @@ export function sanctionLetter(
         // header =
         //     "https://publicramlella.s3.ap-south-1.amazonaws.com/public_assets/Header.jpg";
 
+        console.log("htmlToSend ", htmlToSend);
         return htmlToSend;
     } catch (error) {
         return {
