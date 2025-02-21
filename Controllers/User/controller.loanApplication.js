@@ -207,38 +207,46 @@ const addEmploymentInfo = asyncHandler(async (req, res) => {
 });
 
 const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
+
+    console.log("bank details 1")
     const bankDetails = req.body;
     const userId = req.user._id;
     if (!bankDetails || !userId) {
         return res.status(400).json({ message: "Invalid input" });
     }
-
-
+    console.log("bank details 2")
+    
+    
     const loanDetails = await LoanApplication.findOne(
         { userId: userId }
     ).sort({ createdAt: -1 }).session(session);
-
+    
+    console.log("bank details 3")
     if (!loanDetails) {
         return res.status(400).json({ message: "Loan Application not found" })
     }
-
+    console.log("bank details 4")
+    
     if (loanDetails.applicationStatus === "LEAD_CREATED") {
         return res.status(400).json({ message: "You cant edit this because Lead has been sent to Screener" })
     }
-
+    
+    console.log("bank details 5")
     let progressStatus
     let previousJourney
     if (loanDetails.progressStatus == "DOCUMENTS_SAVED") {
         progressStatus = "COMPLETED",
-            previousJourney = "DISBURSAL_DETAILS_SAVED"
+        previousJourney = "DISBURSAL_DETAILS_SAVED"
     }
-
+    
+    console.log("bank details 6")
     if (loanDetails.progressStatus != "DOCUMENTS_SAVED") {
         progressStatus = loanDetails.progressStatus,
-            previousJourney = loanDetails.previousJourney
+        previousJourney = loanDetails.previousJourney
     }
-
-
+    console.log("bank details 7")
+    
+    
     const updatedLoanDetails = await LoanApplication.findOneAndUpdate(
         { userId: userId },
         {
@@ -248,74 +256,88 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
                 previousJourney: previousJourney,
                 isDisbursalDetailsSaved: true,
                 // applicationStatus: "LEAD_CREATED"
-
+                
             }
         },
-
+        
         {
             new: true,
             sort: { createdAt: -1 },
             session
-
+            
         }
     );
-
+    console.log("bank details 8")
+    
     if (!updatedLoanDetails) {
         return res.status(400).json({ message: "Bank Details not added" });
     }
+    console.log("bank details 9")
     await postUserLogs(userId, `User add bank  disbursal details`, session)
-
+    console.log("bank details 10")
+    
     const userDetails = await User.findById(userId).session(session);
     if (!userDetails) {
         return res.status(400).json({ message: "User not found" });
     }
+    console.log("bank details 11")
     let docs;
     let pan = userDetails.PAN
     const exisitingDoc = await Documents.findOne({ pan: userDetails.PAN }).session(session);;
+    console.log("bank details 12")
     if (exisitingDoc) {
         docs = exisitingDoc;
     } else {
         docs = new Documents({ pan });
         await docs.save({ session });
     }
-
+    console.log("bank details 13")
+    
     const isDocumentUploaded = checkUploadedDocuments(docs.document)
+    console.log("bank details 14")
     console.log("document checker -->", isDocumentUploaded)
     if (!isDocumentUploaded.isComplete) {
         return res.status(400).json({ message: "Please upload all documents", missingDocument: isDocumentUploaded.missingDocuments })
     }
-
-
-
+    console.log("bank details 15")
+    
+    
+    
     // pass extraObject In Lead
     const personalDetails = userDetails.personalDetails
     const employeDetails = updatedLoanDetails.employeeDetails
     const disbursalBankDetails = updatedLoanDetails.disbursalBankDetails
-    console.log(" loan details ----->", updatedLoanDetails)
-    console.log(" disbursal bank details ---->", updatedLoanDetails.disbursalBankDetails)
+    // console.log(" loan details ----->", updatedLoanDetails)
+    // console.log(" disbursal bank details ---->", updatedLoanDetails.disbursalBankDetails)
     const residenceDetails = userDetails.residenceDetails
     const incomeDetails = userDetails.incomeDetails
-
-
-
-
+    
+    
+    console.log("bank details 16")
+    
+    
     // logic of creating lead
-
+    
     const { fName, mName, lName } = splitName(userDetails.personalDetails.fullName)
-
-
+    
+    console.log("bank details 17")
+    
     const leadNo = await nextSequence("leadNo", "QUALED", 10);
-
+    
+    console.log("bank details 17",new Date(userDetails.personalDetails.dob))
     const leadStatus = new LeadStatus({
         pan,
         leadNo,
         isInProcess: true,
     });
     await leadStatus.save({ session });
-
-
+    
+    
     const [day, month, year] = userDetails.personalDetails.dob.split('-');
-    const dob = new Date(`${year}-${month}-${day}`);
+    console.log("bank details 18",day,month,year)
+    // const dob = new Date(`${year}-${month}-${day}`);
+    const dob = new Date(userDetails.personalDetails.dob);
+    console.log("bank details 19",dob)
     let extraDetails = {
         personalDetails,
         employeDetails,
@@ -382,13 +404,13 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
             remarks.push(`User income mode is ${userDetails.incomeDetails.incomeMode}`);
         }
 
-        if (userDetails.incomeDetails.monthlyIncome < 35000) {
-            newLead.isRejected = true;
-            updatedLoanDetails.applicationStatus = "REJECTED",
-            updatedLoanDetails.sanction = "REJECTED"
-            updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-            remarks.push(`User monthly income is ${userDetails.incomeDetails.monthlyIncome}`);
-        }
+            if (!userDetails.IsOldUser && userDetails.incomeDetails.monthlyIncome < 35000) {
+                newLead.isRejected = true;
+                updatedLoanDetails.applicationStatus = "REJECTED",
+                updatedLoanDetails.sanction = "REJECTED"
+                updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                remarks.push(`User monthly income is ${userDetails.incomeDetails.monthlyIncome}`);
+            }
 
         if (remarks.length > 0) {
             newLead.remarks = remarks.join(" | ");

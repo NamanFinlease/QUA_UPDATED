@@ -33,6 +33,8 @@ const aadhaarOtp = asyncHandler(async (req, res) => {
             const otp = generateRandomNumber();
             const result = await otpSent(mobile, otp);
 
+            console.log('result aadhaar otp', result.data)
+
             if (result.data.ErrorMessage === "Success") {
                 // Update or create the OTP record for the mobile number
                 await OTP.findOneAndUpdate(
@@ -608,6 +610,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
     ]
     let isRedirectToJourney = false
     const result = await Closed.aggregate(pipeline)
+    console.log('result',result)
     const countPreviousActiveLoan = result.length
     console.log("countPreviousActiveLoan", countPreviousActiveLoan)
     if (countPreviousActiveLoan > 0) {
@@ -695,7 +698,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         })
 
     }
-    if(loanApplication.applicationStatus === "REJECTED"){
+    if (loanApplication.applicationStatus === "REJECTED") {
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
