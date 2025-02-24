@@ -127,7 +127,7 @@ async function migrateUsers() {
           city: applicant?.residence?.city ?? "",
           state: applicant?.residence?.state ?? "",
           pincode: applicant?.residence?.pincode ?? "",
-          residingSince: applicant?.residence?.residingSince ?? "",
+          residingSince: applicant?.residence?.residingSince ?? null,
           residenceType: "OTHERS"
         },
         incomeDetails: {

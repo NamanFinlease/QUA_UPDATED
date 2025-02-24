@@ -53,7 +53,7 @@ export const applicantDetails = async (details = null, session) => {
                 pincode: details?.extraDetails?.employeDetails?.pincode || "",
                 department: details?.extraDetails?.employeDetails?.companyType || "",
                 designation: details?.extraDetails?.employeDetails?.designation || "",
-                employedSince: details?.extraDetails?.employeDetails?.employedSince || ""
+                employedSince: details?.extraDetails?.employeDetails?.employedSince || null
             },
         };
 

@@ -12,7 +12,7 @@ const personalDetailsSchema = new mongoose.Schema(
       enum: ["M", "F"]
     },
     dob: {
-      type: String,
+      type: Date,
       required: true,
     },
     maritalStatus: {
@@ -54,7 +54,7 @@ const residenceSchema = new mongoose.Schema({
     // required: true,
   },
   residingSince: {
-    type: String,
+    type: Date,
     // required: true
   },
   residenceType: {
