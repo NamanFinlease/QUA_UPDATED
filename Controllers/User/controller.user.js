@@ -650,7 +650,6 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Registration incomplete",
-            isRegistering: true,
             registrationStatus: user.registrationStatus,
             isAadharVerify: user.isAadharVerify,
             isMobileVerify: user.isMobileVerify,
@@ -659,6 +658,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isPersonalDetails: user.isPersonalDetails,
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
+            isRegistering: true,
             isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
         });
@@ -670,7 +670,6 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: false,
             message: "Registration completed",
-            isRegistering: false,
             registrationStatus: user.registrationStatus,
             isAadharVerify: user.isAadharVerify,
             isMobileVerify: user.isMobileVerify,
@@ -693,8 +692,9 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isPersonalDetails: user.isPersonalDetails,
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
-            isLoanApplied: false,
             isBankStatementUploaded: false,
+            isRegistering: false,
+            isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
         });
     }
@@ -704,7 +704,6 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
-            isRegistering: false,
             applicationStatus: loanApplication.applicationStatus,
             progressStatus: loanApplication.progressStatus,
             isLoanCalculated: false,
@@ -718,8 +717,9 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isPersonalDetails: user.isPersonalDetails,
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
-            isLoanApplied: false,
             isBankStatementUploaded: false,
+            isRegistering: false,
+            isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
         })
 
@@ -728,7 +728,6 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
-            isRegistering: false,
             applicationStatus: loanApplication.applicationStatus,
             progressStatus: loanApplication.progressStatus,
             isLoanCalculated: loanApplication?.isLoanCalculated ?? true,
@@ -742,9 +741,10 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isPersonalDetails: user.isPersonalDetails,
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
-            isLoanApplied: true,
             isBankStatementUploaded: loanApplication.isBankStatementUploaded,
-            isRedirectToLoanList: isRedirectToLoanList
+            isRegistering: false,
+            isLoanApplied: true,
+            isRedirectToLoanList: isRedirectToLoanList,
         });
     }
 
@@ -757,7 +757,6 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
     return res.status(200).json({
         success: true,
         message: "Application status fetched successfully",
-        isRegistering: false,
         applicationStatus: loanApplication.applicationStatus,
         progressStatus: loanApplication.progressStatus,
         isLoanCalculated: loanApplication?.isLoanCalculated ?? true,
@@ -771,9 +770,10 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         isPersonalDetails: user.isPersonalDetails,
         isCurrentResidence: user.isCurrentResidence,
         isIncomeDetails: user.isIncomeDetails,
-        isLoanApplied: isLoanApplied,
         isBankStatementUploaded: loanApplication.isBankStatementUploaded,
-        isRedirectToLoanList: isRedirectToLoanList
+        isRegistering: false,
+        isLoanApplied: isLoanApplied,
+        isRedirectToLoanList: isRedirectToLoanList,
     });
 });
 
