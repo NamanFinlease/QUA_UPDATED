@@ -128,10 +128,10 @@ const addEmploymentInfo = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Invalid input" });
     }
 
-    if (employeInfo?.employedSince) {
-        const [day, month, year] = employeInfo.employedSince.split("-").map(Number);
-        const validDate = new Date(year, month - 1, day);
-        employeInfo.employedSince = validDate;
+    if(employeInfo.employedSince){
+        const dateString = employeInfo.employedSince;
+        const isoDate = new Date(dateString);
+        employeInfo.employedSince = isoDate
     }
 
 

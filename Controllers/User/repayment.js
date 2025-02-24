@@ -454,7 +454,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             logDate: new Date(),
             status: "Payment verification failed By Payment Gateway",
             leadRemark: `Order ID: ${JSON.stringify(callbackResponse)}`,
-        },);
+        });
 
         return res.status(400).json({
             message: 'Payment verification failed',

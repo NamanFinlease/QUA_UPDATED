@@ -27,6 +27,7 @@ const aadhaarOtp = asyncHandler(async (req, res) => {
 
     // check if aadhar is already registered then send OTP by SMS gateway
     const userDetails = await User.findOne({ aadarNumber: aadhaar })
+    console.log('userDetails in controller-->', userDetails)
     if (userDetails) {
         if (userDetails && userDetails.mobile) {
             const mobile = userDetails.mobile
@@ -116,12 +117,18 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
                 token: token,
             });
         }
+        const dateString = details.dob; // DD-MM-YYYY
+        const parts = dateString.split("-"); // Split the string by '-'
+        const isoDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00.000Z`);
+
+        console.log(isoDate); // Output: 1998-06-16T00:00:00.000Z
+        details.dob = isoDate
 
         const userDetails = await User.create({
             aadarNumber: details.adharNumber,
             mobile: null,
             "personalDetails.fullName": details.name,
-            "personalDetails.dob": details.dob,
+            "personalDetails.dob": isoDate,
             "personalDetails.gender": details.gender,
             registrationStatus: "AADHAR_VERIFIED",
         }
@@ -390,6 +397,9 @@ const personalInfo = asyncHandler(async (req, res) => {
 const currentResidence = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const residenceDetails = req.body;
+    if (!residenceDetails) {
+        return res.status(400).json({ message: "Please Provide Details which are  required" })
+    }
 
     const userDetails = await User.findById(userId);
 
@@ -410,6 +420,12 @@ const currentResidence = asyncHandler(async (req, res) => {
     }
 
 
+    if (residenceDetails.residingSince) {
+        const dateString = residenceDetails.residingSince;
+        const isoDate = new Date(dateString);
+        residenceDetails.residingSince = isoDate
+    }
+
     userDetails.residenceDetails = residenceDetails
     userDetails.registrationStatus = registrationStatus
     userDetails.previousJourney = previousJourney
@@ -424,10 +440,16 @@ const currentResidence = asyncHandler(async (req, res) => {
 const addIncomeDetails = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const incomeDetails = req.body;
+    if (!incomeDetails) {
+        return res.status(400).json({ message: "Please Provide Details which are  required" })
+    }
 
-    const [day, month, year] = incomeDetails.nextSalaryDate.split("-").map(Number);
-    const validDate = new Date(year, month - 1, day);
-    incomeDetails.nextSalaryDate = validDate;
+    if (incomeDetails.nextSalaryDate) {
+        const dateString = incomeDetails.nextSalaryDate;
+        const isoDate = new Date(dateString);
+        incomeDetails.nextSalaryDate = isoDate
+    }
+
 
     const userDetails = await User.findById(userId);
 
@@ -454,7 +476,6 @@ const addIncomeDetails = asyncHandler(async (req, res) => {
     userDetails.previousJourney = previousJourney
     userDetails.isIncomeDetails = true
     await userDetails.save();
-    userDetails.incomeDetails.nextSalaryDate = userDetails.incomeDetails.nextSalaryDate.toISOString().split('T')[0]
     await postUserLogs(userId, `User Income Details Updated Successfully!`)
     res.status(200).json({ message: "Income details updated successfully", incomeDetails: userDetails.incomeDetails });
 })
@@ -603,16 +624,21 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             }
         },
         {
-            $project: {
-                data: 0
+            $match: {
+                data: {
+                    $elemMatch: {
+                        isActive: true,
+                        isClosed: false
+                    }
+                }
             }
         }
     ]
     let isRedirectToJourney = false
     const result = await Closed.aggregate(pipeline)
-    console.log('result',result)
+    console.log('result', result)
     const countPreviousActiveLoan = result.length
-    console.log("countPreviousActiveLoan", countPreviousActiveLoan)
+    console.log("countPreviousActiveLoan--->", countPreviousActiveLoan)
     if (countPreviousActiveLoan > 0) {
         isRedirectToJourney = true
     }
@@ -624,7 +650,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Registration incomplete",
-            isRegistration: true,
+            isRegistering: true,
             registrationStatus: user.registrationStatus,
             isAadharVerify: user.isAadharVerify,
             isMobileVerify: user.isMobileVerify,
@@ -644,7 +670,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: false,
             message: "Registration completed",
-            isRegistration: false,
+            isRegistering: false,
             registrationStatus: user.registrationStatus,
             isAadharVerify: user.isAadharVerify,
             isMobileVerify: user.isMobileVerify,
@@ -678,7 +704,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
-            isRegistration: false,
+            isRegistering: false,
             applicationStatus: loanApplication.applicationStatus,
             progressStatus: loanApplication.progressStatus,
             isLoanCalculated: false,
@@ -702,7 +728,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
-            isRegistration: false,
+            isRegistering: false,
             applicationStatus: loanApplication.applicationStatus,
             progressStatus: loanApplication.progressStatus,
             isLoanCalculated: loanApplication?.isLoanCalculated ?? true,
@@ -731,7 +757,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
     return res.status(200).json({
         success: true,
         message: "Application status fetched successfully",
-        isRegistration: false,
+        isRegistering: false,
         applicationStatus: loanApplication.applicationStatus,
         progressStatus: loanApplication.progressStatus,
         isLoanCalculated: loanApplication?.isLoanCalculated ?? true,
