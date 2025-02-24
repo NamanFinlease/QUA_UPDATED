@@ -634,19 +634,19 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             }
         }
     ]
-    let isRedirectToJourney = false
+    let isRedirectToLoanList = false
     const result = await Closed.aggregate(pipeline)
     console.log('result', result)
     const countPreviousActiveLoan = result.length
     console.log("countPreviousActiveLoan--->", countPreviousActiveLoan)
     if (countPreviousActiveLoan > 0) {
-        isRedirectToJourney = true
+        isRedirectToLoanList = true
     }
 
 
     // If the registration is incomplete, return the registration status
     if (!user.isCompleteRegistration) {
-        console.log("!isComplete", isRedirectToJourney)
+        console.log("!isComplete", isRedirectToLoanList)
         return res.status(200).json({
             success: true,
             message: "Registration incomplete",
@@ -660,13 +660,13 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
             isLoanApplied: false,
-            isRedirectToJourney: isRedirectToJourney
+            isRedirectToLoanList: isRedirectToLoanList
         });
     }
 
 
     if (!loanApplication) {
-        console.log("!loanApplication", isRedirectToJourney)
+        console.log("!loanApplication", isRedirectToLoanList)
         return res.status(200).json({
             success: false,
             message: "Registration completed",
@@ -695,12 +695,12 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isIncomeDetails: user.isIncomeDetails,
             isLoanApplied: false,
             isBankStatementUploaded: false,
-            isRedirectToJourney: isRedirectToJourney
+            isRedirectToLoanList: isRedirectToLoanList
         });
     }
 
     if (loanApplication.applicationStatus === "CLOSED") {
-        console.log("loanApplication.applicationStatus === CLOSED", isRedirectToJourney)
+        console.log("loanApplication.applicationStatus === CLOSED", isRedirectToLoanList)
         return res.status(200).json({
             success: true,
             message: "Application status fetched successfully",
@@ -720,7 +720,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isIncomeDetails: user.isIncomeDetails,
             isLoanApplied: false,
             isBankStatementUploaded: false,
-            isRedirectToJourney: isRedirectToJourney
+            isRedirectToLoanList: isRedirectToLoanList
         })
 
     }
@@ -744,7 +744,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isIncomeDetails: user.isIncomeDetails,
             isLoanApplied: true,
             isBankStatementUploaded: loanApplication.isBankStatementUploaded,
-            isRedirectToJourney: isRedirectToJourney
+            isRedirectToLoanList: isRedirectToLoanList
         });
     }
 
@@ -773,7 +773,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         isIncomeDetails: user.isIncomeDetails,
         isLoanApplied: isLoanApplied,
         isBankStatementUploaded: loanApplication.isBankStatementUploaded,
-        isRedirectToJourney: isRedirectToJourney
+        isRedirectToLoanList: isRedirectToLoanList
     });
 });
 
