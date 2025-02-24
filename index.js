@@ -12,6 +12,7 @@ import applicationRouter from "./routes/ApplicationRouter.js";
 import appRouter from "./routes/AppRouter.js";
 import collectionRouter from "./routes/CollectionRouter.js";
 import leadRouter from "./routes/LeadsRouter.js"; // Import routes
+import marketingRouter from "./routes/marketing.js"; // Import routes
 import employeeRouter from "./routes/EmployeesRouter.js";
 import verifyRouter from "./routes/VerifyRouter.js";
 import sanctionRouter from "./routes/SanctionRouter.js";
@@ -37,6 +38,7 @@ var corsOption = {
         "https://preprod-crm.api.qualoan.com",
         "https://preprod-web.qualoan.com",
         "http://localhost:5173",
+        "http://localhost:5174",
         "https://www.crm.qualoan.com",
         "https://crm.qualoan.com",
     ],
@@ -96,6 +98,7 @@ app.use("/api/mobile", appRouter); // Use the mobile routes
 app.use("/api/employees", employeeRouter); // Use the employee routes
 app.use("/api/user" , userRoute); // user route
 app.use("/api/leads", leadRouter); // Use the lead routes
+app.use("/api/marketing", marketingRouter); // Use the lead routes
 app.use("/api/applications", applicationRouter); // Use the application routes
 app.use("/api/applicant", applicantRouter); // Use the applicant's routes
 app.use("/api/sanction", sanctionRouter); // Use the sanction letter

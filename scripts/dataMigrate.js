@@ -19,8 +19,8 @@ import OTP from '../models/User/model.Otp.js'
 
 // Configuration
 const BATCH_SIZE = 200;
-// const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
 const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
+// const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -985,8 +985,7 @@ async function createCollectionData() {
   await Collection.insertMany(collectiondocs);
   // logProgress('colection',documents);
 }
-
-async function updateCollectionData() {
+async function updateCollection() {
   console.log('Starting Creating Collections...');
 
   const payments = await Payment.find()
@@ -1143,14 +1142,14 @@ async function updateCollectionData() {
     let principalAmount = sanctionedAmount
 
 
-    const elapseDays = (closingType === "closed" || closingType === "settled" || closingType === "partPayment") ?
+    const elapseDays = (closingType === "closed" || closingType === "settled") ?
       localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
     if (elapseDays > tenure) {
       dpd = elapseDays - tenure
       penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
       interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
     } else {
-      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays).toFixed(2))
+      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
     }
 
 
@@ -1177,13 +1176,6 @@ async function updateCollectionData() {
       outstandingAmount = 0
 
     }
-    // if (closingType === "partPayment" || closingType === "") {
-    //   if(paymentDate)
-    //   calculatedData.principalDiscount += outstandingAmount
-    //   calculatedData.principalAmount = 0
-    //   outstandingAmount = 0
-
-    // }
 
 
     collectiondocs.push({
@@ -1282,46 +1274,31 @@ async function updateCollectionData() {
       }
     });
 
-    // if (collectionBulk.length >= BATCH_SIZE) {
+    //   if (collectionBulk.length >= BATCH_SIZE) {
+    //     await Collection.bulkWrite(collectionBulk);
+    //     progress.collections.processed += collectionBulk.length;
+    //     collectionBulk.length = 0;
+    //     logProgress('collections');
+
+    //   }
+
+    // }
+
+    // if (collectionBulk.length >= 0) {
     //   await Collection.bulkWrite(collectionBulk);
     //   progress.collections.processed += collectionBulk.length;
     //   collectionBulk.length = 0;
-    //   logProgress('collections');
-
-    // }
-    if (elapseDays <= tenure) {
-      await Collection.findOneAndUpdate(
-        { loanNo: loanNo },
-        {
-          $set: {
-            principalAmount: calculatedData.principalAmount,
-            penalty: calculatedData.penalty,
-            interest: calculatedData.interest,
-            outstandingAmount
-          }
-        }
-      );
-
-    }
 
   }
-
-  // if (collectionBulk.length >= 0) {
-  //   await Collection.bulkWrite(collectionBulk);
-  //   progress.collections.processed += collectionBulk.length;
-  //   collectionBulk.length = 0;
-
-  // }
 
   // console.log("jsonData", jsonData);
 
 
   fs.writeFileSync('collectionData.json', JSON.stringify(collectiondocs, null, 2));
   logProgress('collections');
-  // await Collection.insertMany(collectiondocs);
+  await Collection.insertMany(collectiondocs);
   // logProgress('colection',documents);
 }
-
 
 async function runMigration() {
   try {
@@ -1332,18 +1309,16 @@ async function runMigration() {
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
     // await withRetry(() => migrateCamDetails());
-    // await withRetry(() => createPaymentCollection());
+    await withRetry(() => createPaymentCollection());
     // await withRetry(() => createCollectionData());
-    await withRetry(() => updateCollectionData());
-
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
     // console.log('OTP:', progress.otp);
     // console.log('Loans:', progress.loans);
     // console.log('CAM Details:', progress.camDetails);
-    // console.log('Payments:', progress.payments);
-    console.log('Collection:', progress.collections);
+    console.log('Payments:', progress.payments);
+    // console.log('Collection:', progress.collections);
 
   } catch (error) {
     console.error('Migration failed:', error);
