@@ -17,46 +17,39 @@ export const calculateInterest = async (msg) => {
             }
         },
         {
-            $match: {
-                "closedData.data.isActive": true,
-                "closedData.data.isClosed": false,
-                "closedData.data.isDisbursed": true
-            }
-        },
-        {
             $addFields: {
-                activeClosed: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$closedData.data", // Access `data` inside `closedData`
-                                as: "item",
-                                cond: {
-                                    $and: [
-                                        {
-                                            $eq: ["$$item.isActive", true]
-                                        },
-                                        {
-                                            $eq: [
-                                                "$$item.isClosed",
-                                                false
-                                            ]
-                                        },
-                                        {
-                                            $eq: [
-                                                "$$item.isDisbursed",
-                                                true
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        },
-                        0
+              activeClosed: {
+                $filter: {
+                  input: { $ifNull: [{ $arrayElemAt: ["$closedData.data", 0] }, []] },
+                  as: "item",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$item.isActive", true] },
+                      { $eq: ["$$item.isClosed", false] }
                     ]
+                  }
                 }
+              }
             }
-        },
+          },
+          {
+            $match: {
+              $expr: { 
+                $gt: [
+                  { 
+                    $size: { 
+                      $filter: {
+                        input: "$activeClosed",
+                        as: "active",
+                        cond: { $eq: ["$$active.loanNo", "$loanNo"] }
+                      }
+                    }
+                  }, 
+                  0
+                ] 
+              }
+            }
+          },
 
         {
             $lookup: {
@@ -64,6 +57,12 @@ export const calculateInterest = async (msg) => {
                 localField: "disbursal",
                 foreignField: "_id",
                 as: "disbursalData"
+            }
+        },
+        {
+            $unwind: {
+                path: "$disbursalData",
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -77,7 +76,7 @@ export const calculateInterest = async (msg) => {
 
         {
             $unwind: {
-                path: "$disbursalData",
+                path: "$sanctionData",
                 preserveNullAndEmptyArrays: true
             }
         },
@@ -96,15 +95,10 @@ export const calculateInterest = async (msg) => {
             }
         },
         {
-            $unwind: {
-                path: "$sanctionData",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
             $project: {
                 penalty: 1,
                 interest: 1,
+                loanNo:1,
                 principalAmount: 1,
                 penalRate: 1,
                 dpd: 1,
@@ -121,12 +115,18 @@ export const calculateInterest = async (msg) => {
 
 
     const collectionBulk = []
+    let count = 0
 
 
     for(let collectionData of collections) {
-        let { roi, tenure, sanctionDate, principalAmount, penalty, disbursedDate, penalRate, interest, dpd } = collectionData
+        count++
+        let { roi, tenure, sanctionDate, principalAmount, penalty, disbursedDate, interest, dpd,loanNo } = collectionData
+        let penalRate = 2
 
-        if (!disbursedDate || !tenure) return "Insuficiant Data!";
+        console.log('cronnnnn',!disbursedDate , !tenure , !roi ,loanNo, !principalAmount,principalAmount)
+        
+
+        if (!disbursedDate || !tenure || !roi || !principalAmount) return "Insuficiant Data!";
 
 
         let localDisbursedDate = moment(disbursedDate).startOf("day");
@@ -134,13 +134,13 @@ export const calculateInterest = async (msg) => {
 
 
         const elapseDays = today.diff(localDisbursedDate, "days") + 1
-        console.log('elapse days', elapseDays, today, localDisbursedDate)
         if (elapseDays > tenure) {
-            penalty += Number((principalAmount * (penalRate / 100)).toFixed(2))
             dpd = elapseDays - tenure
+            penalty = Number((principalAmount * (penalRate / 100) * dpd).toFixed(2))
         } else {
-            interest += Number((principalAmount * (roi / 100)).toFixed(2))
+            interest = Number((principalAmount * (roi / 100) * elapseDays).toFixed(2))
         }
+
         collectionBulk.push({
             updateOne: {
                 filter: { _id: collectionData._id },
@@ -162,6 +162,7 @@ export const calculateInterest = async (msg) => {
         }
 
     }
+    console.log("count ",count)
 
     if (collectionBulk.length > 0) {
         await Collection.bulkWrite(collectionBulk);

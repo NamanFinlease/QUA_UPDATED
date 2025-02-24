@@ -3,11 +3,11 @@ import moment from "moment";
 import { calculateInterest } from "./calculateInterest.js";
 
 const schedulInterestCal = async () => {
-  await calculateInterest("hello");
+  console.log(await calculateInterest("hello"));
 
 }
 const cron = new CronJob(
-  '0 * * * * *',
+  '*/20 * * * * *',
   schedulInterestCal,
   null,
   false,
