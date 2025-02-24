@@ -128,7 +128,7 @@ const addEmploymentInfo = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Invalid input" });
     }
 
-    if(employeInfo.employedSince){
+    if (employeInfo.employedSince) {
         const dateString = employeInfo.employedSince;
         const isoDate = new Date(dateString);
         employeInfo.employedSince = isoDate
@@ -215,38 +215,38 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         return res.status(400).json({ message: "Invalid input" });
     }
     console.log("bank details 2")
-    
-    
+
+
     const loanDetails = await LoanApplication.findOne(
         { userId: userId }
     ).sort({ createdAt: -1 }).session(session);
-    
+
     console.log("bank details 3")
     if (!loanDetails) {
         return res.status(400).json({ message: "Loan Application not found" })
     }
     console.log("bank details 4")
-    
+
     if (loanDetails.applicationStatus === "LEAD_CREATED") {
         return res.status(400).json({ message: "You cant edit this because Lead has been sent to Screener" })
     }
-    
+
     console.log("bank details 5")
     let progressStatus
     let previousJourney
     if (loanDetails.progressStatus == "DOCUMENTS_SAVED") {
         progressStatus = "COMPLETED",
-        previousJourney = "DISBURSAL_DETAILS_SAVED"
+            previousJourney = "DISBURSAL_DETAILS_SAVED"
     }
-    
+
     console.log("bank details 6")
     if (loanDetails.progressStatus != "DOCUMENTS_SAVED") {
         progressStatus = loanDetails.progressStatus,
-        previousJourney = loanDetails.previousJourney
+            previousJourney = loanDetails.previousJourney
     }
     console.log("bank details 7")
-    
-    
+
+
     const updatedLoanDetails = await LoanApplication.findOneAndUpdate(
         { userId: userId },
         {
@@ -256,26 +256,26 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
                 previousJourney: previousJourney,
                 isDisbursalDetailsSaved: true,
                 // applicationStatus: "LEAD_CREATED"
-                
+
             }
         },
-        
+
         {
             new: true,
             sort: { createdAt: -1 },
             session
-            
+
         }
     );
     console.log("bank details 8")
-    
+
     if (!updatedLoanDetails) {
         return res.status(400).json({ message: "Bank Details not added" });
     }
     console.log("bank details 9")
     await postUserLogs(userId, `User add bank  disbursal details`, session)
     console.log("bank details 10")
-    
+
     const userDetails = await User.findById(userId).session(session);
     if (!userDetails) {
         return res.status(400).json({ message: "User not found" });
@@ -292,7 +292,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         await docs.save({ session });
     }
     console.log("bank details 13")
-    
+
     const isDocumentUploaded = checkUploadedDocuments(docs.document)
     console.log("bank details 14")
     console.log("document checker -->", isDocumentUploaded)
@@ -300,9 +300,9 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         return res.status(400).json({ message: "Please upload all documents", missingDocument: isDocumentUploaded.missingDocuments })
     }
     console.log("bank details 15")
-    
-    
-    
+
+
+
     // pass extraObject In Lead
     const personalDetails = userDetails.personalDetails
     const employeDetails = updatedLoanDetails.employeeDetails
@@ -311,33 +311,33 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     // console.log(" disbursal bank details ---->", updatedLoanDetails.disbursalBankDetails)
     const residenceDetails = userDetails.residenceDetails
     const incomeDetails = userDetails.incomeDetails
-    
-    
+
+
     console.log("bank details 16")
-    
-    
+
+
     // logic of creating lead
-    
+
     const { fName, mName, lName } = splitName(userDetails.personalDetails.fullName)
-    
+
     console.log("bank details 17")
-    
+
     const leadNo = await nextSequence("leadNo", "QUALED", 10);
-    
-    console.log("bank details 17",new Date(userDetails.personalDetails.dob))
+
+    console.log("bank details 17", new Date(userDetails.personalDetails.dob))
     const leadStatus = new LeadStatus({
         pan,
         leadNo,
         isInProcess: true,
     });
     await leadStatus.save({ session });
-    
-    
+
+
     const [day, month, year] = userDetails.personalDetails.dob.split('-');
-    console.log("bank details 18",day,month,year)
+    console.log("bank details 18", day, month, year)
     // const dob = new Date(`${year}-${month}-${day}`);
     const dob = new Date(userDetails.personalDetails.dob);
-    console.log("bank details 19",dob)
+    console.log("bank details 19", dob)
     let extraDetails = {
         personalDetails,
         employeDetails,
@@ -366,7 +366,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         pinCode: userDetails.residenceDetails.pincode,
         state: userDetails.residenceDetails.state,
         city: userDetails.residenceDetails.city,
-        source: userDetails.platformType,
+        source: req?.platformType || "website",
         leadStatus: leadStatus._id,
         isAadhaarVerified: true,
         isAadhaarDetailsSaved: true,
@@ -386,12 +386,12 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         updatedLoanDetails.applicationStatus = "LEAD_CREATED"
 
         // auto reject lead by employeeType , payment cash or other , sallary less then 30k 
-         
+
 
         if (userDetails.incomeDetails.employementType === "SELF EMPLOYED") {
             newLead.isRejected = true;
             updatedLoanDetails.applicationStatus = "REJECTED",
-            updatedLoanDetails.sanction = "REJECTED"
+                updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             remarks.push("User is SELF EMPLOYED");
         }
@@ -399,18 +399,18 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         if (userDetails.incomeDetails.incomeMode === "CASH" || userDetails.incomeDetails.incomeMode === "OTHERS") {
             newLead.isRejected = true;
             updatedLoanDetails.applicationStatus = "REJECTED",
-            updatedLoanDetails.sanction = "REJECTED"
+                updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             remarks.push(`User income mode is ${userDetails.incomeDetails.incomeMode}`);
         }
 
-            if (!userDetails.IsOldUser && userDetails.incomeDetails.monthlyIncome < 35000) {
-                newLead.isRejected = true;
-                updatedLoanDetails.applicationStatus = "REJECTED",
+        if (!userDetails.IsOldUser && userDetails.incomeDetails.monthlyIncome < 35000) {
+            newLead.isRejected = true;
+            updatedLoanDetails.applicationStatus = "REJECTED",
                 updatedLoanDetails.sanction = "REJECTED"
-                updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-                remarks.push(`User monthly income is ${userDetails.incomeDetails.monthlyIncome}`);
-            }
+            updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            remarks.push(`User monthly income is ${userDetails.incomeDetails.monthlyIncome}`);
+        }
 
         if (remarks.length > 0) {
             newLead.remarks = remarks.join(" | ");
@@ -433,7 +433,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         "",
         session
     );
-    if(newLead.isRejected){
+    if (newLead.isRejected) {
         await postLogs(
             newLead._id,
             "LEAD AUTO REJECTED",
@@ -654,61 +654,6 @@ const getDocumentList = asyncHandler(async (req, res) => {
     return res.status(200).json({ documents: [] });
 });
 
-
-// FOR RETURN ONLY MAX 3 MULTIPLE DOCUMENT
-/*
-const getDocumentList = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-
-    // Fetch user details to get PAN
-    const userDetails = await User.findById(userId);
-    if (!userDetails || !userDetails.PAN) {
-        return res.status(404).json({ message: "User or PAN not found" });
-    }
-
-    // Find the documents by PAN
-    const result = await Documents.findOne(
-        { pan: userDetails.PAN }, 
-        {
-            "document.singleDocuments": 1,
-            "document.multipleDocuments": 1,
-        }
-    );
-
-    if (result) {
-        // Process `singleDocuments`
-        const singleDocuments = result.document.singleDocuments.map(doc => ({
-            id: doc._id || null,
-            name: doc.name,
-            type: doc.type || null,
-            url: doc.url || null,
-        }));
-
-        // Process `multipleDocuments` and limit to max 3 per type
-        const multipleDocuments = [];
-        const multipleDocs = result.document.multipleDocuments;
-
-        for (const [key, docsArray] of Object.entries(multipleDocs)) {
-            docsArray.slice(0, 3).forEach(doc => { // Take only the first 3 documents of each type
-                multipleDocuments.push({
-                    id: doc._id || null,
-                    name: doc.name,
-                    type: key, // Use the key (e.g., bankStatement, salarySlip) as the type
-                    url: doc.url || null,
-                });
-            });
-        }
-
-        // Combine both lists into one array
-        const allDocuments = [...multipleDocuments, ...singleDocuments];
-
-        return res.status(200).json({ documents: allDocuments });
-    }
-
-    // Return an empty array if no documents match the given PAN
-    return res.status(200).json({ documents: [] });
-});
-*/
 
 const documentPreview = asyncHandler(async (req, res) => {
 

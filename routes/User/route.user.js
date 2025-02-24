@@ -1,5 +1,5 @@
 import express from "express";
-import { aadhaarOtp, saveAadhaarDetails, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, logout , getLoanList , sendEmailOTP ,verifyEmailOTP } from "../../Controllers/User/controller.user.js";
+import { aadhaarOtp, saveAadhaarDetails, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, logout, getLoanList, sendEmailOTP, verifyEmailOTP } from "../../Controllers/User/controller.user.js";
 import { verifyOtp, mobileGetOtp, verifyPan } from "../../Controllers/User/controller.user.js";
 import { authMiddleware } from "../../middleware/User/authMiddleware.js";
 import { calculateLoan, addEmploymentInfo, getApplicationStatus, getApplicationDetails, disbursalBankDetails, getDocumentStatus, getDocumentList, documentPreview, getJourney } from "../../Controllers/User/controller.loanApplication.js";
@@ -65,14 +65,14 @@ router.get("/getJourney", authMiddleware, getJourney)
 router.post("/mobile/get-otp/:mobile", authMiddleware, mobileGetOtp);
 router.post("/mobile/verify-otp", verifyOtp);
 router.post("/verifyPAN/:pan", authMiddleware, verifyPan);
-router.post("/sendEmailOTP" , authMiddleware, sendEmailOTP);
+router.post("/sendEmailOTP", authMiddleware, sendEmailOTP);
 router.post("/verifyEmailOTP", authMiddleware, verifyEmailOTP);
 
 // repayment 
 router.get("/getLoanNumber/:pan", authMiddleware, getLoanNumber);
 router.post("/payNow", authMiddleware, payNow)
 router.post("/callback", callback) // transaction
-router.get("/loanList" , authMiddleware , getLoanList)
+router.get("/loanList", authMiddleware, getLoanList)
 
- 
+
 export default router;
