@@ -390,6 +390,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
         if (userDetails.incomeDetails.employementType === "SELF EMPLOYED") {
             newLead.isRejected = true;
+            newLead.isRejectedBySystem = true
             updatedLoanDetails.applicationStatus = "REJECTED",
                 updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -398,6 +399,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
         if (userDetails.incomeDetails.incomeMode === "CASH" || userDetails.incomeDetails.incomeMode === "OTHERS") {
             newLead.isRejected = true;
+            newLead.isRejectedBySystem = true
             updatedLoanDetails.applicationStatus = "REJECTED",
                 updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -406,6 +408,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
         if (!userDetails.IsOldUser && userDetails.incomeDetails.monthlyIncome < 35000) {
             newLead.isRejected = true;
+            newLead.isRejectedBySystem = true
             updatedLoanDetails.applicationStatus = "REJECTED",
                 updatedLoanDetails.sanction = "REJECTED"
             updatedLoanDetails.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
