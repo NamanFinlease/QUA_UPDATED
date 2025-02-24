@@ -583,16 +583,19 @@ const getProfile = asyncHandler(async (req, res) => {
 
 const getProfileDetails = asyncHandler(async (req, res) => {
     const userId = req.user._id;
-    const detailsType = req.query
-    console.log(userId, "userId")
+    const { detailsType } = req.query
+    console.log(detailsType)
+    console.log("congratulation-->")
     const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
     if (detailsType === "personalDetails") {
+        console.log("First 1-->")
         return res.status(200).json({
             success: true,
-            data: user.personalDetails
+            mobile: user.mobile,
+            fullName: user?.personalDetails?.fullName,
         })
     }
 
@@ -665,6 +668,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isPersonalDetails: user.isPersonalDetails,
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
+            isFormFilled: user.isFormFilled,
             isRegistering: true,
             isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
@@ -700,6 +704,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
             isBankStatementUploaded: false,
+            isFormFilled: true,
             isRegistering: false,
             isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
@@ -725,6 +730,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
             isBankStatementUploaded: false,
+            isFormFilled: true,
             isRegistering: false,
             isLoanApplied: false,
             isRedirectToLoanList: isRedirectToLoanList
@@ -749,6 +755,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
             isCurrentResidence: user.isCurrentResidence,
             isIncomeDetails: user.isIncomeDetails,
             isBankStatementUploaded: loanApplication.isBankStatementUploaded,
+            isFormFilled: true,
             isRegistering: false,
             isLoanApplied: true,
             isRedirectToLoanList: isRedirectToLoanList,
@@ -778,6 +785,7 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
         isCurrentResidence: user.isCurrentResidence,
         isIncomeDetails: user.isIncomeDetails,
         isBankStatementUploaded: loanApplication.isBankStatementUploaded,
+        isFormFilled: true,
         isRegistering: false,
         isLoanApplied: isLoanApplied,
         isRedirectToLoanList: isRedirectToLoanList,
@@ -970,4 +978,21 @@ const verifyEmailOTP = asyncHandler(async (req, res) => {
     return res.status(200).json({ message: "Email verified successfully" })
 })
 
-export { aadhaarOtp, saveAadhaarDetails, mobileGetOtp, verifyPan, getProfile, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, verifyOtp, logout, getLoanList, sendEmailOTP, verifyEmailOTP }
+const addFormDetails = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const formDetails = req.body;
+    if (!formDetails) {
+        return res.status(400).json({ message: "Please provide required form details" })
+    }
+    const userDetails = await User.findById(userId);
+    if (!userDetails) {
+        return res.status(400).json({ message: "User not found" })
+    }
+    userDetails.PAN = formDetails?.pan || ""
+    userDetails.personalDetails.fathersName = formDetails?.fathersName || ""
+    userDetails.isFormFilled = true
+    await userDetails.save()
+    return res.status(200).json({ message: "Form details added successfully" })
+})
+
+export { aadhaarOtp, saveAadhaarDetails, mobileGetOtp, verifyPan, getProfile, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, verifyOtp, logout, getLoanList, sendEmailOTP, verifyEmailOTP, addFormDetails }

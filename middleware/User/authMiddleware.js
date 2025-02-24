@@ -24,12 +24,11 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
         try {
             const decoded =  jwt.verify(token, process.env.JWT_SECRET_USER); // Verify the token
             const user = await User.findById(decoded.id)
-            console.log("user-->", user)
+            // console.log("user-->", user)
             req.user = user
             req.platformType = platformType;
-            console.log("Hii-0")
             // await user.save()
-            console.log("Hii-0.1")
+            // console.log("Hii-0.1")
             if (!req.user) {
                 res.status(404);
                 throw new Error("User not found");
@@ -38,11 +37,11 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
                 res.status(401);
                 throw new Error("Your account is deactivated");
             }
-            console.log("Hii-1")
+            // console.log("Hii-1")
             req.isAuthenticated = true;
-            console.log("Hii-2")
+            // console.log("Hii-2")
             next();
-            console.log("Hii-3")
+            // console.log("Hii-3")
         }
         catch (err) {
             return res.status(401).json({message:"not authosrised"});

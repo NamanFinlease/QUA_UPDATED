@@ -28,6 +28,9 @@ const personalDetailsSchema = new mongoose.Schema(
     mothersName:{
       type : String
     },
+    fathersName:{
+      type : String
+    }
   });
 
 
@@ -181,6 +184,10 @@ const userSchema = new mongoose.Schema(
     isIncomeDetails: {
       type: Boolean,
       default: false
+    },
+    isFormFilled:{
+      type : Boolean,
+      default : false
     },
     IsOldUser: {
       type: Boolean,

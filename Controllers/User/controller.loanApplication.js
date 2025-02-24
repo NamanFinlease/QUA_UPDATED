@@ -333,11 +333,11 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     await leadStatus.save({ session });
 
 
-    const [day, month, year] = userDetails.personalDetails.dob.split('-');
-    console.log("bank details 18", day, month, year)
-    // const dob = new Date(`${year}-${month}-${day}`);
-    const dob = new Date(userDetails.personalDetails.dob);
-    console.log("bank details 19", dob)
+    // const [day, month, year] = userDetails.personalDetails.dob.split('-');
+    // console.log("bank details 18", day, month, year)
+    // // const dob = new Date(`${year}-${month}-${day}`);
+    // const dob = new Date(userDetails.personalDetails.dob);
+    // console.log("bank details 19", dob)
     let extraDetails = {
         personalDetails,
         employeDetails,
@@ -352,7 +352,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         mName: mName,
         lName: lName,
         gender: userDetails.personalDetails.gender,
-        dob: dob,
+        dob: userDetails.personalDetails?.dob,
         leadNo,
         aadhaar: userDetails.aadarNumber,
         pan: userDetails.PAN,
