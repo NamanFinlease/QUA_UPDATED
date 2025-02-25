@@ -688,6 +688,9 @@ const getJourney = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const loanDetails = await LoanApplication.findOne({ userId: userId }).sort({ createdAt: -1 });
     console.log("loanDetails--->", loanDetails)
+    if(!loanDetails){
+        return res.status(400).json({ message: "Loan Application not found" });
+    }
     const journey = await LoanApplication.findById(loanDetails._id);
     console.log("journey--->", journey)
     if (!journey) {

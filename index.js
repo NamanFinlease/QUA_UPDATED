@@ -98,7 +98,7 @@ app.use("/api/mobile", appRouter); // Use the mobile routes
 app.use("/api/employees", employeeRouter); // Use the employee routes
 app.use("/api/user" , userRoute); // user route
 app.use("/api/leads", leadRouter); // Use the lead routes
-app.use("/api/marketing", marketingRouter); // Use the lead routes
+// app.use("/api/marketing", marketingRouter); // Use the lead routes
 app.use("/api/applications", applicationRouter); // Use the application routes
 app.use("/api/applicant", applicantRouter); // Use the applicant's routes
 app.use("/api/sanction", sanctionRouter); // Use the sanction letter
