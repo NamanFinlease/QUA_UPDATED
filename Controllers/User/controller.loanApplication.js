@@ -12,6 +12,8 @@ import { postUserLogs } from './controller.userLogs.js';
 import { getDocs } from '../../utils/User/docsUploadAndFetch.js';
 import Closed from '../../models/Closed.js';
 import { sessionAsyncHandler } from '../../middleware/sessionAsyncHandler.js'
+import LandingPageLead from '../../models/LandingPageLead.js';
+import Employee from '../../models/Employees.js';
 
 
 
@@ -248,7 +250,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
 
     const updatedLoanDetails = await LoanApplication.findOneAndUpdate(
-        { userId: userId },
+        { _id: loanDetails._id },
         {
             $set: {
                 disbursalBankDetails: bankDetails,
@@ -262,7 +264,6 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
 
         {
             new: true,
-            sort: { createdAt: -1 },
             session
 
         }
@@ -283,10 +284,10 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     console.log("bank details 11")
     let docs;
     let pan = userDetails.PAN
-    const exisitingDoc = await Documents.findOne({ pan: userDetails.PAN }).session(session);;
+    const existingDoc = await Documents.findOne({ pan: userDetails.PAN }).session(session);;
     console.log("bank details 12")
-    if (exisitingDoc) {
-        docs = exisitingDoc;
+    if (existingDoc) {
+        docs = existingDoc;
     } else {
         docs = new Documents({ pan });
         await docs.save({ session });
@@ -448,6 +449,35 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         );
     }
 
+    // add marketing Logic
+    const marketingLead = await LandingPageLead.findOne({
+        pan: pan,
+        isComplete: false,
+        isRejected: false,
+        screenerId: { $exists: true, $ne: null }
+    }).session(session)
+    if (marketingLead) {
+        marketingLead.isComplete = true
+        newLead.screenerId = marketingLead.screenerId
+        newLead.source = "marketing"
+        await marketingLead.save({ session });
+        await newLead.save({ session });
+
+        const employee = await Employee.findById(marketingLead?.screenerId).session(session)
+        if (!employee) {
+            throw new Error("Employee not found")
+        }
+        // create post log
+        await postLogs(
+            newLead._id,
+            "LEAD IN PROCESS",
+            `${newLead.fName} ${newLead.mName ?? ""} ${newLead.lName}`,
+            `Marketing Lead auto allocated to ${employee.fName} ${employee.lName}`,
+            "",
+            session
+        );
+
+    }
     updatedLoanDetails.loanUnderProcess = "SUCCESS"
     await updatedLoanDetails.save({ session });
 
@@ -688,7 +718,7 @@ const getJourney = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const loanDetails = await LoanApplication.findOne({ userId: userId }).sort({ createdAt: -1 });
     console.log("loanDetails--->", loanDetails)
-    if(!loanDetails){
+    if (!loanDetails) {
         return res.status(400).json({ message: "Loan Application not found" });
     }
     const journey = await LoanApplication.findById(loanDetails._id);

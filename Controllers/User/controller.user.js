@@ -364,6 +364,11 @@ const personalInfo = asyncHandler(async (req, res) => {
             return res.status(400).json({ message: "Email should be in correct format" });
         }
     }
+    if (personalDetails.dob) {
+        const dateString = personalDetails.dob;
+        const isoDate = new Date(dateString);
+        personalDetails.dob = isoDate
+    }
 
     const userDetails = await User.findById(userId);
 

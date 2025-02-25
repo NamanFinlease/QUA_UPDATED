@@ -7,8 +7,8 @@ const router = express.Router();
 router.route("/landingPageData").post(createLandingPageLead).get(protect, getAllLandingPageLeads); // (DONE)
 router.route("/partialLead/:id").post(protect, allocatePartialLead);  // Allocate marketing lead (DONE)
 router.route("/allocated").get(protect, allocatedList);  // Allocated marketing lead (DONE)
-router.route("/completed").get(protect, completedList);  // Completed marketing lead
-router.route("/reject/:id").post(protect, reject);  // reject lead
-router.route("/rejectedList").get(protect, rejectedList); // get rejectedList
+router.route("/completed").get(protect, completedList);  // Completed marketing lead (DONE)
+router.route("/reject/:id").post(protect, reject);  // reject lead (DONE)
+router.route("/rejectedList").get(protect, rejectedList); // get rejectedList (DONE)
 
 export default router;

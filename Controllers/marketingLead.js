@@ -353,7 +353,7 @@ export const reject = asyncHandler(async (req, res) => {
     }
 
     // Update the lead with assignedTo and status
-    lead.screenerId = screenerId;
+    lead.rejectedBy = screenerId;
     lead.isRejected = true;
     lead.remarks = req?.body?.remarks || "";
 

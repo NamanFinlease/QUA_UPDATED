@@ -1308,7 +1308,7 @@ async function runMigration() {
     // await withRetry(() => migrateUsers());
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
-    // await withRetry(() => migrateCamDetails());
+    await withRetry(() => migrateCamDetails());
     await withRetry(() => createPaymentCollection());
     // await withRetry(() => createCollectionData());
 

@@ -165,7 +165,7 @@ const leadSchema = new mongoose.Schema(
         source: {
             type: String,
             required: true,
-            enum: ["website", "bulk", "landingPage", "whatsapp", "app"],
+            enum: ["website", "bulk", "landingPage", "whatsapp", "app" , "marketing"],
             default: "website",
         },
         extraDetails: {
