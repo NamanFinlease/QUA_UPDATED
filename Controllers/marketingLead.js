@@ -115,7 +115,6 @@ export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
 // @access Private
 export const allocatePartialLead = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { assignedTo, status } = req.body;
     if (req.activeRole !== "screener") {
         return res.status(403).json({
             success: false,
@@ -126,7 +125,7 @@ export const allocatePartialLead = asyncHandler(async (req, res) => {
     if (req.activeRole === "screener") {
         screenerId = req.employee._id.toString(); // Current user is a screener
     }
-    const employee = await Employee.findOne({ _id: screenerId });
+    // if()
 
     // Find the lead by ID
     const lead = await LandingPageLead.findById(id);
@@ -139,8 +138,8 @@ export const allocatePartialLead = asyncHandler(async (req, res) => {
     }
 
     // Update the lead with assignedTo and status
-    lead.assignedTo = assignedTo;
-    lead.status = status;
+    lead.screenerId = screenerId;
+    lead.remarks = req?.body?.remarks || "";
 
     // Save the updated lead
     await lead.save();

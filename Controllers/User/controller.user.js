@@ -986,8 +986,9 @@ const verifyEmailOTP = asyncHandler(async (req, res) => {
 const addFormDetails = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const formDetails = req.body;
-    if (!formDetails) {
-        return res.status(400).json({ message: "Please provide required form details" })
+    console.log('formDetails', formDetails)
+    if (!formDetails.PAN || !formDetails.fathersName) {
+        return res.status(400).json({ message: "Please provide PAN and fathersName both the fields are required." })
     }
     const userDetails = await User.findById(userId);
     if (!userDetails) {
