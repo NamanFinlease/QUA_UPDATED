@@ -43,6 +43,35 @@ const LandingPageLeadSchema = new mongoose.Schema(
             enum: ["website", "others"],
             default: "website",
         },
+        screenerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
+        isRejected: {
+            type: Boolean,
+            default: false,
+        },
+        isRejectedBySystem: {
+            type: Boolean,
+            default: false,
+        },
+        rejectedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
+        remarks: {
+            type: String,
+            default: ""
+        },
+        isComplete: {
+            type: Boolean,
+            default: false,
+        },
+        completedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
+
     },
     { timestamps: true }
 );

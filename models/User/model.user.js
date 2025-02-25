@@ -91,7 +91,7 @@ const incomeDetailsSchema = new mongoose.Schema({
     enum: ["CASH", "BANK", "CHEQUE", "OTHERS"],
   },
   workingSince:{
-    type : String
+    type : Date
   }
 });
 

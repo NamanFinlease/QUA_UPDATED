@@ -449,6 +449,11 @@ const addIncomeDetails = asyncHandler(async (req, res) => {
         const isoDate = new Date(dateString);
         incomeDetails.nextSalaryDate = isoDate
     }
+    if (incomeDetails.workingSince) {
+        const dateString = incomeDetails.workingSince;
+        const isoDate = new Date(dateString);
+        incomeDetails.workingSince = isoDate
+    }
 
 
     const userDetails = await User.findById(userId);
