@@ -181,6 +181,15 @@ const leadSchema = new mongoose.Schema(
         loanApplicationId : {
             type : mongoose.Schema.Types.ObjectId,
             ref : "loanApplication"
+        },
+        mothersName:{
+            type : String
+        },
+        fathersName:{
+            type : String
+        },
+        workingSince:{
+            type : Date
         }
     },
     { timestamps: true }

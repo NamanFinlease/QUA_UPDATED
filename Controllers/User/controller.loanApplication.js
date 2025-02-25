@@ -375,6 +375,9 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         isEmailVerified: true,
         isMobileVerified: true,
         loanApplicationId: loanDetails._id,
+        mothersName: userDetails.personalDetails.mothersName ? userDetails.personalDetails.mothersName : "",
+        fathersName: userDetails.personalDetails.fathersName ? userDetails.personalDetails.fathersName : "",
+        workingSince: userDetails.incomeDetails.workingSince ? userDetails.incomeDetails.workingSince : "",
         extraDetails
     });
 
