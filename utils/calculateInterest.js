@@ -10,8 +10,8 @@ export const calculateInterest = async (msg) => {
     const collections = await Collection.aggregate([
         {
             $lookup: {
-                from: "closeds",
-                localField: "closed",
+                from: "closes",
+                localField: "close",
                 foreignField: "_id",
                 as: "closedData"
             }

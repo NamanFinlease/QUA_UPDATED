@@ -248,8 +248,8 @@ export const activeLeads = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "closeds",
-                    localField: "closed",
+                    from: "closes",
+                    localField: "close",
                     foreignField: "_id",
                     as: "closedDetails"
                 }
@@ -1052,8 +1052,8 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "closeds",
-                    localField: "closed",
+                    from: "closes",
+                    localField: "close",
                     foreignField: "_id",
                     as: "closedDetails"
                 }
