@@ -7,6 +7,7 @@ import { postLogs } from "./logs.js";
 import Sanction from "../models/Sanction.js";
 import Disbursal from "../models/Disbursal.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
+import Close from "../models/close.js";
 
 // @desc Rejecting a lead
 // @route PATCH /api/leads/reject/:id or /api/applications/reject/:id
@@ -196,8 +197,8 @@ export const rejected = asyncHandler(async (req, res) => {
             throw new Error("Status not found");
         }
 
-        const closedDoc = await Closed.findOne({
-            "data.loanNo": disbursal.loanNo,
+        const closedDoc = await Close.findOne({
+            loanNo: disbursal.loanNo,
         });
         if (closedDoc) {
             closedDoc.data = closedDoc.data.map((item) =>

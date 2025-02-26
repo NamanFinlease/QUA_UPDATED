@@ -13,16 +13,18 @@ import LeadStatus from "../models/LeadStatus.js";
 import Employee from "../models/Employees.js";
 import Lead from "../models/Leads.js";
 import { sessionAsyncHandler } from "../middleware/sessionAsyncHandler.js";
+import Close from "../models/close.js";
 
 // @desc Create a lead to close after collection/recovery
 // @route POST /api/collections/
 export const createActiveLead = async (pan, loanNo, leadNo) => {
     try {
-        const existingActiveLead = await Closed.findOne({ pan: pan });
+        const existingActiveLead = await Close.findOne({ pan: pan });
         if (!existingActiveLead) {
-            const newActiveLead = await Closed.create({
+            const newActiveLead = await Close.create({
                 pan,
-                data: [{ loanNo, leadNo }],
+                loanNo,
+                leadNo,
             });
             if (!newActiveLead) {
                 return { success: false };
@@ -612,16 +614,14 @@ export const getActiveLead = asyncHandler(async (req, res) => {
     const { loanNo } = req.params;
 
     // const activeRecord = (await Closed.aggregate(pipeline))[0];
-    const activeRecord = await Closed.findOne(
-        { "data.loanNo": loanNo },
+    const activeRecord = await Close.findOne(
+        { loanNo: loanNo },
         {
             pan: 1,
-            data: {
-                $elemMatch: { loanNo: loanNo }, // Match only the specific loanNo
-            },
+            loanNo: 1
         }
     ).populate({
-        path: "data.disbursal",
+        path: "disbursal",
         populate: {
             path: "sanction", // Populating the 'sanction' field in Disbursal
             populate: [
@@ -646,16 +646,18 @@ export const getActiveLead = asyncHandler(async (req, res) => {
         });
     }
 
+    console.log('actvie ',activeRecord)
+
     // Fetch the CAM data and add to disbursalObj
     const cam = await CamDetails.findOne({
-        leadId: activeRecord?.data?.[0]?.disbursal?.sanction?.application?.lead
+        leadId: activeRecord?.disbursal?.sanction?.application?.lead
             ._id,
     });
 
     const activeLeadObj = activeRecord.toObject();
 
     // Extract the matched data object from the array
-    const matchedData = activeLeadObj.data[0]; // Since $elemMatch returns a single matching element
+    const matchedData = activeLeadObj; // Since $elemMatch returns a single matching element
     matchedData.disbursal.sanction.application.cam = cam
         ? { ...cam.toObject() }
         : null;
@@ -679,22 +681,16 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
 
         const pipeline = [
             {
-                $match: { "data.loanNo": loanNo }, // Match documents where the data array contains the loanNo
+                $match: { loanNo: loanNo }, // Match documents where the data array contains the loanNo
             },
             {
                 $project: {
-                    data: {
-                        $filter: {
-                            input: "$data",
-                            as: "item", // Alias for each element in the array
-                            cond: { $eq: ["$$item.loanNo", loanNo] }, // Condition to match
-                        },
-                    },
+                    loanNo: 1
                 },
             },
         ];
 
-        const activeRecord = (await Closed.aggregate(pipeline))[0];
+        const activeRecord = (await Close.aggregate(pipeline))[0];
 
         if (!activeRecord || !activeRecord.data?.length) {
             res.status(404);
@@ -705,8 +701,8 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
         }
 
         // Populate the filtered data
-        const populatedRecord = await Closed.populate(activeRecord, {
-            path: "data.disbursal",
+        const populatedRecord = await Close.populate(activeRecord, {
+            path: "disbursal",
             populate: {
                 path: "sanction", // Populating the 'sanction' field in Disbursal
                 populate: [
@@ -726,7 +722,7 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
         // Check if updates are provided
         if (updates && updates.data) {
             const updateQuery = {
-                "data.loanNo": loanNo,
+                loanNo,
             };
 
             let updateOperation = {};
@@ -734,16 +730,17 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
             if (updates.data.partialPaid) {
                 // If partialPaid is present in the updates, push the object into the array
                 updateOperation.$push = {
-                    "data.$.partialPaid": updates.data.partialPaid,
-                    "data.$.requestedStatus": updates.data.requestedStatus,
+                    "partialPaid": updates.partialPaid,
+                    "requestedStatus": updates.requestedStatus,
                 };
             } else {
                 updateOperation.$set = {
-                    "data.$": { ...populatedRecord.data[0], ...updates.data }, // Merge updates
+                    ...populatedRecord,
+                    ...updates
                 };
             }
 
-            const updatedRecord = await Closed.findOneAndUpdate(
+            const updatedRecord = await Close.findOneAndUpdate(
                 updateQuery,
                 updateOperation,
                 { new: true } // Return the updated document
@@ -777,12 +774,12 @@ export const closedLeads = asyncHandler(async (req, res) => {
     // const skip = (page - 1) * limit;
 
 
-    const closedLeads = await Closed.find({
-        "data.isActive": false,
-        "data.isClosed": true,
+    const closedLeads = await Close.find({
+        isActive: false,
+        isClosed: true,
     })
         .populate({
-            path: "data.disbursal",
+            path: "disbursal",
             populate: {
                 path: "sanction", // Populating the 'sanction' field in Disbursal
                 populate: [
@@ -800,9 +797,9 @@ export const closedLeads = asyncHandler(async (req, res) => {
         })
         .sort({ updatedAt: -1 });
 
-    const totalClosedLeads = await Closed.countDocuments({
-        "data.isActive": false,
-        "data.isClosed": true,
+    const totalClosedLeads = await Close.countDocuments({
+        isActive: false,
+        isClosed: true,
     });
 
     res.json({
@@ -896,19 +893,18 @@ export const getClosedList = asyncHandler(async (req, res) => {
     if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead" || req.activeRole === "admin") {
 
         const pipeline = [
-            { $unwind: "$data" },
             {
                 $match: {
-                    "data.isActive": false,
-                    "data.isClosed": true,
-                    "data.isDisbursed": true
+                    isActive: false,
+                    isClosed: true,
+                    isDisbursed: true
                 }
             },
 
             {
                 $lookup: {
                     from: "disbursals",
-                    localField: "data.disbursal",
+                    localField: "disbursal",
                     foreignField: "_id",
                     as: "disbursalDetails"
                 }
@@ -977,13 +973,13 @@ export const getClosedList = asyncHandler(async (req, res) => {
                 $project: {
                     _id: 0,
                     pan: 1,
-                    loanNo: "$data.loanNo",
+                    loanNo: 1,
                     sanctionAmount:
                         "$sanctionData.loanRecommended",
-                    requestedStatus: "$data.requestedStatus",
-                    isSettled: "$data.isSettled",
-                    isWriteOff: "$data.isWriteOff",
-                    defaulted: "$data.defaulted",
+                    requestedStatus: 1,
+                    isSettled: 1,
+                    isWriteOff: 1,
+                    defaulted: 1,
                     leadNo: "$leadData.leadNo",
                     fName: "$leadData.fName",
                     mName: "$leadData.mName",
@@ -1000,7 +996,7 @@ export const getClosedList = asyncHandler(async (req, res) => {
             },
         ]
 
-        const closedList = await Closed.aggregate(pipeline)
+        const closedList = await Close.aggregate(pipeline)
 
         return res.status(200).json({ message: "Closed List get sucessfully", closedList })
     }
@@ -1228,8 +1224,8 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "closeds",
-                    localField: "closed",
+                    from: "closes",
+                    localField: "close",
                     foreignField: "_id",
                     as: "closedDetails"
                 }
@@ -1239,13 +1235,9 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
             },
             {
                 $match: {
-                    "closedDetails.data": {
-                        $elemMatch: {
-                            isActive: true,
-                            isClosed: false,
-                            isDisbursed: true
-                        }
-                    }
+                    "closedDetails.isActive": true,
+                    "closedDetails.isClosed": false,
+                    "closedDetails.isDisbursed": true
                 }
             },
             {
@@ -1280,6 +1272,9 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
             },
             {
                 $unwind: "$employeeDetails"
+            },
+            {
+                $sort:{"camDetails.disbursalDate":-1}
             },
             {
                 $project: {
@@ -1370,8 +1365,8 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "closeds",
-                    localField: "closed",
+                    from: "closes",
+                    localField: "close",
                     foreignField: "_id",
                     as: "closedDetails"
                 }
@@ -1381,13 +1376,9 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
             },
             {
                 $match: {
-                    "closedDetails.data": {
-                        $elemMatch: {
-                            isActive: true,
-                            isClosed: false,
-                            isDisbursed: true
-                        }
-                    }
+                    "closedDetails.isActive": true,
+                    "closedDetails.isClosed": false,
+                    "closedDetails.isDisbursed": true
                 }
             },
             {

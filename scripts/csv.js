@@ -3,7 +3,7 @@ import csv from 'csv-parser';
 import fs from 'fs';
 
 // MongoDB connection configuration
-const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
+const MONGO_URI = "mongodb+srv://STAGINGUSER:mongoStagingPass1234badal@staging.th9vc.mongodb.net/closeMigration?retryWrites=true&w=majority&appName=STAGING";
 const MONGO_OPTIONS = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -64,7 +64,7 @@ async function importCSVData() {
 
         // Create read stream and process CSV
         const results = [];
-        const stream = fs.createReadStream('QUALoanTotalcasesSummaryNew.csv').on("error", (err) => {
+        const stream = fs.createReadStream('final_csv.csv').on("error", (err) => {
             console.error("File read error:", err.message);
             process.exit(1);
           })

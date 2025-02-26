@@ -19,6 +19,7 @@ import Payment from "../models/Payment.js";
 import mongoose from "mongoose";
 import LoanApplication from "../models/User/model.loanApplication.js";
 import { sessionAsyncHandler } from "../middleware/sessionAsyncHandler.js";
+import Close from "../models/close.js";
 
 // @desc Get new disbursal
 // @route GET /api/disbursals/
@@ -472,13 +473,12 @@ export const approveDisbursal = sessionAsyncHandler(async (req, res, session) =>
         });
 
         const objectId = new mongoose.Types.ObjectId(id);
-        const closed = await Closed.findOneAndUpdate(
-            { "data.disbursal": objectId }, // Find the document where data.disbursal matches
+        const closed = await Close.findOneAndUpdate(
+            { disbursal: objectId }, // Find the document where data.disbursal matches
             {
-                $set: { "data.$[elem].isDisbursed": true } // Use array filter reference
+                $set: { isDisbursed: true } // Use array filter reference
             },
             {
-                arrayFilters: [{ "elem.disbursal": objectId }], // Filter the correct array element
                 returnDocument: 'after', // Return the updated document
                 session: session // Include transaction session if needed
             }
@@ -533,7 +533,7 @@ export const approveDisbursal = sessionAsyncHandler(async (req, res, session) =>
             disbursal: disbursal._id,
             isDisbursed: true,
             camDetails: updatedCAM._id,
-            closed: closed._id,
+            close: closed._id,
         });
         await collectionData.save({ session })
 

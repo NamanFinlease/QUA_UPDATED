@@ -1,3 +1,4 @@
+import Close from "../models/close.js";
 import Closed from "../models/Closed.js";
 import Collection from "../models/Collection.js";
 import Payment from "../models/Payment.js";
@@ -5,8 +6,9 @@ import LoanApplication from "../models/User/model.loanApplication.js";
 import { calculateReceivedPayment } from "./calculateReceivedPayment.js";
 
 export const verifyPaymentCalculation = async (loanNo, transactionId, accountRemarks = "", accountEmpId = null, session) => {
+    console.log('payment cal 1')
     try {
-
+        
         const collectionData = await Collection.aggregate([
             {
                 $match: { loanNo }
@@ -56,13 +58,16 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
                 }
             }
         ]).session(session);
-
+        console.log('payment cal 2')
+        
         if (!collectionData) {
             return false;
         }
-
+        console.log('payment cal 3')
+        
         const calculatedAmount = calculateReceivedPayment(collectionData)
-
+        console.log('payment cal 4')
+        
         if (!calculatedAmount) {
             return false
         }
@@ -70,9 +75,9 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
         if (outstandingAmount < 1) {
             calculatedAmount.principalDiscount += outstandingAmount
         }
-
+        
         console.log("Calculation--->" , calculatedAmount)
-
+        
         let updatedPayment = await Payment.findOneAndUpdate(
             {
                 loanNo,
@@ -94,17 +99,19 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
                     principalReceived: Number(Number(calculatedAmount.principalReceived).toFixed(2)),
                     totalReceivedAmount: Number(Number(calculatedAmount.receivedAmount).toFixed(2)),
                     excessAmount: Number(Number(calculatedAmount.excessAmount).toFixed(2)),
-
+                    
                 }
-
+                
             },
             { new: true, runValidators: true, session }
         );
+        console.log('payment cal 5')
         if (!updatedPayment) {
             return false;
         }
         const { interest, penalty, principalAmount } = calculatedAmount
-
+        console.log('payment cal 6')
+        
         let updateCollection = await Collection.findOneAndUpdate(
             {
                 loanNo,
@@ -121,33 +128,35 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
             { new: true, runValidators: true, session }
         );
 
-
+        
+        console.log('payment cal 7')
         if (updateCollection.outstandingAmount < 1) {
-
-            const closed = await Closed.findOneAndUpdate(
+            
+            const closed = await Close.findOneAndUpdate(
                 {
                     pan: collectionData[0].pan,
-                    "data.loanNo": collectionData[0].loanNo
+                    loanNo: collectionData[0].loanNo
                 },
                 {
                     $set: {
-                        "data.$[elem].isClosed": true,
-                        "data.$[elem].isActive": false
+                        isClosed: true,
+                        isActive: false
                     }
                 },
                 {
-                    arrayFilters: [{ "elem.loanNo": collectionData[0].loanNo }],
-                    returnDocument: 'after',
+                    new: true,
                     session
                 }
             );
             
+            console.log('payment cal 8')
             console.log('in verify payment ---->')
             const loanDetails = await LoanApplication.findOneAndUpdate({ loanNo: loanNo }, {
                 applicationStatus: "CLOSED"
             }, { new: true , session })
             console.log("loandetails ----->", loanDetails)
         }
+        console.log('payment cal 9')
 
         return updatedPayment
     } catch (error) {

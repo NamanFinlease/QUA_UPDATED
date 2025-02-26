@@ -92,13 +92,13 @@ export const activeLeadsToVerify = asyncHandler(async (req, res) => {
             },
         ];
 
-        const results = await Closed.aggregate(pipeline).sort({
+        const results = await Close.aggregate(pipeline).sort({
             updatedAt: -1,
         });
 
         // Populate the filtered data
-        const leadsToVerify = await Closed.populate(results, {
-            path: "data.disbursal",
+        const leadsToVerify = await Close.populate(results, {
+            path: disbursal,
             populate: {
                 path: "sanction", // Populating the 'sanction' field in Disbursal
                 populate: [
@@ -115,24 +115,24 @@ export const activeLeadsToVerify = asyncHandler(async (req, res) => {
             },
         });
 
-        const totalActiveLeadsToVerify = await Closed.countDocuments({
-            "data.isActive": true,
-            "data.isDisbursed": true,
-            "data.isVerified": false,
-            "data.isClosed": false,
+        const totalActiveLeadsToVerify = await Close.countDocuments({
+            isActive: true,
+            isDisbursed: true,
+            isVerified: false,
+            isClosed: false,
             $or: [
-                { "data.closingDate": { $exists: true, $ne: null } },
-                { "data.closingAmount": { $exists: true, $ne: 0 } },
+                { closingDate: { $exists: true, $ne: null } },
+                { closingAmount: { $exists: true, $ne: 0 } },
                 {
-                    "data.partialPaid": {
+                    partialPaid: {
                         $elemMatch: {
                             date: { $exists: true, $ne: null },
                             amount: { $exists: true, $gt: 0 },
                         },
                     },
                 },
-                { "data.requestedStatus": { $exists: true, $ne: null } },
-                { "data.dpd": { $exists: true, $gt: 0 } },
+                { requestedStatus: { $exists: true, $ne: null } },
+                { dpd: { $exists: true, $gt: 0 } },
             ],
         });
 
@@ -154,17 +154,23 @@ export const verifyPayment = sessionAsyncHandler(async (req, res, session) => {
         const { accountRemarks } = req.body
         let accountEmpId = req.employee._id.toString();
         const { transactionId } = req.query
-       
 
+        console.log('payment verify 1')
+        
         const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, accountRemarks, accountEmpId, session)
+        console.log('payment verify 2')
         if (!updatedPayment) {
             // await session.abortTransaction();
             throw new Error("Payment didn't update")
             // return res.status(400).json({ error: `Payment didn't update` });
         }
+        console.log('payment verify 3')
         const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
-        const lead = await Lead.findOne({ leadNo: collectionData.leadNo },  null, { session })
-        const employee = await Employee.findById(accountEmpId , null, { session })
+        console.log('payment verify 5')
+        const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
+        console.log('payment verify 6')
+        const employee = await Employee.findById(accountEmpId, null, { session })
+        console.log('payment verify 7')
 
         // update leadStatus 
         await LeadStatus.findOneAndUpdate({
@@ -259,7 +265,7 @@ export const getPendingPaymentVerification = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Loan number is required" })
     }
 
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead"|| req.activeRole === "admin") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead" || req.activeRole === "admin") {
 
         const pipeline = [
             {
@@ -289,7 +295,7 @@ export const getPendingPaymentVerification = asyncHandler(async (req, res) => {
 // @desc Reject the payment verification if the payment is not received and remove the requested status
 export const rejectPaymentVerification = asyncHandler(async (req, res) => {
     if (req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
-        const { transactionId , accountRemarks } = req.body;
+        const { transactionId, accountRemarks } = req.body;
         let accountEmpId = req.employee._id.toString();
 
         // Find the payment record based on loanNo and transactionId
@@ -344,7 +350,7 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
             }`,
             `Payment Rejected by ${employee.fName} ${employee.lName}`,
             `${accountRemarks}`,
-            );
+        );
         // Send a success response
         return res.json({
             success: true,

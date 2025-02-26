@@ -19,7 +19,7 @@ const collectionSchema = new mongoose.Schema(
         disbursal: { type: mongoose.Schema.Types.ObjectId, ref: "Disbursal" },
         camDetails: { type: mongoose.Schema.Types.ObjectId, ref: "CamDetail" },
         payment: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
-        closed: { type: mongoose.Schema.Types.ObjectId, ref: "Closed" },
+        close: { type: mongoose.Schema.Types.ObjectId, ref: "Close" },
         collectionExecutiveId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
         preCollectionExecutiveId : {type : mongoose.Schema.Types.ObjectId, ref : "Employee"}
     },

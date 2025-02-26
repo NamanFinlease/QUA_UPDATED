@@ -2,6 +2,7 @@ import Lead from "../models/Leads.js";
 import Application from "../models/Applications.js";
 import Sanction from "../models/Sanction.js";
 import Closed from "../models/Closed.js";
+import Close from "../models/close.js";
 
 export const checkExisitingActiveLead = async (pan) => {
     try {
@@ -15,9 +16,9 @@ export const checkExisitingActiveLead = async (pan) => {
             }
         } else {
             sanctions.map(async (sanction) => {
-                const activeLead = await Closed.find({
-                    pan: pan,
-                    "data.loanNo": sanction.loanNo,
+                const activeLead = await Close.find({
+                    pan,
+                    loanNo: sanction.loanNo,
                 });
                 console.log("Active Lead: ", activeLead);
 

@@ -17,37 +17,15 @@ export const calculateInterest = async (msg) => {
             }
         },
         {
-            $addFields: {
-              activeClosed: {
-                $filter: {
-                  input: { $ifNull: [{ $arrayElemAt: ["$closedData.data", 0] }, []] },
-                  as: "item",
-                  cond: {
-                    $and: [
-                      { $eq: ["$$item.isActive", true] },
-                      { $eq: ["$$item.isClosed", false] }
-                    ]
-                  }
-                }
-              }
+            $unwind: {
+              path: "$closedData",
+              preserveNullAndEmptyArrays: true // In case there is no match
             }
           },
           {
             $match: {
-              $expr: { 
-                $gt: [
-                  { 
-                    $size: { 
-                      $filter: {
-                        input: "$activeClosed",
-                        as: "active",
-                        cond: { $eq: ["$$active.loanNo", "$loanNo"] }
-                      }
-                    }
-                  }, 
-                  0
-                ] 
-              }
+              "closedData.isActive": true, // Ensure correct field reference
+              "closedData.isClosed": false
             }
           },
 
@@ -98,7 +76,7 @@ export const calculateInterest = async (msg) => {
             $project: {
                 penalty: 1,
                 interest: 1,
-                loanNo:1,
+                loanNo: 1,
                 principalAmount: 1,
                 penalRate: 1,
                 dpd: 1,
@@ -118,13 +96,13 @@ export const calculateInterest = async (msg) => {
     let count = 0
 
 
-    for(let collectionData of collections) {
+    for (let collectionData of collections) {
         count++
-        let { roi, tenure, sanctionDate, principalAmount, penalty, disbursedDate, interest, dpd,loanNo } = collectionData
+        let { roi, tenure, sanctionDate, principalAmount, penalty, disbursedDate, interest, dpd, loanNo } = collectionData
         let penalRate = 2
 
-        console.log('cronnnnn',!disbursedDate , !tenure , !roi ,loanNo, !principalAmount,principalAmount)
-        
+        console.log('cronnnnn', !disbursedDate, !tenure, !roi, loanNo, !principalAmount, principalAmount)
+
 
         if (!disbursedDate || !tenure || !roi || !principalAmount) return "Insuficiant Data!";
 
@@ -146,8 +124,8 @@ export const calculateInterest = async (msg) => {
                 filter: { _id: collectionData._id },
                 update: {
                     $set: {
-                       interest: Number(interest.toFixed(2)),
-                        penalty:Number(penalty.toFixed(2)),
+                        interest: Number(interest.toFixed(2)),
+                        penalty: Number(penalty.toFixed(2)),
                         dpd,
                         outstandingAmount: Number(((principalAmount || 0) + (interest || 0) + (penalty || 0)).toFixed(2))
                     }
@@ -155,14 +133,14 @@ export const calculateInterest = async (msg) => {
             }
         });
 
-        if(collectionBulk.length > BATCH_SIZE){
+        if (collectionBulk.length > BATCH_SIZE) {
             await Collection.bulkWrite(collectionBulk);
             collectionBulk.length = 0
 
         }
 
     }
-    console.log("count ",count)
+    console.log("count ", count)
 
     if (collectionBulk.length > 0) {
         await Collection.bulkWrite(collectionBulk);

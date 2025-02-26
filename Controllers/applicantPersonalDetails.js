@@ -27,35 +27,73 @@ export const applicantDetails = async (details = null, session) => {
         // Define the data to update if the applicant exists, or to create if not
         // yhi se hi lead se data pass  krna h yha 
 
+        let updateData
+        const applicantDetails = await Applicant.findOne(filter)
 
-        const updateData = {
-            personalDetails: {
-                fName: details.fName,
-                mName: details.mName,
-                lName: details.lName,
-                gender: details.gender,
-                dob: details.dob,
-                mobile: details.mobile,
-                alternateMobile: details.alternateMobile,
-                personalEmail: details.personalEmail,
-                officeEmail: details.officeEmail,
-                screenedBy: details.screenedBy,
-                pan: details.pan,
-                aadhaar: details.aadhaar,
-            },
-            residence: details?.extraDetails?.residenceDetails || {},
-            incomeDetails: details?.extraDetails?.incomeDetails || {},
-            employment: {
-                companyName: details?.extraDetails?.employeDetails?.companyName || "",
-                companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || "",
-                state: details?.extraDetails?.employeDetails?.state || "",
-                city: details?.extraDetails?.employeDetails?.city || "",
-                pincode: details?.extraDetails?.employeDetails?.pincode || "",
-                department: details?.extraDetails?.employeDetails?.companyType || "",
-                designation: details?.extraDetails?.employeDetails?.designation || "",
-                employedSince: details?.extraDetails?.employeDetails?.employedSince || null
-            },
-        };
+
+        if (applicantDetails) {
+            updateData = {
+                personalDetails: {
+                    fName: details.fName,
+                    mName: details.mName,
+                    lName: details.lName,
+                    gender: details.gender,
+                    dob: details.dob,
+                    mobile: details.mobile,
+                    alternateMobile: details.alternateMobile,
+                    personalEmail: details.personalEmail,
+                    officeEmail: details.officeEmail,
+                    screenedBy: details.screenedBy,
+                    pan: details.pan,
+                    aadhaar: details.aadhaar,
+                },
+                residence: details?.extraDetails?.residenceDetails || applicantDetails?.residence,
+                incomeDetails: details?.extraDetails?.incomeDetails || applicantDetails?.incomeDetails,
+                employment: {
+                    companyName: details?.extraDetails?.employeDetails?.companyName || applicantDetails?.employment?.companyName,
+                    companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || applicantDetails?.employment?.companyAddress,
+                    state: details?.extraDetails?.employeDetails?.state || applicantDetails?.employment?.state,
+                    city: details?.extraDetails?.employeDetails?.city || applicantDetails?.employment?.city,
+                    pincode: details?.extraDetails?.employeDetails?.pincode || applicantDetails?.employment?.pincode,
+                    department: details?.extraDetails?.employeDetails?.companyType || applicantDetails?.employment?.department,
+                    designation: details?.extraDetails?.employeDetails?.designation || applicantDetails?.employment?.designation,
+                    employedSince: details?.extraDetails?.employeDetails?.employedSince || applicantDetails?.employment?.employedSince
+                },
+            };
+
+        }
+        else {
+
+            updateData = {
+                personalDetails: {
+                    fName: details.fName,
+                    mName: details.mName,
+                    lName: details.lName,
+                    gender: details.gender,
+                    dob: details.dob,
+                    mobile: details.mobile,
+                    alternateMobile: details.alternateMobile,
+                    personalEmail: details.personalEmail,
+                    officeEmail: details.officeEmail,
+                    screenedBy: details.screenedBy,
+                    pan: details.pan,
+                    aadhaar: details.aadhaar,
+                },
+                residence: details?.extraDetails?.residenceDetails || {},
+                incomeDetails: details?.extraDetails?.incomeDetails || {},
+                employment: {
+                    companyName: details?.extraDetails?.employeDetails?.companyName || "",
+                    companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || "",
+                    state: details?.extraDetails?.employeDetails?.state || "",
+                    city: details?.extraDetails?.employeDetails?.city || "",
+                    pincode: details?.extraDetails?.employeDetails?.pincode || "",
+                    department: details?.extraDetails?.employeDetails?.companyType || "",
+                    designation: details?.extraDetails?.employeDetails?.designation || "",
+                    employedSince: details?.extraDetails?.employeDetails?.employedSince || null
+                },
+            };
+        }
+
 
         // Find the applicant by criteria and update if found, or create a new one
         const applicant = await Applicant.findOneAndUpdate(filter, updateData, {
@@ -185,6 +223,7 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
         throw new Error("Applicant not found!");
     }
 
+    console.log('applicant', updates)
     // Update residence if provided
     if (updates.residence) {
         applicant.residence = {
@@ -255,6 +294,8 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
             applicant.reference.push(newRef);
         });
     }
+
+    console.log('applicant save', applicant)
 
     // Save the updated applicant
     await applicant.save();

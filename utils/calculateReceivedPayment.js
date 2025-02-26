@@ -6,6 +6,7 @@ const adjustValue = (received, payable) => {
 };
 
 export const calculateReceivedPayment = (collectionData) => {
+    console.log('Receive Payment 1')
     let {
         filteredPaymentHistory,
         camDetails,
@@ -22,7 +23,7 @@ export const calculateReceivedPayment = (collectionData) => {
     let { receivedAmount, discount } = filteredPaymentHistory[0];
     let remainingReceivedAmount = receivedAmount;
     let remainingDiscount = discount;
-
+    
     const amounts = [
         { key: "penalty", payable: penalty, received: penaltyReceived, discount: penaltyDiscount },
         { key: "interest", payable: interest, received: interestReceived, discount: interestDiscount },
@@ -32,11 +33,11 @@ export const calculateReceivedPayment = (collectionData) => {
         let remainingPayable = payable;
         let appliedDiscount = 0;
         let received = 0;
-
+        
         // console.log(key,payable)
-
-
-
+        
+        
+        
         // Adjust discount if available
         if (remainingDiscount > 0 && payable > 0) {
             const adjustment = adjustValue(remainingDiscount, payable);
@@ -44,18 +45,19 @@ export const calculateReceivedPayment = (collectionData) => {
             appliedDiscount = payable - adjustment.remainingPayable;
             remainingPayable = adjustment.remainingPayable;
         }
-
+        
         // Adjust received amount
         if (remainingReceivedAmount > 0 && remainingPayable > 0) {
             const adjustment = adjustValue(remainingReceivedAmount, remainingPayable);
             remainingReceivedAmount = adjustment.remainingReceived;
             received = payable - adjustment.remainingPayable - appliedDiscount
             remainingPayable = adjustment.remainingPayable;
-
+            
         }
-
+        
         // console.log('updated calculated',{ key, payable: remainingAdjustable, discount: appliedDiscount, received },currentRemainingAmount)
-
+        
+        console.log('Receive Payment 2')
         return { key, payable: Number(remainingPayable.toFixed(2)), discount: Number(appliedDiscount.toFixed(2)), received: Number(received.toFixed(2)) };
     });
 

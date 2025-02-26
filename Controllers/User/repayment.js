@@ -14,6 +14,7 @@ import { sessionAsyncHandler } from "../../middleware/sessionAsyncHandler.js";
 import Lead from "../../models/Leads.js";
 import { postLogs } from "../logs.js";
 import LeadStatus from "../../models/LeadStatus.js";
+import Close from "../../models/close.js";
 dotenv.config();
 
 
@@ -26,30 +27,11 @@ export const getLoanNumber = asyncHandler(async (req, res) => {
     const pipeline = [
         {
             $match: {
-                pan: PAN
+                pan: PAN,
+                isActive: true
             }
         },
-        {
-            $addFields: {
-                firstActiveLoan: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$data",
-                                as: "entry",
-                                cond: { $eq: ["$$entry.isActive", true] }
-                            }
-                        },
-                        0
-                    ]
-                }
-            }
-        },
-        {
-            $match: {
-                firstActiveLoan: { $ne: null }
-            }
-        },
+        
         {
             $lookup: {
                 from: "disbursals",
@@ -128,7 +110,7 @@ export const getLoanNumber = asyncHandler(async (req, res) => {
     ]
 
 
-    const result = await Closed.aggregate(pipeline);
+    const result = await Close.aggregate(pipeline);
 
     if (!result || result.length === 0) {
         return res.status(400).json({

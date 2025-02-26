@@ -16,6 +16,7 @@ import Documents from "../models/Documents.js";
 import LeadStatus from "../models/LeadStatus.js";
 import User from "../models/User/model.user.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
+import Close from "../models/close.js";
 
 // @desc Get the forwarded applications
 // @route GET /api/sanction/recommended
@@ -224,22 +225,14 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                 _id: sanction.application.lead,
             });
 
-            const activeLead = await Closed.findOne(
+            const activeLead = await Close.findOne(
                 {
                     pan,
-                    data: {
-                        $elemMatch: {
-                            isActive: true,
-                        },
-                    },
+                    isActive:true,
                 },
                 {
                     pan: 1,
-                    data: {
-                        $elemMatch: {
-                            isActive: true,
-                        },
-                    },
+                    isActive:1
                 }
             );
 
@@ -262,18 +255,24 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
             );
 
             // insert loanNo in loanApplication (user side)
-            const user = await User.findOne(
+            let user
+            user = await User.findOne(
                 { PAN:pan },
                
             );
+            if(user){
+                const loanDetails = await LoanApplication.findOneAndUpdate(
+                    { userId: user._id },
+                    { loanNo: newLoanNo },
+                    { new: true, sort: { createdAt: -1 } }
+                );
+                console.log("loanDetails--->" , loanDetails)
 
-            const loanDetails = await LoanApplication.findOneAndUpdate(
-                { userId: user._id },
-                { loanNo: newLoanNo },
-                { new: true, sort: { createdAt: -1 } }
-            );
+            }
 
-            console.log("loanDetails--->" , loanDetails)
+            
+
+            
 
             const existing = await Sanction.findById(id);
 
@@ -285,7 +284,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
             const newActiveLead = await createActiveLead(
                 pan,
                 existing.loanNo,
-                leadNo
+                lead.leadNo
                 // disbursalRes._id
             );
             console.log(newActiveLead);
@@ -312,7 +311,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                 `Sanction approved by ${req.employee.fName} ${req.employee.lName}`
             );
 
-            return res.json({ success: true, logs , leadNo :lead.leadNo , loanNo : loanDetails.loanNo });
+            return res.json({ success: true, logs , leadNo :lead.leadNo  });
         } catch (error) {
             console.log("error", error);
             res.status(500);
@@ -402,14 +401,14 @@ export const sendESign = asyncHandler(async (req, res) => {
             }
 
             // Update the Closed collection
-            const updateResult = await Closed.updateOne(
+            const updateResult = await Close.updateOne(
                 {
                     pan,
-                    "data.loanNo": existing.loanNo, // Match the document where the data array has this loanNo
+                    loanNo: existing.loanNo, // Match the document where the data array has this loanNo
                 },
                 {
                     $set: {
-                        "data.$.disbursal": disbursalRes._id, // Use the `$` positional operator to update the matched array element
+                        disbursal: disbursalRes._id, // Use the `$` positional operator to update the matched array element
                     },
                 }
             );

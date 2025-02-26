@@ -14,6 +14,7 @@ import Closed from '../../models/Closed.js';
 import { sessionAsyncHandler } from '../../middleware/sessionAsyncHandler.js'
 import LandingPageLead from '../../models/LandingPageLead.js';
 import Employee from '../../models/Employees.js';
+import Close from '../../models/close.js';
 
 
 
@@ -43,30 +44,16 @@ const calculateLoan = asyncHandler(async (req, res) => {
     // check in closed if any loan have been pending yet
     const pipeline = [
         {
-            $match: { pan: user.PAN }
+            $match: { 
+                pan: user.PAN,
+                isActive:true,
+                isClosed:false,
+             }
         },
-        {
-            $project: {
-                count: {
-                    $size: {
-                        $filter: {
-                            input: "$data",
-                            as: "item",
-                            cond: {
-                                $or: [
-                                    { $eq: ["$$item.isActive", true] },
-                                    { $eq: ["$$item.isClosed", false] }
-                                ]
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        
     ]
-    const result = await Closed.aggregate(pipeline)
-    const countPreviousActiveLoan = result.length > 0 ? result[0].count : 0;
-    if (countPreviousActiveLoan > 0) {
+    const result = await Close.aggregate(pipeline)
+    if (result.length > 0) {
         return res.status(400).json({ message: `You have already ${countPreviousActiveLoan} active loan` })
 
     }

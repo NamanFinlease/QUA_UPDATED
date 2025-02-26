@@ -1,4 +1,4 @@
-
+import express from "express"
 //---------------------------------------------- optimisation way ------------------------------------
 import mongoose from 'mongoose';
 import User from '../models/User/model.user.js';
@@ -16,11 +16,19 @@ import Collection from '../models/Collection.js';
 import moment from 'moment';
 import { calculateReceivedPayment } from '../utils/calculateReceivedPayment.js';
 import OTP from '../models/User/model.Otp.js'
+import AadhaarDetails from '../models/AadhaarDetails.js';
+import { createObjectCsvWriter } from "csv-writer";
+import { formatFullName } from "../utils/nameFormatter.js";
+import Close from "../models/close.js";
+import Sanction from "../models/Sanction.js";
+import { sanctioned } from "../Controllers/sanction.js";
+// import fs from "fs/promises";
 
 // Configuration
 const BATCH_SIZE = 200;
-const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
+// const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
 // const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
+const MONGO_URI = "mongodb+srv://STAGINGUSER:mongoStagingPass1234badal@staging.th9vc.mongodb.net/closeMigration?retryWrites=true&w=majority&appName=STAGING";
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -34,7 +42,8 @@ const progress = {
   loans: { total: 0, processed: 0, errors: 0 },
   camDetails: { total: 0, processed: 0, errors: 0 },
   payments: { total: 0, processed: 0, errors: 0 },
-  collections: { total: 0, processed: 0, errors: 0 }
+  collections: { total: 0, processed: 0, errors: 0 },
+  close: { total: 0, processed: 0, errors: 0 }
 };
 
 // Helpers
@@ -108,6 +117,8 @@ async function migrateUsers() {
         new Date(b.updatedAt) - new Date(a.updatedAt)
       )[0];
 
+      console.log('cam', latestCamDetail)
+
       // Proceed with user data creation
       const personalDetails = {
         fullName: `${applicant.personalDetails.fName} ${applicant.personalDetails.mName} ${applicant.personalDetails.lName}`
@@ -132,8 +143,8 @@ async function migrateUsers() {
         },
         incomeDetails: {
           employementType: "SALARIED",
-          monthlyIncome: latestCamDetail?.details?.averageSalary ?
-            Number(latestCamDetail.details.averageSalary) : 0,
+          monthlyIncome: latestCamDetail?.details?.actualNetSalary ?
+            Number(latestCamDetail.details.actualNetSalary) : 0,
           obligations: latestCamDetail?.details?.obligations ?
             Number(latestCamDetail.details.obligations) : 0,
           nextSalaryDate: latestCamDetail?.details?.salaryDate1 ?
@@ -364,7 +375,7 @@ async function migrateCamDetails() {
       // Fetch lead document using leadId
       const lead = await Lead.findById(doc.leadId).lean();
       if (!lead) {
-        console.warn(`No lead found for leadId: ${cam.leadId}`);
+        console.warn(`No lead found for leadId: ${doc.leadId}`);
         progress.errors++;
         continue;
       }
@@ -535,9 +546,9 @@ async function createPaymentCollection() {
         },
         {
           $lookup: {
-            from: "closeds",
+            from: "closes",
             localField: "_id",
-            foreignField: "data.disbursal",
+            foreignField: "disbursal",
             as: "closedData"
           }
         },
@@ -564,34 +575,21 @@ async function createPaymentCollection() {
         progress.errors++;
         continue;
       }
-      const closedDocs = await Closed.aggregate([
+      const closedDocs = await Close.aggregate([
         {
           $match: {
-            "data.loanNo": doc.LAN
+            loanNo: doc.LAN
           }
         },
         {
           $project: {
             pan: 1, // Include PAN
-            data: {
-              $filter: {
-                input: "$data",
-                as: "item",
-                cond: { $eq: ["$$item.loanNo", doc.LAN] }
-              }
-            }
+            loanNo: doc.LAN,
+            utr:1
           }
+
         },
-        {
-          $unwind: "$data"
-        },
-        {
-          $project: {
-            pan: 1,
-            loanNo: "$data.loanNo",
-            utr: "$data.utr"
-          }
-        }
+        
       ]
       )
 
@@ -760,9 +758,9 @@ async function createCollectionData() {
       },
       {
         $lookup: {
-          from: "closeds",
+          from: "closes",
           localField: "_id",
-          foreignField: "data.disbursal",
+          foreignField: "disbursal",
           as: "closedData"
         }
       },
@@ -787,7 +785,7 @@ async function createCollectionData() {
             sanctionedAmount: "$camData.loanRecommended",
           },
           camDetails: "$camData._id",
-          closed: "$closedData._id",
+          close: "$closedData._id",
           disbursedBy: 1,
 
         }
@@ -796,12 +794,11 @@ async function createCollectionData() {
 
     ])
 
-    console.log("loan nummmmberr ----->", loanNo, _id)
 
 
     if (disbursal.length === 0) continue
 
-    let { _id: disbursalId, leadNo, isDisbursed, disbursedBy, camDetails, closed, camData: { roi, tenure, sanctionedAmount, disbursalDate, repaymentDate } } = disbursal[0]
+    let { _id: disbursalId, leadNo, isDisbursed, disbursedBy, camDetails, close, camData: { roi, tenure, sanctionedAmount, disbursalDate, repaymentDate } } = disbursal[0]
 
 
 
@@ -828,15 +825,29 @@ async function createCollectionData() {
     let principalAmount = sanctionedAmount
 
 
-    const elapseDays = (closingType === "closed" || closingType === "settled") ?
+    const elapseDays = ((closingType === "closed" || closingType === "settled")  || closingType === "partPayment") ?
       localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
     if (elapseDays > tenure) {
       dpd = elapseDays - tenure
       penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
       interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
     } else {
-      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
+      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays).toFixed(2))
     }
+
+    
+
+    // const elapseDays1 = ( closingType !== "partPayment") ?
+    //   localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
+    // if (elapseDays1 > tenure) {
+    //   dpd = elapseDays1 - tenure
+    //   penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
+    //   interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
+    // } else {
+    //   interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays1).toFixed(2))
+    // }
+
+   
 
 
     let calculatedData = await calculateReceivedPayment([{
@@ -848,11 +859,14 @@ async function createCollectionData() {
       interestDiscount,
       principalDiscount,
       penaltyReceived,
-      principalAmount,
       interestReceived,
-      principalAmount,
       principalReceived,
+      principalAmount,
     }])
+
+    if(closingType === "partPayment"){
+      console.log('payment details',calculatedData)
+    }
 
     let outstandingAmount = calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount
 
@@ -865,7 +879,6 @@ async function createCollectionData() {
 
 
     collectiondocs.push({
-      ...calculatedData,
       pan,
       loanNo,
       leadNo,
@@ -881,8 +894,9 @@ async function createCollectionData() {
       disbursal: disbursalId,
       payment: _id,
       camDetails,
-      closed,
+      close,
       outstandingAmount,
+      ...calculatedData,
 
     })
 
@@ -910,20 +924,19 @@ async function createCollectionData() {
 
     if (outstandingAmount < 1) {
 
-      const closed = await Closed.findOneAndUpdate(
+      const closed = await Close.findOneAndUpdate(
         {
-          pan: pan,
-          "data.loanNo": loanNo
+          pan,
+          loanNo
         },
         {
           $set: {
-            "data.$[elem].isClosed": true,
-            "data.$[elem].isActive": false
+            isClosed: true,
+            isActive: false
           }
         },
         {
-          arrayFilters: [{ "elem.loanNo": loanNo }],
-          returnDocument: 'after',
+          new: true,
         }
       );
     }
@@ -952,7 +965,7 @@ async function createCollectionData() {
             disbursal: `ObjectId('${disbursalId}')`,
             payment: `ObjectId('${_id}')`,
             camDetails: `ObjectId('${camDetails}')`,
-            closed: `ObjectId('${closed}')`,
+            close: `ObjectId('${close}')`,
             outstandingAmount: (calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount),
 
           }
@@ -985,26 +998,72 @@ async function createCollectionData() {
   await Collection.insertMany(collectiondocs);
   // logProgress('colection',documents);
 }
-async function updateCollection() {
-  console.log('Starting Creating Collections...');
-
-  const payments = await Payment.find()
 
 
-  progress.collections.total = payments.length;
-  let collectiondocs = []
-  let collectionBulk = [];
-  for (let collectionData of payments) {
-    let { _id, loanNo, pan, paymentHistory, interestDiscount, penaltyDiscount, principalDiscount, interestReceived, penaltyReceived, principalReceived } = collectionData
-    const disbursal = await Disbursal.aggregate([
+async function verifiedLeads(req, res) {
+  try {
+
+    const leadData = await Collection.aggregate([
       {
-        $match: { loanNo }
+        $lookup: {
+          from: "closes",
+          localField: "close",
+          foreignField: "_id",
+          as: "closedData"
+        }
       },
-
+      {
+        $addFields: {
+          activeClosed: {
+            $filter: {
+              input: { $ifNull: [{ $arrayElemAt: ["$closedData.data", 0] }, []] },
+              as: "item",
+              cond: {
+                $and: [
+                  { $eq: ["$$item.isActive", true] },
+                  { $eq: ["$$item.isClosed", false] }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          $expr: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$activeClosed",
+                    as: "active",
+                    cond: { $eq: ["$$active.loanNo", "$loanNo"] }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "disbursals",
+          localField: "disbursal",
+          foreignField: "_id",
+          as: "disbursalData"
+        }
+      },
+      {
+        $unwind: {
+          path: "$disbursalData",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $lookup: {
           from: "sanctions",
-          localField: "sanction",
+          localField: "disbursalData.sanction",
           foreignField: "_id",
           as: "sanctionData"
         }
@@ -1023,7 +1082,6 @@ async function updateCollection() {
           as: "applicationData"
         }
       },
-
       {
         $unwind: {
           path: "$applicationData",
@@ -1038,266 +1096,109 @@ async function updateCollection() {
           as: "leadData"
         }
       },
-
       {
         $unwind: {
           path: "$leadData",
           preserveNullAndEmptyArrays: true
         }
       },
-      {
-        $lookup: {
-          from: "camdetails",
-          localField: "leadData._id",
-          foreignField: "leadId",
-          as: "camData"
-        }
-      },
-      {
-        $addFields: {
-          camData: {
-            $filter: {
-              input: "$camData",
-              as: "cam",
-              cond: { "$gt": ["$$cam.details.repaymentAmount", null] }
-            }
+
+
+
+    ]
+    )
+
+
+    // Fetch Aadhaar details in parallel using Promise.all
+    const unVerifiedLeads = (
+      await Promise.all(
+        leadData.map(async (lead) => {
+          const aadhaar = await AadhaarDetails.findOne({
+            "details.adharNumber": lead.leadData.aadhaar,
+          });
+
+          if (aadhaar?.details?.adharNumber) {
+            console.log("Aadhaar found, skipping lead");
+            return null; // Skip verified leads
           }
-        }
-      },
 
+          return {
+            Name: formatFullName(lead.leadData.fName, lead.leadData.mName, lead.leadData.lName) || "N/A",
+            leadNo: lead.leadData.leadNo || "N/A",
+            AadhaarNumber: lead.leadData.aadhaar || "N/A",
+            PanNumber: lead.leadData.pan || "N/A",
+            Aadhaar: "Not Verified" || "N/A",
+          };
+        })
+      )
+    ).filter(Boolean); // Remove null values (verified leads)
 
-      {
-        $unwind: {
-          path: "$camData",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $lookup: {
-          from: "closeds",
-          localField: "_id",
-          foreignField: "data.disbursal",
-          as: "closedData"
-        }
-      },
-
-      {
-        $unwind: {
-          path: "$closedData",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          isDisbursed: 1,
-          loanNo: 1,
-          leadNo: "$leadData.leadNo",
-          camData: {
-
-            roi: "$camData.roi",
-            tenure: "$camData.eligibleTenure",
-            disbursalDate: "$camData.disbursalDate",
-            repaymentDate: "$camData.repaymentDate",
-            sanctionedAmount: "$camData.loanRecommended",
-          },
-          camDetails: "$camData._id",
-          closed: "$closedData._id",
-          disbursedBy: 1,
-
-        }
-      }
-
-
-    ])
-
-    console.log("loan nummmmberr ----->", loanNo, _id)
-
-
-    if (disbursal.length === 0) continue
-
-    let { _id: disbursalId, leadNo, isDisbursed, disbursedBy, camDetails, closed, camData: { roi, tenure, sanctionedAmount, disbursalDate, repaymentDate } } = disbursal[0]
-
-
-
-
-    let receivedAmount = 0;
-    let paymentDate = null;
-    let closingType = '';
-
-    if (Array.isArray(paymentHistory) && paymentHistory.length > 0) {
-      receivedAmount = paymentHistory[0]?.receivedAmount || 0;
-      closingType = paymentHistory[0]?.closingType || 0;
-      paymentDate = paymentHistory[0]?.paymentDate ? moment.utc(paymentHistory[0].paymentDate).clone().local() : null;
+    if (unVerifiedLeads.length === 0) {
+      console.log("No unverified leads found.");
+      return; // Simply exit the function without sending a response
     }
 
-
-
-    let localDisbursedDate = moment.utc(new Date(disbursalDate)).clone().local();
-    let localPaymentDate = moment.utc(paymentDate).clone().local();
-    const today = moment.utc(new Date()).clone().local();
-    let penalRate = 2
-    let dpd
-    let interest = 0
-    let penalty = 0
-    let principalAmount = sanctionedAmount
-
-
-    const elapseDays = (closingType === "closed" || closingType === "settled") ?
-      localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
-    if (elapseDays > tenure) {
-      dpd = elapseDays - tenure
-      penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
-      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
-    } else {
-      interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
-    }
-
-
-    let calculatedData = await calculateReceivedPayment([{
-      filteredPaymentHistory: [{ receivedAmount }],
-      camDetails,
-      interest,
-      penalty,
-      penaltyDiscount,
-      interestDiscount,
-      principalDiscount,
-      penaltyReceived,
-      principalAmount,
-      interestReceived,
-      principalAmount,
-      principalReceived,
-    }])
-
-    let outstandingAmount = calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount
-
-    if (closingType === "settled") {
-      calculatedData.principalDiscount += outstandingAmount
-      calculatedData.principalAmount = 0
-      outstandingAmount = 0
-
-    }
-
-
-    collectiondocs.push({
-      ...calculatedData,
-      pan,
-      loanNo,
-      leadNo,
-      elapseDays,
-      tenure,
-      closingType,
-      repaymentDate,
-      paymentDate,
-      sanctionedAmount,
-      dpd,
-      isDisbursed,
-      disbursedBy,
-      disbursal: disbursalId,
-      payment: _id,
-      camDetails,
-      closed,
-      outstandingAmount,
-
-    })
-
-    let updatedPayment = await Payment.findOneAndUpdate(
-      {
-        loanNo,
-        // "paymentHistory.transactionId": paymentHistory[0].transactionId,
-      },
-      {
-
-        $inc: {
-          penaltyDiscount: Number(calculatedData.penaltyDiscount.toFixed(2)),
-          interestDiscount: Number(calculatedData.interestDiscount.toFixed(2)),
-          principalDiscount: Number(calculatedData.principalDiscount.toFixed(2)),
-          penaltyReceived: Number(calculatedData.penaltyReceived.toFixed(2)),
-          interestReceived: Number(calculatedData.interestReceived.toFixed(2)),
-          principalReceived: Number(calculatedData.principalReceived.toFixed(2)),
-          totalReceivedAmount: Number(calculatedData.receivedAmount.toFixed(2)),
-
-        }
-
-      },
-      { new: true, runValidators: true, }
-    );
-
-    if (outstandingAmount < 1) {
-
-      const closed = await Closed.findOneAndUpdate(
-        {
-          pan: pan,
-          "data.loanNo": loanNo
-        },
-        {
-          $set: {
-            "data.$[elem].isClosed": true,
-            "data.$[elem].isActive": false
-          }
-        },
-        {
-          arrayFilters: [{ "elem.loanNo": loanNo }],
-          returnDocument: 'after',
-        }
-      );
-    }
+    fs.writeFileSync('scripts/unverified.json', JSON.stringify(unVerifiedLeads, null, 2));
+    console.log('unverified leads', unVerifiedLeads)
 
 
 
-
-    collectionBulk.push({
-      updateOne: {
-        filter: { _id: collectionData._id },
-        update: {
-          $set: {
-            ...calculatedData,
-            pan,
-            loanNo,
-            leadNo,
-            elapseDays,
-            tenure,
-            closingType,
-            repaymentDate,
-            paymentDate,
-            sanctionedAmount,
-            dpd,
-            isDisbursed,
-            disbursedBy,
-            disbursal: `ObjectId('${disbursalId}')`,
-            payment: `ObjectId('${_id}')`,
-            camDetails: `ObjectId('${camDetails}')`,
-            closed: `ObjectId('${closed}')`,
-            outstandingAmount: (calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount),
-
-          }
-        }
-      }
-    });
-
-    //   if (collectionBulk.length >= BATCH_SIZE) {
-    //     await Collection.bulkWrite(collectionBulk);
-    //     progress.collections.processed += collectionBulk.length;
-    //     collectionBulk.length = 0;
-    //     logProgress('collections');
-
-    //   }
-
-    // }
-
-    // if (collectionBulk.length >= 0) {
-    //   await Collection.bulkWrite(collectionBulk);
-    //   progress.collections.processed += collectionBulk.length;
-    //   collectionBulk.length = 0;
-
+  } catch (error) {
+    console.error("Error fetching unverified leads:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 
-  // console.log("jsonData", jsonData);
+
+}
+
+async function closeMigration() {
+  try {
+    const closedDocuments = await Closed.find();
+
+    console.log('closed docs', closedDocuments)
+
+    let bulkOps = [];
 
 
-  fs.writeFileSync('collectionData.json', JSON.stringify(collectiondocs, null, 2));
-  logProgress('collections');
-  await Collection.insertMany(collectiondocs);
-  // logProgress('colection',documents);
+    for (let doc of closedDocuments) {
+      for (let item of doc.data) {
+        const sanction = await Sanction.findOne({ loanNo: item.loanNo });
+
+        bulkOps.push({
+          insertOne: {
+            document: {
+              pan: doc.pan,
+              leadNo: sanction?.leadNo || "",
+              loanNo: item?.loanNo || "",
+              utr: item?.utr || "",
+              disbursal: item?.disbursal || null,
+              isClosed: item?.isClosed || false,
+              isSettled: item?.isSettled || false,
+              isDisbursed: item?.isDisbursed || false,
+              isActive: item?.isActive || false,
+              isWriteOff: item?.isWriteOff || false,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+            },
+          },
+        });
+
+        // Process in batches
+        if (bulkOps.length >= BATCH_SIZE) {
+          await Close.bulkWrite(bulkOps); // Ensure this waits for completion
+          bulkOps.length = 0; // Reset the batch array
+        }
+      }
+    }
+
+    // Insert remaining documents
+    if (bulkOps.length > 0) {
+      await Close.bulkWrite(bulkOps);
+    }
+  } catch (error) {
+    console.error("Migration failed:", error);
+  }
+
 }
 
 async function runMigration() {
@@ -1308,17 +1209,20 @@ async function runMigration() {
     // await withRetry(() => migrateUsers());
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
-    await withRetry(() => migrateCamDetails());
-    await withRetry(() => createPaymentCollection());
-    // await withRetry(() => createCollectionData());
+    // await withRetry(() => migrateCamDetails());
+    // await withRetry(() => createPaymentCollection());
+    await withRetry(() => createCollectionData());
+    // await withRetry(() => verifiedLeads());
+    // await withRetry(() => closeMigration());
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
     // console.log('OTP:', progress.otp);
     // console.log('Loans:', progress.loans);
     // console.log('CAM Details:', progress.camDetails);
-    console.log('Payments:', progress.payments);
-    // console.log('Collection:', progress.collections);
+    // console.log('Payments:', progress.payments);
+    console.log('Collection:', progress.collections);
+    // console.log('Close:', progress.close);
 
   } catch (error) {
     console.error('Migration failed:', error);
