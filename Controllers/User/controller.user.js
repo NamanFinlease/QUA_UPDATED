@@ -397,6 +397,7 @@ const personalInfo = asyncHandler(async (req, res) => {
     if (!userDetails) {
         return res.status(404).json({ message: "User not found" });
     }
+    personalDetails.fathersName = userDetails.personalDetails.fathersName
 
     let registrationStatus
     let previousJourney
