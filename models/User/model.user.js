@@ -25,11 +25,11 @@ const personalDetailsSchema = new mongoose.Schema(
     spouseName: {
       type: String,
     },
-    mothersName:{
-      type : String
+    mothersName: {
+      type: String
     },
-    fathersName:{
-      type : String
+    fathersName: {
+      type: String
     }
   });
 
@@ -90,8 +90,8 @@ const incomeDetailsSchema = new mongoose.Schema({
     required: true,
     enum: ["CASH", "BANK", "CHEQUE", "OTHERS"],
   },
-  workingSince:{
-    type : Date
+  workingSince: {
+    type: Date
   }
 });
 
@@ -103,16 +103,16 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    emailOTP:{
-      type : String,
-      default : null  
+    emailOTP: {
+      type: String,
+      default: null
     },
-    email:{
-      type : String,
+    email: {
+      type: String,
     },
-    isEmailVerify:{
-      type : Boolean,
-      default : false
+    isEmailVerify: {
+      type: Boolean,
+      default: false
     },
 
     PAN: {
@@ -121,7 +121,7 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
     },
-    mobile: { type: String},
+    mobile: { type: String },
     personalDetails: {
       type: personalDetailsSchema,
     },
@@ -185,9 +185,9 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    isFormFilled:{
-      type : Boolean,
-      default : false
+    isFormFilled: {
+      type: Boolean,
+      default: false
     },
     IsOldUser: {
       type: Boolean,

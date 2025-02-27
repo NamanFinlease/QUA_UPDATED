@@ -171,6 +171,21 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
 
 const mobileGetOtp = asyncHandler(async (req, res) => {
     const { mobile } = req.params;
+    const details = req.body
+    if (!details) {
+        return res.status(400).json({ message: "Please provide details" })
+
+    }
+    if (!details.PNA || !details.fathersName) {
+        return res.status(400).json({ message: "Please provide details" })
+
+    }
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+    // Validate the PAN number
+    if (!panRegex.test(details.PAN)) {
+        return res.status(400).json({ message: "Please provide valid PAN" })
+    }
     const userId = req.user._id
 
     if (!mobile) {
@@ -187,6 +202,9 @@ const mobileGetOtp = asyncHandler(async (req, res) => {
     if (!user) {
         return res.status(400).json({ message: "User not found" });
     }
+    user.personalDetails.fathersName = details.fathersName
+    user.PNA = details.PNA
+    await user.save()
 
     const otp = generateRandomNumber();
     console.log("fdfdsgg---->", otp)

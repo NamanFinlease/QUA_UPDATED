@@ -229,6 +229,7 @@ export const activeLeads = asyncHandler(async (req, res) => {
                                         $subtract: [
                                             "$$NOW",
                                             "$camDetails.repaymentDate"
+
                                         ]
                                     },
                                     86400000
@@ -259,13 +260,9 @@ export const activeLeads = asyncHandler(async (req, res) => {
             },
             {
                 $match: {
-                    "closedDetails.data": {
-                        $elemMatch: {
-                            isActive: true,
-                            isClosed: false,
-                            isDisbursed: true
-                        }
-                    }
+                    "closedDetails.isActive": true,
+                    "closedDetails.isClosed": false,
+                    "closedDetails.isDisbursed": true
                 }
             },
             {
@@ -327,10 +324,8 @@ export const activeLeads = asyncHandler(async (req, res) => {
                     salary: "$leadDetails.salary",
                     leadNo: "$leadDetails.leadNo",
                     loanNo: 1,
-                    repaymentDetails:
-                        "$camDetails.repaymentDate",
-                    disbursalDetails:
-                        "$camDetails.disbursalDate"
+                    repaymentDate: "$camDetails.repaymentDate",
+                    disbursalDate: "$camDetails.disbursalDate"
                 }
             }
         ]
@@ -646,7 +641,7 @@ export const getActiveLead = asyncHandler(async (req, res) => {
         });
     }
 
-    console.log('actvie ',activeRecord)
+    console.log('actvie ', activeRecord)
 
     // Fetch the CAM data and add to disbursalObj
     const cam = await CamDetails.findOne({
@@ -1274,7 +1269,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                 $unwind: "$employeeDetails"
             },
             {
-                $sort:{"camDetails.disbursalDate":-1}
+                $sort: { "camDetails.disbursalDate": -1 }
             },
             {
                 $project: {
