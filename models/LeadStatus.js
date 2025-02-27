@@ -41,7 +41,7 @@ const leadStatusSchema = new mongoose.Schema(
 
         close: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Closed",
+            ref: "Close",
         },
     },
     { timestamps: true }

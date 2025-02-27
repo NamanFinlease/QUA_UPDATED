@@ -12,6 +12,7 @@ import PanDetails from '../../models/PanDetails.js';
 import { postUserLogs } from './controller.userLogs.js';
 import Closed from '../../models/Closed.js';
 import OTP from '../../models/User/model.Otp.js';
+import Close from '../../models/close.js';
 
 
 const aadhaarOtp = asyncHandler(async (req, res) => {
@@ -639,23 +640,17 @@ const getDashboardDetails = asyncHandler(async (req, res) => {
 
     const pipeline = [
         {
-            $match: {
-                pan: user.PAN
-            }
+            $match: { pan: user.PAN }
         },
         {
             $match: {
-                data: {
-                    $elemMatch: {
-                        isActive: true,
-                        isClosed: false
-                    }
-                }
+                "isActive": true,
+                "isClosed": false
             }
         }
     ]
     let isRedirectToLoanList = false
-    const result = await Closed.aggregate(pipeline)
+    const result = await Close.aggregate(pipeline)
     console.log('result', result)
     const countPreviousActiveLoan = result.length
     console.log("countPreviousActiveLoan--->", countPreviousActiveLoan)
@@ -849,63 +844,68 @@ const getLoanList = asyncHandler(async (req, res) => {
 
     const pipeline = [
         {
-            $match: {
-                pan: user.PAN
-            }
+            $match: { pan: user.PAN }
         },
         {
-            $set: {
-                data: {
-                    $sortArray: {
-                        input: "$data",
-                        sortBy: { createdAt: -1 }
-                    }
-                }
-            }
-        },
-        {
-            $unwind: "$data"
+            $sort: { createdAt: -1 }
         },
         {
             $lookup: {
                 from: "collections",
-                localField: "data.loanNo",
+                localField: "loanNo",
                 foreignField: "loanNo",
                 as: "collectionDetails"
             }
         },
         {
-            $unwind: "$collectionDetails"
+            $unwind: {
+                path: "$collectionDetails",
+                preserveNullAndEmptyArrays: true
+            }
         },
         {
             $lookup: {
                 from: "camdetails",
-                localField: "collectionDetails.leadNo",
+                localField: "leadNo",
                 foreignField: "leadNo",
                 as: "camDetails"
             }
         },
         {
-            $unwind: "$camDetails"
+            $unwind: {
+                path: "$camDetails",
+                preserveNullAndEmptyArrays: true
+            }
         },
         {
             $project: {
-                loanNo: "$data.loanNo",
-                isActive: "$data.isActive",
-                isClosed: "$data.isClosed",
-                isDisbursed: "$data.isDisbursed",
+                loanNo: 1,
+                leadNo: 1,
+                isActive: 1,
+                isClosed: 1,
+                isDisbursed: 1,
                 pan: 1,
-                repaymentAmount:
-                    "$camDetails.repaymentAmount",
-                outstandingAmount:
-                    "$collectionDetails.outstandingAmount",
-                dpd: "$collectionDetails.dpd",
+                repaymentAmount: {
+                    $ifNull: [
+                        "$camDetails.repaymentAmount",
+                        0
+                    ]
+                },
+                outstandingAmount: {
+                    $ifNull: [
+                        "$collectionDetails.outstandingAmount",
+                        0
+                    ]
+                },
+                dpd: {
+                    $ifNull: ["$collectionDetails.dpd", 0]
+                },
                 repaymentDate:
                     "$collectionDetails.repaymentDate"
             }
         }
     ]
-    const loanList = await Closed.aggregate(pipeline);
+    const loanList = await Close.aggregate(pipeline);
     return res.status(200).json({ message: "Loan List get sucessfully", loanList })
 })
 

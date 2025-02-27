@@ -44,13 +44,13 @@ const calculateLoan = asyncHandler(async (req, res) => {
     // check in closed if any loan have been pending yet
     const pipeline = [
         {
-            $match: { 
+            $match: {
                 pan: user.PAN,
-                isActive:true,
-                isClosed:false,
-             }
+                isActive: true,
+                isClosed: false,
+            }
         },
-        
+
     ]
     const result = await Close.aggregate(pipeline)
     if (result.length > 0) {
