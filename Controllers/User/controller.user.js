@@ -11,7 +11,7 @@ import LoanApplication from '../../models/User/model.loanApplication.js';
 import PanDetails from '../../models/PanDetails.js';
 import { postUserLogs } from './controller.userLogs.js';
 import Closed from '../../models/Closed.js';
-import OTP from '../../models/User/model.Otp.js';
+import OTP from '../../models/User/model.otp.js';
 import Close from '../../models/close.js';
 
 
