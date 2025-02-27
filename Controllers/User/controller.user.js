@@ -206,7 +206,7 @@ const mobileGetOtp = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "User not found" });
     }
     user.personalDetails.fathersName = details.fathersName
-    user.PNA = details.PNA
+    user.PAN = details.PAN
     await user.save()
 
     const otp = generateRandomNumber();
