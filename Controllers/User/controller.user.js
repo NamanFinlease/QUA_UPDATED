@@ -866,7 +866,7 @@ const getLoanList = asyncHandler(async (req, res) => {
 
     const pipeline = [
         {
-            $match: { pan: user.PAN  , isDisturbed:true}
+            $match: { pan: user.PAN  , isDisbursed:true}
         },
         {
             $sort: { createdAt: -1 }
