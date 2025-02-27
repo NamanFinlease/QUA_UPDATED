@@ -172,11 +172,14 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
 const mobileGetOtp = asyncHandler(async (req, res) => {
     const { mobile } = req.params;
     const details = req.body
+    console.log("details--->", details)
     if (!details) {
+        console.log("1")
         return res.status(400).json({ message: "Please provide details" })
 
     }
-    if (!details.PNA || !details.fathersName) {
+    if (!details.PAN || !details.fathersName) {
+        console.log("2")
         return res.status(400).json({ message: "Please provide details" })
 
     }
