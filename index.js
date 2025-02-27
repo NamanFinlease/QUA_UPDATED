@@ -92,7 +92,7 @@ app.get(`/otp-success/:id`, (req, res) => {
     res.render("otpSuccess");
 });
 
-calIntCron()
+// calIntCron()
 
 app.use("/api/mobile", appRouter); // Use the mobile routes
 app.use("/api/employees", employeeRouter); // Use the employee routes
