@@ -20,29 +20,42 @@ import Close from "../models/close.js";
 export const createActiveLead = async (pan, loanNo, leadNo) => {
     try {
         const existingActiveLead = await Close.findOne({ pan: pan });
-        if (!existingActiveLead) {
-            const newActiveLead = await Close.create({
-                pan,
-                loanNo,
-                leadNo,
-            });
-            if (!newActiveLead) {
-                return { success: false };
-            }
-            return { success: true };
-        } else if (
-            existingActiveLead.data.some((entry) => entry.isActive === false)
-        ) {
-            // If disbursal ID is not found, add the new disbursal
-            existingActiveLead.data.push({ loanNo: loanNo, leadNo: leadNo });
-            const res = await existingActiveLead.save();
-            if (!res) {
-                return { success: false };
-            }
-            return { success: true };
-        } else {
+
+        const newActiveLead = await Close.create({
+            pan,
+            loanNo,
+            leadNo,
+        });
+        if (!newActiveLead) {
             return { success: false };
         }
+        return { success: true };
+
+
+        // console.log('existing',existingActiveLead)
+        // if (!existingActiveLead) {
+        //     const newActiveLead = await Close.create({
+        //         pan,
+        //         loanNo,
+        //         leadNo,
+        //     });
+        //     if (!newActiveLead) {
+        //         return { success: false };
+        //     }
+        //     return { success: true };
+        // } else if (
+        //     existingActiveLead.isActive === false
+        // ) {
+        //     // If disbursal ID is not found, add the new disbursal
+        //     existingActiveLead.push({ loanNo: loanNo, leadNo: leadNo });
+        //     const res = await existingActiveLead.save();
+        //     if (!res) {
+        //         return { success: false };
+        //     }
+        //     return { success: true };
+        // } else {
+        //     return { success: false };
+        // }
     } catch (error) {
         console.log(error);
     }

@@ -70,7 +70,7 @@ router.post("/sendEmailOTP", authMiddleware, sendEmailOTP);
 router.post("/verifyEmailOTP", authMiddleware, verifyEmailOTP);
 
 // repayment 
-router.get("/getLoanNumber/:pan", authMiddleware, getLoanNumber);
+router.get("/getLoanNumber/:pan", authMiddleware, getLoanNumber); // for old website 
 router.post("/payNow", authMiddleware, payNow)
 router.post("/callback", callback) // transaction
 router.get("/loanList", authMiddleware, getLoanList)

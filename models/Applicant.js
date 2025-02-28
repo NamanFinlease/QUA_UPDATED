@@ -77,74 +77,74 @@ const residenceSchema = new mongoose.Schema({
 const employmentDetailsSchema = new mongoose.Schema({
     companyName: {
         type: String,
-        // required: true,
+        required: true,
     },
     companyAddress: {
         type: String,
-        // required: true,
+        required: true,
     },
     state: {
         type: String,
-        // required: true,
+        required: true,
     },
     city: {
         type: String,
-        // required: true,
+        required: true,
     },
     pincode: {
         type: String,
-        // required: true,
+        required: true,
     },
     department: {
         type: String,
-        // required: true,
+        required: true,
     },
     designation: {
         type: String,
-        // required: true,
+        required: true,
     },
     employedSince: {
         type: String,
-        // required: true,
+        required: true,
     },
 });
 
 const referenceSchema = new mongoose.Schema({
     name: {
         type: String,
-        // required: true,
+        required: true,
     },
     relation: {
         type: String,
-        // required: true,
+        required: true,
     },
     mobile: {
         type: String,
-        // required: true,
+        required: true,
     },
 });
 
 const incomeDetailsSchema = new mongoose.Schema({
   employementType: {
     type: String,
-    // required: true,
+    required: true,
     enum: ["SALARIED", "SELF EMPLOYED"],
   },
 
   monthlyIncome: {
     type: Number,
-    // required: true,
+    required: true,
   },  
   obligations: {
     type: Number,
   },
   nextSalaryDate: {
     type: Date,
-    // required: true,
+    required: true,
   },  
   incomeMode:{
     type: String,
-    // required: true,
+    required: true,
     enum: ["CASH", "BANK", "CHEQUE", "OTHERS"],
   }
 });
