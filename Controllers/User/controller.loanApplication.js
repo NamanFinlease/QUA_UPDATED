@@ -54,7 +54,7 @@ const calculateLoan = asyncHandler(async (req, res) => {
     ]
     const result = await Close.aggregate(pipeline)
     if (result.length > 0) {
-        return res.status(400).json({ message: `You have already ${countPreviousActiveLoan} active loan` })
+        return res.status(400).json({ message: `You have already ${result.length} active loan` })
 
     }
 
