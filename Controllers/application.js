@@ -302,7 +302,7 @@ export const allocatedApplications = asyncHandler(async (req, res) => {
                 updatedAt: 1,
 
                 // Lead Fields
-                "lead.leadNo": "$lead.leadNo",
+                "lead.leadNo": "$leadData.leadNo",
                 "lead.fName": "$leadData.fName",
                 "lead.mName": "$leadData.mName",
                 "lead.lName": "$leadData.lName",
