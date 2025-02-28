@@ -371,6 +371,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         console.log('updatedPayment if transactionId is null --->', updatedPayment)
 
         if (!updatedPayment) {
+            console.log("same transaction id---> , is bloack me nhi jaana chahiye")
             await Payment.findOneAndUpdate(
                 {
                     loanNo,
@@ -401,6 +402,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
                 return res.status(400).json({ error: `Payment didn't update` });
             }
 
+            console.log("---> updated payment details --->", updatedPayment)
             // Update Logs
             const collectionData = await Collection.findOne({ loanNo: loanNo }, null,{ session })
             const lead = await Lead.findOne({ leadNo: collectionData.leadNo },null, { session })
