@@ -231,9 +231,9 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             leadRemark: `${JSON.stringify(callbackResponse)}`
         },
     )
-    console.log("logData--->", logData)
+    // console.log("logData--->", logData)
     const { order_id } = req.body
-    console.log("received object is ---->", callbackResponse)
+    // console.log("received object is ---->", callbackResponse)
 
     if (!order_id) {
         return res.status(400).json({ message: '--Order ID not provided in callback' });
@@ -254,7 +254,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
 
     const response = await fetch(url, options);
     const data = await response.json();
-    console.log("data--->", data);
+    // console.log("data--->", data);
 
 
     // //  const {amount} = req.body
@@ -313,6 +313,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         let paymentDate = new Date(data.order.created_at.replace(" ", "T"));
 
         console.log('loan number-->', loanNo)
+        console.log('received amount from paytring-->', receivedAmount)
 
         let isPartialPaid;
         const collectionData = await Collection.findOne({ loanNo : loanNo })
@@ -333,7 +334,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             closingType = "partPayment";
         }
 
-        console.log('received amount', receivedAmount)
+        console.log('received amount after calculation', receivedAmount)
         // increament amounts when payment status become true-->
         // let updatedPayment;
         // Update Payment Collection --------------
@@ -367,6 +368,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             },
             { new: true, runValidators: true, session }
         );
+        console.log('updatedPayment if transactionId is null --->', updatedPayment)
 
         if (!updatedPayment) {
             await Payment.findOneAndUpdate(
@@ -388,6 +390,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
                 }
             );
         }
+        console.log('updatedPayment if transactionId is not null --->', updatedPayment)
 
         if (order_status === "success") {
 
