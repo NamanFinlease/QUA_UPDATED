@@ -69,8 +69,9 @@ export const createLandingPageLead = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/getAllLandingPageLeads
 // @access Private
 export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
+    console.log("---->" , req.activeRole)
 
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
             success: false,
             message: "You are not authorized to access this resource.",
