@@ -433,7 +433,7 @@ export const getProfile = asyncHandler(async (req, res) => {
         });
     }
 
-    const partialLeadDetails = await PartialLead.findById(id);
+    const partialLeadDetails = await LandingPageLead.findById(id);
     if (!partialLeadDetails) {
         return res.status(404).json({
             success: false,
