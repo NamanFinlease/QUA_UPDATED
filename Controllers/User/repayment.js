@@ -362,9 +362,9 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
                         isPaymentVerified: true,
                     },
                 },
-                $inc: {
-                    totalReceivedAmount: data.order.order_status === "success" ? Number(receivedAmount) : 0
-                },
+                // $inc: {
+                //     totalReceivedAmount: data.order.order_status === "success" ? Number(receivedAmount) : 0
+                // },
             },
             { new: true, runValidators: true, session }
         );
