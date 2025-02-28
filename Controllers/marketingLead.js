@@ -415,3 +415,35 @@ export const rejectedList = asyncHandler(async (req, res) => {
         rejectedLeads,
     });
 })
+
+export const getProfile = asyncHandler(async (req, res) => {
+
+    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+        return res.status(403).json({
+            success: false,
+            message: "You are not authorized to access this resource.",
+        });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: "Partial Lead id is required.",
+        });
+    }
+
+    const partialLeadDetails = await PartialLead.findById(id);
+    if (!partialLeadDetails) {
+        return res.status(404).json({
+            success: false,
+            message: "Partial Lead not found.",
+        });
+    }
+    return res.status(200).json({
+        success: true,
+        partialLeadDetails,
+    });
+
+
+})
