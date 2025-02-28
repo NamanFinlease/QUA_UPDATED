@@ -10,7 +10,7 @@ const cron = new CronJob(
   '*/20 * * * * *',
   schedulInterestCal,
   null,
-  true,
+  false,
   "Asia/Kolkata"
 );
 const calMidNight = async () => {
@@ -22,7 +22,7 @@ const calMidNightCron = new CronJob(
   '0 0 0 * * *',
   calMidNight,
   null,
-  true,
+  false,
   'Asia/Kolkata'
 );
 
