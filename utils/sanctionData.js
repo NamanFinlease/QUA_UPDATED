@@ -1,6 +1,7 @@
 import Sanction from "../models/Sanction.js";
 import CamDetails from "../models/CAM.js";
 import { dateFormatter, dateStripper } from "./dateFormatter.js";
+import moment from "moment";
 
 export const getSanctionData = async (id) => {
     // Fetch Sanction and CAM details
@@ -14,16 +15,17 @@ export const getSanctionData = async (id) => {
         const camDetails = await CamDetails.findOne({
             leadId: application.lead,
         });
-
-        // Stripping the time from the date to compare
         const sanctionDate = dateStripper(new Date());
         const disbursalDate = dateStripper(camDetails?.disbursalDate);
+
+        let localDisbursedDate = moment.utc(new Date(camDetails?.disbursalDate)).clone().local();
+        let localSanctionDate = moment.utc(new Date()).clone().local();
 
         // Date validation
         if (
             (application.sanctionDate &&
-                application.sanctionDate > disbursalDate) || // Strip time from `sanctionDate`
-            sanctionDate > disbursalDate
+                localDisbursedDate > localSanctionDate) || // Strip time from `sanctionDate`
+            localDisbursedDate > localSanctionDate
         ) {
             throw new Error(
                 "Disbursal Date cannot be in the past. It must be the present date or future date!"
@@ -34,13 +36,11 @@ export const getSanctionData = async (id) => {
         const response = {
             sanctionDate: sanctionDate,
             title: "Mr./Ms.",
-            fullname: `${application.applicant.personalDetails.fName}${
-                application.applicant.personalDetails.mName &&
+            fullname: `${application.applicant.personalDetails.fName}${application.applicant.personalDetails.mName &&
                 ` ${application.applicant.personalDetails.mName}`
-            }${
-                application.applicant.personalDetails.lName &&
+                }${application.applicant.personalDetails.lName &&
                 ` ${application.applicant.personalDetails.lName}`
-            }`,
+                }`,
             loanNo: `${sanction.loanNo}`,
             pan: `${sanction.application.applicant.personalDetails.pan}`,
             residenceAddress: `${application.applicant.residence.address}, ${application.applicant.residence.city}`,
@@ -82,11 +82,13 @@ export const getSanctionData = async (id) => {
     // Stripping the time from the date to compare
     const sanctionDate = dateStripper(new Date());
     const disbursalDate = dateStripper(camDetails?.disbursalDate);
+    let localSanctionDate = moment.utc(new Date()).clone().local();
+    let localDisbursedDate = moment.utc(new Date(camDetails?.disbursalDate)).clone().local();
 
     // Date validation
     if (
-        (sanction.sanctionDate && sanction.sanctionDate > disbursalDate) || // Strip time from `sanctionDate`
-        sanctionDate > disbursalDate
+        (sanction.sanctionDate && localDisbursedDate > localSanctionDate) || // Strip time from `sanctionDate`
+        localDisbursedDate > localSanctionDate
     ) {
         throw new Error(
             "Disbursal Date cannot be in the past. It must be the present date or future date!"
@@ -97,13 +99,11 @@ export const getSanctionData = async (id) => {
     const response = {
         sanctionDate: sanctionDate,
         title: "Mr./Ms.",
-        fullname: `${sanction.application.applicant.personalDetails.fName}${
-            sanction.application.applicant.personalDetails.mName &&
+        fullname: `${sanction.application.applicant.personalDetails.fName}${sanction.application.applicant.personalDetails.mName &&
             ` ${sanction.application.applicant.personalDetails.mName}`
-        }${
-            sanction.application.applicant.personalDetails.lName &&
+            }${sanction.application.applicant.personalDetails.lName &&
             ` ${sanction.application.applicant.personalDetails.lName}`
-        }`,
+            }`,
         loanNo: `${sanction.loanNo}`,
         pan: `${sanction.application.applicant.personalDetails.pan}`,
         residenceAddress: `${sanction.application.applicant.residence.address}, ${sanction.application.applicant.residence.city}`,
@@ -126,13 +126,12 @@ export const getSanctionData = async (id) => {
         // repaymentCheques: `${camDetails?.repaymentCheques || "-"}`,
         // bankName: `${bankName || "-"}`,
         bouncedCharges: "1000",
-        annualPercentage: `${
-            ((Number(camDetails?.roi) / 100) *
-                Number(camDetails?.eligibleTenure) +
-                Number(camDetails?.adminFeePercentage) / 100) *
+        annualPercentage: `${((Number(camDetails?.roi) / 100) *
+            Number(camDetails?.eligibleTenure) +
+            Number(camDetails?.adminFeePercentage) / 100) *
             (365 / Number(camDetails?.eligibleTenure)) *
             100
-        }%`,
+            }%`,
     };
 
     return { sanction, camDetails, response };
