@@ -104,7 +104,17 @@ export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
                 .sort({ updatedAt: -1 });
 
             // Get total count
-            const totalLeads = await LandingPageLead.countDocuments();
+            const totalLeads = await LandingPageLead.countDocuments(
+                {
+                    isRejected: false,
+                    isComplete: false,
+                    $or: [
+                        { screenerId: { $exists: false } },
+                        { screenerId: null }
+                    ]
+
+                }
+            );
 
             return res.status(200).json({
                 success: true,
@@ -120,6 +130,12 @@ export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
                 message: "Server error while retrieving leads.",
             });
         }
+    }
+    else {
+        return res.status(403).json({
+            success: false,
+            message: "You are not authorized to access this resource.",
+        });
     }
 });
 
