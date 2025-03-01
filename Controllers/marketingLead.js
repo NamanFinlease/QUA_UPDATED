@@ -88,7 +88,17 @@ export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
 
         try {
             // Fetch paginated leads
-            const leads = await LandingPageLead.find()
+            const leads = await LandingPageLead.find(
+                {
+                    isRejected: false,
+                    isComplete: false,
+                    $or: [
+                        { screenerId: { $exists: false } },
+                        { screenerId: null }
+                    ]
+
+                }
+            )
                 .skip(skip)
                 .limit(limit)
                 .sort({ updatedAt: -1 });
@@ -216,12 +226,6 @@ export const allocatedList = asyncHandler(async (req, res) => {
                 {
                     $limit: limit
                 },
-                {
-                    $facet: {
-                        metadata: [{ $count: "total" }],
-                        data: [{ $match: {} }]
-                    }
-                }
             ]
         }
         else {
@@ -245,12 +249,6 @@ export const allocatedList = asyncHandler(async (req, res) => {
                 {
                     $limit: limit
                 },
-                {
-                    $facet: {
-                        metadata: [{ $count: "total" }],
-                        data: [{ $match: {} }]
-                    }
-                }
             ]
 
         }
@@ -294,12 +292,6 @@ export const completedList = asyncHandler(async (req, res) => {
             {
                 $limit: limit
             },
-            {
-                $facet: {
-                    metadata: [{ $count: "total" }],
-                    data: [{ $match: {} }]
-                }
-            }
         ]
 
         const completedLeads = await LandingPageLead.aggregate(pipeline)
@@ -397,12 +389,6 @@ export const rejectedList = asyncHandler(async (req, res) => {
             {
                 $limit: limit
             },
-            {
-                $facet: {
-                    metadata: [{ $count: "total" }],
-                    data: [{ $match: {} }]
-                }
-            }
         ]
 
         const rejectedLeads = await LandingPageLead.aggregate(pipeline)
@@ -414,6 +400,9 @@ export const rejectedList = asyncHandler(async (req, res) => {
     }
 })
 
+// @desc   to get profile Details of Lead 
+// @route  GET /api/marketing/getProfile
+// @access Private
 export const getProfile = asyncHandler(async (req, res) => {
 
     if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
