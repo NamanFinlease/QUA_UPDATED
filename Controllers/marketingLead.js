@@ -69,7 +69,7 @@ export const createLandingPageLead = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/getAllLandingPageLeads
 // @access Private
 export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
-    console.log("---->" , req.activeRole)
+    console.log("---->", req.activeRole)
 
     if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
@@ -174,7 +174,7 @@ export const allocatePartialLead = asyncHandler(async (req, res) => {
 // @access Private
 export const allocatedList = asyncHandler(async (req, res) => {
 
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
             success: false,
             message: "You are not authorized to access this resource.",
@@ -269,7 +269,7 @@ export const allocatedList = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/completed
 // @access Private
 export const completedList = asyncHandler(async (req, res) => {
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
             success: false,
             message: "You are not authorized to access this resource.",
@@ -374,7 +374,7 @@ export const reject = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/rejectedList
 // @access Private
 export const rejectedList = asyncHandler(async (req, res) => {
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
             success: false,
             message: "You are not authorized to access this resource.",
@@ -419,7 +419,7 @@ export const rejectedList = asyncHandler(async (req, res) => {
 
 export const getProfile = asyncHandler(async (req, res) => {
 
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
         return res.status(403).json({
             success: false,
             message: "You are not authorized to access this resource.",
