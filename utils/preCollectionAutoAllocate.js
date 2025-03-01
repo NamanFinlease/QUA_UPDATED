@@ -1,6 +1,7 @@
-import Collection from "../models/Collection"
+import Collection from "../models/Collection.js"
 
-export const preCollectionAutoAllocate =async () => {
+export const preCollectionAutoAllocate = async () => {
+    let BATCH_SIZE = 200
     const pipeline = [
         {
             $lookup: {
@@ -127,7 +128,7 @@ export const preCollectionAutoAllocate =async () => {
                         "$employeeDetails.lName"
                     ]
                 },
-                sanctionAmount:"$camDetails.loanRecommended",
+                sanctionAmount: "$camDetails.loanRecommended",
                 fName: "$leadDetails.fName",
                 mName: "$leadDetails.mName",
                 lName: "$leadDetails.lName",
@@ -149,5 +150,11 @@ export const preCollectionAutoAllocate =async () => {
     ]
 
     const preActiveLeads = await Collection.aggregate(pipeline)
+    let count = 0;
+    for (let activeLead of preActiveLeads) {
+        count++
+        console.log('pre active leads', activeLead.loanNo)
+    }
+
 
 }

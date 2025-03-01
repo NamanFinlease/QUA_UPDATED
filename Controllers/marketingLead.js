@@ -70,44 +70,42 @@ export const createLandingPageLead = asyncHandler(async (req, res) => {
 // @access Private
 export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
 
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
-        return res.status(403).json({
-            success: false,
-            message: "You are not authorized to access this resource.",
-        });
-    }
-    let page = parseInt(req.query.page) || 1; // Current page
-    let limit = parseInt(req.query.limit) || 10; // Items per page
+    if (req.activeRole === "screener" || req.activeRole === "admin" || req.activeRole === "sanctionHead") {
 
-    // Prevent invalid pagination values
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
 
-    const skip = (page - 1) * limit;
+        let page = parseInt(req.query.page) || 1; // Current page
+        let limit = parseInt(req.query.limit) || 10; // Items per page
 
-    try {
-        // Fetch paginated leads
-        const leads = await LandingPageLead.find()
-            .skip(skip)
-            .limit(limit)
-            .sort({ updatedAt: -1 });
+        // Prevent invalid pagination values
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
 
-        // Get total count
-        const totalLeads = await LandingPageLead.countDocuments();
+        const skip = (page - 1) * limit;
 
-        return res.status(200).json({
-            success: true,
-            totalLeads,
-            totalPages: Math.ceil(totalLeads / limit),
-            currentPage: page,
-            leads,
-        });
-    } catch (error) {
-        console.error("❌ Error fetching leads:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Server error while retrieving leads.",
-        });
+        try {
+            // Fetch paginated leads
+            const leads = await LandingPageLead.find()
+                .skip(skip)
+                .limit(limit)
+                .sort({ updatedAt: -1 });
+
+            // Get total count
+            const totalLeads = await LandingPageLead.countDocuments();
+
+            return res.status(200).json({
+                success: true,
+                totalLeads,
+                totalPages: Math.ceil(totalLeads / limit),
+                currentPage: page,
+                leads,
+            });
+        } catch (error) {
+            console.error("❌ Error fetching leads:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Server error while retrieving leads.",
+            });
+        }
     }
 });
 
@@ -116,6 +114,8 @@ export const getAllLandingPageLeads = asyncHandler(async (req, res) => {
 // @route  POST /api/marketing/partialLead/:id
 // @access Private
 export const allocatePartialLead = asyncHandler(async (req, res) => {
+
+
     const { id } = req.params;
     if (!id) {
         return res.status(400).json({
@@ -173,93 +173,91 @@ export const allocatePartialLead = asyncHandler(async (req, res) => {
 // @access Private
 export const allocatedList = asyncHandler(async (req, res) => {
 
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
-        return res.status(403).json({
-            success: false,
-            message: "You are not authorized to access this resource.",
+    if (req.activeRole === "screener" || req.activeRole === "admin" || req.activeRole === "sanctionHead") {
+
+
+        let screenerId;
+        if (req.activeRole === "screener") {
+            screenerId = req.employee._id.toString(); // Current user is a screener
+        }
+        const employee = await Employee.findById(screenerId);
+        if (!employee) {
+            return res.status(400).json({
+                success: false,
+                message: "Employee not found.",
+            });
+        }
+
+        let page = parseInt(req.query.page) || 1; // Current page
+        let limit = parseInt(req.query.limit) || 10; // Items per page
+
+        // Prevent invalid pagination values
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+        const skip = (page - 1) * limit;
+        let pipeline
+        if (req.activeRole !== "screener") {
+            pipeline = [
+                {
+                    $match: {
+                        screenerId: { $exists: true, $ne: null }
+                    }
+                },
+                {
+                    $sort: { createdAt: -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limit
+                },
+                {
+                    $facet: {
+                        metadata: [{ $count: "total" }],
+                        data: [{ $match: {} }]
+                    }
+                }
+            ]
+        }
+        else {
+            pipeline = [
+                {
+                    $match: {
+                        screenerId: { $exists: true, $ne: null }
+                    }
+                },
+                {
+                    $match: {
+                        screenerId: new mongoose.Types.ObjectId(screenerId)
+                    }
+                },
+                {
+                    $sort: { createdAt: -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limit
+                },
+                {
+                    $facet: {
+                        metadata: [{ $count: "total" }],
+                        data: [{ $match: {} }]
+                    }
+                }
+            ]
+
+        }
+
+        const allocatedLeads = await LandingPageLead.aggregate(pipeline);
+
+        return res.status(200).json({
+            success: true,
+            allocatedLeads,
         });
     }
-    let screenerId;
-    if (req.activeRole === "screener") {
-        screenerId = req.employee._id.toString(); // Current user is a screener
-    }
-    const employee = await Employee.findById(screenerId);
-    if (!employee) {
-        return res.status(400).json({
-            success: false,
-            message: "Employee not found.",
-        });
-    }
-
-    let page = parseInt(req.query.page) || 1; // Current page
-    let limit = parseInt(req.query.limit) || 10; // Items per page
-
-    // Prevent invalid pagination values
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
-    const skip = (page - 1) * limit;
-    let pipeline
-    if (req.activeRole !== "screener") {
-        pipeline = [
-            {
-                $match: {
-                    screenerId: { $exists: true, $ne: null }
-                }
-            },
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: limit
-            },
-            {
-                $facet: {
-                    metadata: [{ $count: "total" }],
-                    data: [{ $match: {} }]
-                }
-            }
-        ]
-    }
-    else {
-        pipeline = [
-            {
-                $match: {
-                    screenerId: { $exists: true, $ne: null }
-                }
-            },
-            {
-                $match: {
-                    screenerId: new mongoose.Types.ObjectId(screenerId)
-                }
-            },
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: limit
-            },
-            {
-                $facet: {
-                    metadata: [{ $count: "total" }],
-                    data: [{ $match: {} }]
-                }
-            }
-        ]
-
-    }
-
-    const allocatedLeads = await LandingPageLead.aggregate(pipeline);
-
-    return res.status(200).json({
-        success: true,
-        allocatedLeads,
-    });
 
 });
 
@@ -268,47 +266,45 @@ export const allocatedList = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/completed
 // @access Private
 export const completedList = asyncHandler(async (req, res) => {
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
-        return res.status(403).json({
-            success: false,
-            message: "You are not authorized to access this resource.",
+    if (req.activeRole === "screener" || req.activeRole === "admin" || req.activeRole === "sanctionHead") {
+
+
+        let page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+        const skip = (page - 1) * limit;
+        let pipeline = [
+            {
+                $match: {
+                    isComplete: true
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "total" }],
+                    data: [{ $match: {} }]
+                }
+            }
+        ]
+
+        const completedLeads = await LandingPageLead.aggregate(pipeline)
+
+        return res.status(200).json({
+            success: true,
+            completedLeads,
         });
     }
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
-    const skip = (page - 1) * limit;
-    let pipeline = [
-        {
-            $match: {
-                isComplete: true
-            }
-        },
-        {
-            $sort: { createdAt: -1 }
-        },
-        {
-            $skip: skip
-        },
-        {
-            $limit: limit
-        },
-        {
-            $facet: {
-                metadata: [{ $count: "total" }],
-                data: [{ $match: {} }]
-            }
-        }
-    ]
-
-    const completedLeads = await LandingPageLead.aggregate(pipeline)
-
-    return res.status(200).json({
-        success: true,
-        completedLeads,
-    });
 });
 
 
@@ -373,45 +369,43 @@ export const reject = asyncHandler(async (req, res) => {
 // @route  GET /api/marketing/rejectedList
 // @access Private
 export const rejectedList = asyncHandler(async (req, res) => {
-    if (req.activeRole !== "screener" || req.activeRole !== "admin" || req.activeRole !== "sanctionHead") {
-        return res.status(403).json({
-            success: false,
-            message: "You are not authorized to access this resource.",
+    if (req.activeRole === "screener" || req.activeRole === "admin" || req.activeRole === "sanctionHead") {
+
+
+        let page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+        const skip = (page - 1) * limit;
+        let pipeline = [
+            {
+                $match: {
+                    isRejected: true
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "total" }],
+                    data: [{ $match: {} }]
+                }
+            }
+        ]
+
+        const rejectedLeads = await LandingPageLead.aggregate(pipeline)
+
+        return res.status(200).json({
+            success: true,
+            rejectedLeads,
         });
     }
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
-    const skip = (page - 1) * limit;
-    let pipeline = [
-        {
-            $match: {
-                isRejected: true
-            }
-        },
-        {
-            $sort: { createdAt: -1 }
-        },
-        {
-            $skip: skip
-        },
-        {
-            $limit: limit
-        },
-        {
-            $facet: {
-                metadata: [{ $count: "total" }],
-                data: [{ $match: {} }]
-            }
-        }
-    ]
-
-    const rejectedLeads = await LandingPageLead.aggregate(pipeline)
-
-    return res.status(200).json({
-        success: true,
-        rejectedLeads,
-    });
 })

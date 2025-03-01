@@ -165,13 +165,10 @@ export const calculateInterest = async (msg) => {
             const paymentBeforeRepayment = localPaymentDate.isBefore(localRepaymentDate);
             const daysBetweenPaymentAndRepayment = localRepaymentDate.diff(localPaymentDate, "days");
 
-            console.log('date difference', loanNo, )
             if (paymentBeforeRepayment) {
-                console.log('payment before')
                 penalty = Number((principalAmount * (penalRate / 100) * dpd).toFixed(2))
                 interest = Number((principalAmount * (roi / 100) * daysBetweenPaymentAndRepayment).toFixed(2))
             } else {
-                console.log('payment after')
                 penalty = Number((principalAmount * (penalRate / 100) * today.diff(localPaymentDate, "days")).toFixed(2))
             }
             dpd = elapseDays - tenure
@@ -207,7 +204,6 @@ export const calculateInterest = async (msg) => {
         }
 
     }
-    console.log("count ", count)
 
     if (collectionBulk.length > 0) {
         await Collection.bulkWrite(collectionBulk);

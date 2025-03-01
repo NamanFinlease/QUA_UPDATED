@@ -654,7 +654,6 @@ export const getActiveLead = asyncHandler(async (req, res) => {
         });
     }
 
-    console.log('actvie ', activeRecord)
 
     // Fetch the CAM data and add to disbursalObj
     const cam = await CamDetails.findOne({
@@ -1190,8 +1189,8 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                         $divide: [
                                             {
                                                 $subtract: [
-                                                    "$camDetails.repaymentDate",
-                                                    "$$NOW"
+                                                    "$$NOW",
+                                                    "$camDetails.repaymentDate"
                                                 ]
                                             },
                                             86400000
@@ -1206,8 +1205,8 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                         $divide: [
                                             {
                                                 $subtract: [
-                                                    "$camDetails.repaymentDate",
-                                                    "$$NOW"
+                                                    "$$NOW",
+                                                    "$camDetails.repaymentDate"
                                                 ]
                                             },
                                             86400000
@@ -1282,7 +1281,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                 $unwind: "$employeeDetails"
             },
             {
-                $sort: { "camDetails.disbursalDate": -1 }
+                $sort: { "camDetails.repaymentDate": -1 }
             },
             {
                 $project: {
@@ -1294,8 +1293,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                             "$employeeDetails.lName"
                         ]
                     },
-                    sanctionAmount:
-                        "$camDetails.loanRecommended",
+                    sanctionAmount:"$camDetails.loanRecommended",
                     fName: "$leadDetails.fName",
                     mName: "$leadDetails.mName",
                     lName: "$leadDetails.lName",
@@ -1362,7 +1360,7 @@ export const preAllocate = asyncHandler(async (req, res) => {
 
 export const getPreAllocatedList = asyncHandler(async (req, res) => {
     console.log('collectionExecutive')
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "admin") {
         let preCollectionExecutiveId = req.employee._id.toString();
 
         const pipeline = [
