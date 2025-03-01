@@ -1,11 +1,27 @@
 import { CronJob } from "cron";
 import moment from "moment";
 import { calculateInterest } from "./calculateInterest.js";
+import { preCollectionAutoAllocate } from "./preCollectionAutoAllocate.js";
 
 const schedulInterestCal = async () => {
   console.log(await calculateInterest("hello"));
 
 }
+const calMidNight = async () => {
+   await calculateInterest("hii");
+
+}
+const preAllocate = async () => {
+   await preCollectionAutoAllocate();
+
+}
+const preCollectionAllocate = new CronJob(
+  '*/20 * * * * *',
+  preAllocate,
+  null,
+  false,
+  "Asia/Kolkata"
+);
 const cron = new CronJob(
   '*/20 * * * * *',
   schedulInterestCal,
@@ -13,16 +29,12 @@ const cron = new CronJob(
   false,
   "Asia/Kolkata"
 );
-const calMidNight = async () => {
-   await calculateInterest("hii");
-
-}
 
 const calMidNightCron = new CronJob(
   '0 0 0 * * *',
   calMidNight,
   null,
-  false,
+  true,
   'Asia/Kolkata'
 );
 
