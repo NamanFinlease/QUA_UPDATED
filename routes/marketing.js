@@ -4,7 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.route("/landingPageData").post(createLandingPageLead).get(protect, getAllLandingPageLeads); // (DONE)
+router.route("/leads").post(createLandingPageLead).get(protect, getAllLandingPageLeads); // (DONE)
 router.route("/partialLead/:id").post(protect, allocatePartialLead);  // Allocate marketing lead (DONE)
 router.route("/allocated").get(protect, allocatedList);  // Allocated marketing lead (DONE)
 router.route("/completed").get(protect, completedList);  // Completed marketing lead (DONE)

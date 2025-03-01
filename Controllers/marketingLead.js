@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import asyncHandler from "../middleware/asyncHandler.js";
 import Employee from "../models/Employees.js";
 import LandingPageLead from "../models/LandingPageLead.js";
+import { nextSequence } from "../utils/nextSequence.js";
 
 // @desc   Create LandingPageLead Entry
 // @route  POST /api/marketing/createLandingPageLead
@@ -44,6 +45,8 @@ export const createLandingPageLead = asyncHandler(async (req, res) => {
             message: "Lead already exists.",
         });
     }
+    const partleadNo = await nextSequence("partlead", "partlead", 10);
+    // console.log("partial lead No -->", partleadNo);
 
     // Create a new lead entry
     const leadInfo = await LandingPageLead.create({
@@ -55,6 +58,7 @@ export const createLandingPageLead = asyncHandler(async (req, res) => {
         salary,
         loanAmount,
         source,
+        partleadNo
     });
 
     // Return success response
@@ -408,4 +412,36 @@ export const rejectedList = asyncHandler(async (req, res) => {
             rejectedLeads,
         });
     }
+})
+
+export const getProfile = asyncHandler(async (req, res) => {
+
+    if (req.activeRole !== "screener" && req.activeRole !== "admin" && req.activeRole !== "sanctionHead") {
+        return res.status(403).json({
+            success: false,
+            message: "You are not authorized to access this resource.",
+        });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: "Partial Lead id is required.",
+        });
+    }
+
+    const partialLeadDetails = await LandingPageLead.findById(id);
+    if (!partialLeadDetails) {
+        return res.status(404).json({
+            success: false,
+            message: "Partial Lead not found.",
+        });
+    }
+    return res.status(200).json({
+        success: true,
+        partialLeadDetails,
+    });
+
+
 })

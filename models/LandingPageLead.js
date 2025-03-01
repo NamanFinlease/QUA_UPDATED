@@ -71,6 +71,13 @@ const LandingPageLeadSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Employee",
         },
+        lastAssignedAt: {
+            type: Date,
+            default: null,
+        },
+        partleadNo: {
+            type: String,
+        }
 
     },
     { timestamps: true }
