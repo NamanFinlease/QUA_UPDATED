@@ -40,7 +40,7 @@ const LandingPageLeadSchema = new mongoose.Schema(
         },
         source: {
             type: String,
-            enum: ["website", "others"],
+            enum: ["website", "marketing"],
             default: "website",
         },
         screenerId: {
