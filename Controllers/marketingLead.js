@@ -214,11 +214,13 @@ export const allocatedList = asyncHandler(async (req, res) => {
             pipeline = [
                 {
                     $match: {
-                        screenerId: { $exists: true, $ne: null }
+                        screenerId: { $exists: true, $ne: null },
+                        isRejected:  { $ne: true },
+                        isComplete:  { $ne: true } 
                     }
                 },
                 {
-                    $sort: { createdAt: -1 }
+                    $sort: { updatedAt: -1 }
                 },
                 {
                     $skip: skip
@@ -231,9 +233,12 @@ export const allocatedList = asyncHandler(async (req, res) => {
         else {
             pipeline = [
                 {
+
                     $match: {
-                        screenerId: { $exists: true, $ne: null }
-                    }
+                        screenerId: { $exists: true, $ne: null },
+                        isRejected:  { $ne: true },
+                        isComplete:  { $ne: true } 
+                    },
                 },
                 {
                     $match: {
@@ -241,7 +246,7 @@ export const allocatedList = asyncHandler(async (req, res) => {
                     }
                 },
                 {
-                    $sort: { createdAt: -1 }
+                    $sort: { updatedAt: -1 }
                 },
                 {
                     $skip: skip
