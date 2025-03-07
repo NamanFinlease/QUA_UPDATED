@@ -3,9 +3,10 @@ import Documents from "../models/Documents.js";
 import Employee from "../models/Employees.js";
 import Lead from "../models/Leads.js";
 import FormData from "form-data";
-import { getBanks, BSA } from "../utils/BSA.js";
+import { getBanks, BSA, getBSAreport, saveAnalyzedBuffer } from "../utils/BSA.js";
 import { postLogs } from "./logs.js";
-import { uploadDocs, getDocs } from "../utils/docsUploadAndFetch.js";
+import { uploadDocs, getDocs, getBSADocs } from "../utils/docsUploadAndFetch.js";
+import mongoose from "mongoose";
 
 // @desc Adding file documents to a lead
 // @route PATCH /api/leads/docs/:id or /api/applications/docs/:id
@@ -13,12 +14,19 @@ import { uploadDocs, getDocs } from "../utils/docsUploadAndFetch.js";
 export const addDocs = asyncHandler(async (req, res) => {
     const { id } = req.params;
     let employeeId;
+    let bsaArray;
 
-    const { accountNo, accountType, bankCode, remarks } = req.body;
+    const { accountNo, accountType, bankCode, remarks, bsaList } = req.body;
 
     let lead = await Lead.findById(id);
     if (!lead) {
         throw new Error("Lead not found");
+    }
+    if (lead.isRejected) {
+        throw new Error("Lead already rejected"); // This error will be caught by the error handler
+    }
+    if (lead.isRecommended) {
+        throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
     }
 
     const docs = await Documents.findOne({ pan: lead.pan });
@@ -27,12 +35,17 @@ export const addDocs = asyncHandler(async (req, res) => {
         employeeId = req.employee._id.toString();
     }
 
+
     if (!req.files) {
         res.status(400);
         throw new Error("No files uploaded");
     }
 
-    if (req.activeRole === "screener" || req.activeRole === "creditManager") {
+    if (req.activeRole === "screener") {
+
+        console.log('bsaList', bsaList)
+
+        bsaArray = bsaList ? bsaList.split(",") : null
         // Validate Aadhaar document uploads, but only if they exist
         const aadhaarFrontUploaded =
             req.files.aadhaarFront && req.files.aadhaarFront.length > 0;
@@ -49,15 +62,58 @@ export const addDocs = asyncHandler(async (req, res) => {
             });
         }
 
-        if (req.files?.bankStatement) {
+        if (req.files?.bankStatement || bsaArray.length > 0) {
             const buffers = [];
             const filenames = [];
+            const bsaDocumentList = []
+            const statementIds = bsaArray ? bsaArray.map(id => new mongoose.Types.ObjectId(id)) : null;
 
-            // Extract buffers and filenames
-            req.files.bankStatement.forEach((file) => {
-                buffers.push(file.buffer);
-                filenames.push(file.originalname);
-            });
+            if (req.files?.bankStatement) {
+
+                // Extract buffers and filenames
+                req.files.bankStatement.forEach((file) => {
+                    buffers.push(file.buffer);
+                    filenames.push(file.originalname);
+                });
+            } else {
+
+                let files = await Documents.aggregate([
+                    {
+                        $match: {
+                            "document.multipleDocuments.bankStatement._id": { $in: statementIds }
+
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0, // Exclude the main document _id if not needed
+                            bankStatement: {
+                                $filter: {
+                                    input: "$document.multipleDocuments.bankStatement",
+                                    as: "doc",
+                                    cond: { $in: ["$$doc._id", statementIds] }
+                                }
+                            }
+                        }
+                    }
+                ])
+                let docs = files[0].bankStatement
+                for (let doc of docs) {
+                    bsaDocumentList.push(doc)
+                    const extractedDoc = await getBSADocs("bankStatement", doc.url)
+
+                    if (!extractedDoc.success) {
+                        res.status(400)
+                        return res.json(extractedDoc)
+
+                    }
+
+                    console.log("file", doc)
+                    buffers.push(extractedDoc.buffer)
+
+                }
+
+            }
 
             // Prepare the 'data' object dynamically
 
@@ -69,8 +125,10 @@ export const addDocs = asyncHandler(async (req, res) => {
                 filePassword: {},
             };
 
+            console.log('type of remarks', remarks.length > 0, remarks)
+
             // Check if remarks is a string or an array
-            if (typeof remarks === "string") {
+            if (typeof remarks === "string" && !bsaArray) {
                 // If remarks is a single string, assign it to all files
                 filenames.forEach((fileName) => {
                     data.filePassword[fileName] = remarks;
@@ -89,10 +147,22 @@ export const addDocs = asyncHandler(async (req, res) => {
                 filenames.forEach((fileName, index) => {
                     data.filePassword[fileName] = remarks[index];
                 });
+            } else if (bsaArray && bsaArray.length > 0) {
+                for (let doc of bsaDocumentList) {
+                    let key = doc.url.split("/")[2]
+                    let baseName = key.split("-").slice(2).join("-")
+                    console.log('bsa document list', baseName)
+                    filenames.push(baseName)
+                    data.filePassword[baseName] = doc.remarks
+                }
+
+
             } else {
                 res.status(400);
                 throw new Error("Remarks must be a string or an array.");
             }
+
+
 
             // prepare formData
             const formData = new FormData();
@@ -101,12 +171,22 @@ export const addDocs = asyncHandler(async (req, res) => {
                 formData.append("file", buffer, fileName);
             });
             formData.append("data", JSON.stringify(data));
+
             const response = await BSA(formData, id);
 
             if (!response.success) {
                 res.status(400);
+                console.log('error res', response)
                 throw new Error(response.message);
             }
+            setTimeout(async () => {
+
+                // console.log('responseeee',response)
+
+                let bsaBuffer = await getBSAreport(response.message.data.referenceId)
+                let analiseBuffer = await saveAnalyzedBuffer(response.message.data.referenceId, bsaBuffer.excelUrl)
+                console.log('buffer resssss', analiseBuffer)
+            }, 70000)
         }
 
         // If only aadhaarFront and aadhaarBack are provided, or only eAadhaar or none, proceed
@@ -138,14 +218,14 @@ export const addDocs = asyncHandler(async (req, res) => {
     const employee = await Employee.findOne({ _id: employeeId });
     const logs = await postLogs(
         lead._id,
-        "ADDED DOCUMENTS",
-        `${lead.fName}${lead.mName && ` ${lead.mName}`}${
-            lead.lName && ` ${lead.lName}`
+        (bsaArray && bsaArray.length > 0) ? "Document Sent for Analysis." : "ADDED DOCUMENTS",
+        `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
         }`,
-        `Added documents by ${employee.fName} ${employee.lName}`
+        (bsaArray && bsaArray.length > 0) ? `Documents sent for analysis by ${employee.fName} ${employee.lName}` : `Added documents by ${employee.fName} ${employee.lName}`
     );
+    let responseMsg = (bsaArray && bsaArray.length > 0) ? "File sent for analysis" : "file uploaded successfully"
 
-    res.json({ message: "file uploaded successfully", logs });
+    res.json({ message: responseMsg, logs });
 });
 
 // @desc Get the docs from a lead/application

@@ -15,9 +15,14 @@ import Lead from "../models/Leads.js";
 // @route GET /api/applications
 // @access Private
 export const getAllApplication = asyncHandler(async (req, res) => {
-    if (req.activeRole === "screener"||req.activeRole === "admin") {
+    if (
+        req.activeRole !== "creditManager" &&
+        req.activeRole !== "sanctionHead" &&
+        req.activeRole !== "admin"
+
+    ) {
         res.status(401);
-        throw new Error("Screeners doesn't have the authorization.");
+        throw new Error("You don't have the authorization.");
     }
     const page = parseInt(req.query.page) || 1; // current page
     const limit = parseInt(req.query.limit) || 10; // items per page
@@ -201,8 +206,7 @@ export const allocateApplication = asyncHandler(async (req, res) => {
     const logs = await postLogs(
         application.lead._id,
         "APPLICATION IN PROCESS",
-        `${application.lead.fName}${
-            application.lead.mName && ` ${application.lead.mName}`
+        `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
         }${application.lead.lName && ` ${application.lead.lName}`}`,
         `Application allocated to ${employee.fName} ${employee.lName}`
     );
@@ -346,14 +350,26 @@ export const postCamDetails = async (
     session
 ) => {
     // need to add logic details come from lead
-    const camDetails = new CamDetails({
-        pan: pan,
-        leadNo: leadNo,
-        leadId: leadId,
-        cibilScore: cibilScore,
-        loanAmount: loanAmount,
-    });
-    camDetails.save({ session });
+
+    const existingCAM = await CamDetails.findById(leadId)
+    if (!existingCAM) {
+        const newCam = await CamDetails.create({
+            pan: pan,
+            leadNo: leadNo,
+            leadId: leadId,
+            cibilScore: cibilScore,
+            loanAmount: loanAmount,
+
+        })
+        if (!newCam) {
+            return { success: false, message: "Couldn't create CAM!" }
+        }
+        return { success: true }
+    } else {
+        return { success: true }
+    }
+
+    // await camDetails.save({ session });
 
     return { success: true };
 };
@@ -394,6 +410,12 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Application not found!!");
     }
+    if (application.isRejected) {
+        throw new Error("Application already rejected"); // This error will be caught by the error handler
+    }
+    if (application.isRecommended) {
+        throw new Error("Application already forwarded to Sanction Head"); // This error will be caught by the error handler
+    }
 
     if (
         req.employee._id.toString() ===
@@ -430,8 +452,7 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
         const logs = await postLogs(
             application.lead._id,
             "APPLICATION IN PROCESS",
-            `${application.lead.fName}${
-                application.lead.mName && ` ${application.lead.mName}`
+            `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
             }${application.lead.lName && ` ${application.lead.lName}`}`,
             `CAM details added by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`,
             `${cam?.loanAmount} ${cam?.loanRecommended} ${cam?.netDisbursalAmount} ${cam?.disbursalDate} ${cam?.repaymentDate} ${cam?.eligibleTenure} ${cam?.repaymentAmount}`
@@ -458,6 +479,12 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
 
         if (!application) {
             throw new Error("Application not found"); // This error will be caught by the error handler
+        }
+        if (application.isRejected) {
+            throw new Error("Application already rejected"); // This error will be caught by the error handler
+        }
+        if (application.isRecommended) {
+            throw new Error("Application already forwarded to Sanction Head"); // This error will be caught by the error handler
         }
 
         const status = await LeadStatus.findById({
@@ -513,9 +540,8 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
             await application.save();
             const logs = await postLogs(
                 application.lead._id,
-                "APPLICATION FORWARDED. TRANSFERED TO SACNTION HEAD",
-                `${application.lead.fName}${
-                    application.lead.mName && ` ${application.lead.mName}`
+                "APPLICATION FORWARDED TO SANCTION HEAD",
+                `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
                 }${application.lead.lName && ` ${application.lead.lName}`}`,
                 `Application forwarded by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`
             );

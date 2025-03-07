@@ -172,7 +172,10 @@ const leadSchema = new mongoose.Schema(
             type: extraDetailsSchema
         },
         referenceId: {
-            type: String,
+            type: String, // e-sign reference id
+        },
+        bsaRefId: {
+            type: String, // BSA reference id
         },
         remarks : {
             type : String,

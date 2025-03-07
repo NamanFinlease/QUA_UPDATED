@@ -151,43 +151,40 @@ export const activeLeadsToVerify = asyncHandler(async (req, res) => {
 export const verifyPayment = sessionAsyncHandler(async (req, res, session) => {
     if (req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
         const { loanNo } = req.params;
-        const { accountRemarks } = req.body
+        const { remarks, closingType } = req.body
         let accountEmpId = req.employee._id.toString();
         const { transactionId } = req.query
 
-        console.log('req.body',req.body)
+        const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, closingType, remarks, accountEmpId, session)
+        if (!updatedPayment) {
+            // await session.abortTransaction();
+            throw new Error("Payment didn't update")
+            // return res.status(400).json({ error: `Payment didn't update` });
+        }
+        const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
+        const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
+        const employee = await Employee.findById(accountEmpId, null, { session })
 
-        
-        // const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, accountRemarks, accountEmpId, session)
-        // if (!updatedPayment) {
-        //     // await session.abortTransaction();
-        //     throw new Error("Payment didn't update")
-        //     // return res.status(400).json({ error: `Payment didn't update` });
-        // }
-        // const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
-        // const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
-        // const employee = await Employee.findById(accountEmpId, null, { session })
-
-        // // update leadStatus 
-        // await LeadStatus.findOneAndUpdate({
-        //     leadNo: lead.leadNo
-        // },
-        //     {
-        //         stage: "ACCOUNTS",
-        //         subStage: "ACCOUNTS IN PROCESS"
-        //     },
-        //     { session }
-        // )
-        // await postLogs(
-        //     lead._id,
-        //     "VERIFY PAYMENT BY ACCOUNTS",
-        //     `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
-        //     }`,
-        //     `Payment Verfied by ${employee.fName} ${employee.lName}`,
-        //     `${accountRemarks}`,
-        //     session
-        // );
-        res.json({ message: "Payment verified",  })
+        // update leadStatus 
+        await LeadStatus.findOneAndUpdate({
+            leadNo: lead.leadNo
+        },
+            {
+                stage: "ACCOUNTS",
+                subStage: "ACCOUNTS IN PROCESS"
+            },
+            { session }
+        )
+        await postLogs(
+            lead._id,
+            "PAYMENT VERIFIED.",
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            }`,
+            `Payment Verfied by ${employee.fName} ${employee.lName}`,
+            `${remarks}`,
+            session
+        );
+        res.json({ message: "Payment verified", })
 
 
     }

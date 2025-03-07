@@ -6,13 +6,16 @@ const generateToken = (res, id) => {
     const token = jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: "30d",
     });
-    // Set JWT as HTTP-Only cookie
+    const isLocal = process.env.NODE_ENV !== "production"; // Defaults to 'development' if NODE_ENV is not set
+
     res.cookie("jwt", token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "None",
+        secure: true, // Secure only in production
+        sameSite: "None", // Lax for local, None for cross-origin
+        path: "/",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 Days
     });
+    return token
 };
 
 const generateUserToken = (res, id) => {
@@ -29,4 +32,4 @@ const generateUserToken = (res, id) => {
     return token
 };
 
-export { generateToken , generateUserToken };
+export { generateToken, generateUserToken };

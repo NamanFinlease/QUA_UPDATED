@@ -90,13 +90,14 @@ export const login = asyncHandler(async (req, res) => {
         throw new Error("Your account has been deactivated!!");
     }
     if (employee && (await employee.matchPassword(password))) {
-        generateToken(res, employee._id);
+         let token = generateToken(res, employee._id);
 
         res.status(200).json({
             _id: employee._id,
             name: employee.fName + " " + employee.lName,
             email: employee.email,
             empRole: employee.empRole,
+            token,
         });
     } else {
         res.status(401);

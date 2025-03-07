@@ -5,7 +5,7 @@ const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const region = process.env.AWS_REGION;
 const bucketName = process.env.AWS_BUCKET_NAME;
 const bucketNameProfile = process.env.AWS_BUCKET_NAME_PROFILE;
-const accessKeyIdProfile =  process.env.AWS_ACCESS_KEY_ID_PROFILE;
+const accessKeyIdProfile = process.env.AWS_ACCESS_KEY_ID_PROFILE;
 const secretAccessKeyProfile = process.env.AWS_SECRET_ACCESS_KEY_PROFILE;
 
 
@@ -113,4 +113,22 @@ const generatePresignedUrlProfile = (key, mimeType) => {
     };
     return s3Pr.getSignedUrl("getObject", params);
 };
-export { uploadFilesToS3, deleteFilesFromS3, generatePresignedUrl , uploadFilesToS3Profile , generatePresignedUrlProfile  , deleteFilesFromS3Profile};
+
+const getBSADocBuffer = async (bucket, key) => {
+    try {
+        const data = await s3.getObject({ Bucket: bucket, Key: key }).promise();
+
+        // Ensure it's a Buffer
+        const pdfBuffer = Buffer.isBuffer(data.Body) ? data.Body : Buffer.from(data.Body);
+
+        console.log("Fetched PDF Buffer:", pdfBuffer);
+
+        // Save it locally (for debugging)
+        // fs.writeFileSync("downloaded.pdf", pdfBuffer);
+
+        return pdfBuffer;
+    } catch (error) {
+        console.error("Error fetching PDF from S3:", error);
+    }
+};
+export { uploadFilesToS3, deleteFilesFromS3, generatePresignedUrl, uploadFilesToS3Profile, generatePresignedUrlProfile, deleteFilesFromS3Profile,getBSADocBuffer };

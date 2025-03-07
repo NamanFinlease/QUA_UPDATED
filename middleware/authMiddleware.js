@@ -22,17 +22,17 @@ const protect = asyncHandler(async (req, res, next) => {
             req.employee = await Employees.findById(decoded.id).select(
                 "-password"
             );
-
+            
             if (!req.employee) {
                 res.status(404);
                 throw new Error("Employee not found");
             }
-
+            
             if (!req.employee.isActive) {
                 res.status(401);
                 throw new Error("Your account is deactivated");
             }
-
+            
             const rolesHierarchy = {
                 admin: ["admin"],
                 supervisor: ["supervisor"],
@@ -49,10 +49,10 @@ const protect = asyncHandler(async (req, res, next) => {
                     if (roleIndex !== -1) {
                         // Add the role and all lower roles in the current hierarchy
                         hierarchy
-                            .slice(0, roleIndex + 1)
-                            .forEach((hierRole) => {
-                                req.roles.add(hierRole);
-                            });
+                        .slice(0, roleIndex + 1)
+                        .forEach((hierRole) => {
+                            req.roles.add(hierRole);
+                        });
                     }
                 });
             });

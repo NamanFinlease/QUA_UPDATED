@@ -63,9 +63,12 @@ export const getSanctionData = async (id) => {
             // repaymentCheques: `${camDetails?.repaymentCheques || "-"}`,
             // bankName: `${bankName || "-"}`,
             bouncedCharges: "1000",
-            // annualPercentageRate: `${
-            //     camDetails?.annualPercentageRate || "0"
-            // }`,
+            annualPercentageRate: `${((Number(camDetails?.roi) / 100) *
+            Number(camDetails?.eligibleTenure) +
+            Number(camDetails?.adminFeePercentage) / 100) *
+            (365 / Number(camDetails?.eligibleTenure)) *
+            100
+            }%`,
         };
 
         return { application, camDetails, response };

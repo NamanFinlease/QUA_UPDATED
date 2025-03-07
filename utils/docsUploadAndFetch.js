@@ -2,10 +2,12 @@ import {
     uploadFilesToS3,
     deleteFilesFromS3,
     generatePresignedUrl,
-    generatePresignedUrlProfile
+    generatePresignedUrlProfile,
+    getBSADocBuffer
 } from "../config/uploadFilesToS3.js";
 import getMimeTypeForDocType from "../utils/getMimeTypeForDocType.js";
 import Documents from "../models/Documents.js";
+import axios from "axios";
 
 export const uploadDocs = async (docs, files, remarks, options = {}) => {
     const {
@@ -170,6 +172,33 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
     return { success: true };
 };
 
+export const getBSADocs = async (docType, url,key) => {
+
+    try {
+
+        const mimeType = getMimeTypeForDocType(url, docType);
+
+        // Generate a pre-signed URL for this specific document
+        // const preSignedUrl = generatePresignedUrl(url, mimeType);
+        const buffer = await getBSADocBuffer(process.env.AWS_BUCKET_NAME,url)
+
+        console.log('buffer',buffer)
+
+
+        // const rawData = await axios.get(preSignedUrl)
+        // let buffer =  Buffer.from(rawData.data)
+
+        return { success: true, buffer }
+    } catch (error) {
+        console.log('error', error)
+        return { success: false, message: "error in getting buffer" }
+
+    }
+
+
+
+}
+
 export const getDocs = async (docs, docType, docId) => {
     // Find the specific document based on docType
     let document;
@@ -203,12 +232,11 @@ export const getDocs = async (docs, docType, docId) => {
         throw new Error(`Document of type ${docType} not found`);
     }
 
-    console.log("document-->" , document)
     const mimeType = getMimeTypeForDocType(document.url, docType);
-    console.log("mime type--->", mimeType)
+
 
     // Generate a pre-signed URL for this specific document
-    console.log("document---->", document)
+ 
     const preSignedUrl = generatePresignedUrl(document.url, mimeType);
 
 

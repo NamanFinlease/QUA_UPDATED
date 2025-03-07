@@ -5,14 +5,17 @@ import Documents from "../models/Documents.js";
 import { uploadDocs } from "../utils/docsUploadAndFetch.js";
 import { getFileBuffer } from "../utils/BSA.js";
 import { postLogs } from "./logs.js";
+import moment from "moment";
 
 // @desc BSA webhook for ScoreMe to send us a response if bank statement is analysed
 // @route POST /api/bank/bsa/success
 // @access Public
 export const bsaWebhook = asyncHandler(async (req, res) => {
     const data = req.body;
+    const time = moment().format("DD/MM/YYYY HH:mm:ss")
+    let lead;
     if (data.data && data.responseCode === "SRC001") {
-        const lead = await Lead.findOne({ bsaRefId: data.data.referenceId });
+        lead = await Lead.findOne({ bsaRefId: data.data.referenceId });
         const docs = await Documents.findOne({ _id: lead.documents });
 
         const fileResponse = await getFileBuffer(data.data.excelUrl);
@@ -24,13 +27,34 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
         });
 
         if (!docsResult.success) {
+            const logs = await postLogs(
+                lead._id,
+                 `Failed to analyse bankstatement at ${time}.` ,
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+                }`,
+                 `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+            );
             res.status(400);
             throw new Error("Couldn't save the document!!");
         }
+        const logs = await postLogs(
+            lead._id,
+             `Bankstatement analyzed and saved successfully at ${time}.` ,
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            }`,
+             `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+        );
         return res.status(200).json({
             success: true,
-            message: "Document signed and saved successfully.",
+            message: "Bankstatement analyzed and saved successfully.",
         });
     }
-    return res.json({ success: true });
+    const logs = await postLogs(
+        lead._id,
+         `Failed to analyse at ${time}.` ,
+        `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+        }`,
+         `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+    );
+    return res.json({ success: false });
 });

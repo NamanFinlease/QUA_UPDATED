@@ -451,6 +451,12 @@ export const updateLead = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("No lead found!!");
     }
+    if (lead.isRejected) {
+        throw new Error("Lead already rejected"); // This error will be caught by the error handler
+    }
+    if (lead.isRecommended) {
+        throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
+    }
 
     // Check if screenerId matches the one in the lead document
     if (lead.screenerId.toString() !== req.employee._id.toString()) {
@@ -505,6 +511,13 @@ export const recommendLead = sessionAsyncHandler(async (req, res, session) => {
 
         if (!lead) {
             throw new Error("Lead not found"); // This error will be caught by the error handler
+        }
+
+        if (lead.isRejected) {
+            throw new Error("Lead already rejected"); // This error will be caught by the error handler
+        }
+        if (lead.isRecommended) {
+            throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
         }
 
         const status = await LeadStatus.findById({

@@ -17,6 +17,7 @@ import LeadStatus from "../models/LeadStatus.js";
 import User from "../models/User/model.user.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
 import Close from "../models/close.js";
+import moment from "moment";
 
 // @desc Get the forwarded applications
 // @route GET /api/sanction/recommended
@@ -172,6 +173,7 @@ export const recommendedApplications = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/:id
 // @access Private
 export const getSanction = asyncHandler(async (req, res) => {
+
     const { id } = req.params;
     const sanction = await Sanction.findOne({ _id: id }).populate({
         path: "application",
@@ -459,7 +461,7 @@ export const sanctioned = asyncHandler(async (req, res) => {
             creditManagerId: req.employee._id.toString(),
             eSigned: { $ne: true },
         };
-    } else if (req.activeRole === "sanctionHead") {
+    } else if (req.activeRole === "sanctionHead" || req.activeRole === "admin" ) {
         query = {
             // eSigned: { $eq: true },
             isApproved: { $eq: true },

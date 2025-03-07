@@ -1196,18 +1196,19 @@ export const exportDisbursedData = async () => {
                             timeZone: "Asia/Kolkata",
                         }
                     );
-                    const repaymentDate =
-                        cam?.details?.repaymentDate.toLocaleString("en-US", {
+
+                    // console.log('cam repay date',cam?.repaymentDate)
+                    const repaymentDate = cam?.repaymentDate ?
+                        cam?.repaymentDate.toLocaleString("en-US", {
                             month: "short",
                             day: "2-digit",
                             year: "numeric",
                             timeZone: "Asia/Kolkata",
-                        });
+                        }):null;
 
-                    return {
+                    let data = {
                         "Lead Created": createdDate || "N/A",
                         "Disbursed Date": disbursedDate || "N/A",
-                        "Repayment Date": repaymentDate,
                         "Repayment Date": repaymentDate,
                         "Loan No": disbursed.loanNo || "N/A",
                         Name: `${lead.fName || ""} ${lead.mName || ""} ${
@@ -1222,15 +1223,15 @@ export const exportDisbursedData = async () => {
                         Email: lead.personalEmail,
                         "Office Email": lead.officeEmail,
                         "Sanctioned Amount": cam?.details?.loanRecommended || 0,
-                        ROI: cam?.details?.roi,
-                        Tenure: cam?.details?.eligibleTenure,
+                        ROI: cam?.roi,
+                        Tenure: cam?.eligibleTenure,
                         "Interest Amount":
-                            Number(cam?.details?.repaymentAmount) -
-                            Number(cam?.details?.loanRecommended),
+                            Number(cam?.repaymentAmount) -
+                            Number(cam?.loanRecommended),
                         "Disbursed Amount": disbursed.amount || 0,
-                        "Repayment Amount": cam?.details?.repaymentAmount || 0,
-                        PF: cam?.details?.netAdminFeeAmount || 0,
-                        "PF%": cam?.details?.adminFeePercentage || 0,
+                        "Repayment Amount": cam?.repaymentAmount || 0,
+                        PF: cam?.netAdminFeeAmount || 0,
+                        "PF%": cam?.adminFeePercentage || 0,
                         "Beneficiary Bank Name": bank?.bankName || "N/A",
                         accountNo: bank?.bankAccNo || "N/A",
                         IFSC: bank?.ifscCode || "N/A",
@@ -1274,9 +1275,14 @@ export const exportDisbursedData = async () => {
                         "Company Pincode":
                             sanction.application.applicant.employment.pincode,
                     };
+
+                    // console.log('disbursed report bank',data)
+
+                    return data
                 })
             )
         ).filter((entry) => entry !== null);
+
 
         return data;
     } catch (error) {

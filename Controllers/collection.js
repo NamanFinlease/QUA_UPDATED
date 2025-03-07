@@ -622,31 +622,110 @@ export const getActiveLead = asyncHandler(async (req, res) => {
     const { loanNo } = req.params;
 
     // const activeRecord = (await Closed.aggregate(pipeline))[0];
-    const activeRecord = await Close.findOne(
-        { loanNo: loanNo },
-        {
-            pan: 1,
-            loanNo: 1
-        }
-    ).populate({
-        path: "disbursal",
-        populate: {
-            path: "sanction", // Populating the 'sanction' field in Disbursal
-            populate: [
-                { path: "approvedBy" },
-                {
-                    path: "application",
-                    populate: [
-                        { path: "lead", populate: { path: "documents" } }, // Nested populate for lead and documents
-                        { path: "creditManagerId" }, // Populate creditManagerId
-                        { path: "recommendedBy" },
-                    ],
-                },
-            ],
-        },
-    });
+    const leadInfo = await Close.aggregate([
+        { $match: { loanNo } }, // Match loan number
 
-    if (!activeRecord) {
+        // Lookup Disbursal
+        {
+            $lookup: {
+                from: "disbursals",
+                localField: "disbursal",
+                foreignField: "_id",
+                as: "disbursal"
+            }
+        },
+        { $unwind: { path: "$disbursal", preserveNullAndEmptyArrays: true } },
+
+        // Lookup Sanction inside Disbursal
+        {
+            $lookup: {
+                from: "sanctions",
+                localField: "disbursal.sanction",
+                foreignField: "_id",
+                as: "disbursal.sanction"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction", preserveNullAndEmptyArrays: true } },
+
+        // Lookup ApprovedBy inside Sanction
+        {
+            $lookup: {
+                from: "users",
+                localField: "disbursal.sanction.approvedBy",
+                foreignField: "_id",
+                as: "disbursal.sanction.approvedBy"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction.approvedBy", preserveNullAndEmptyArrays: true } },
+
+        // Lookup Application inside Sanction
+        {
+            $lookup: {
+                from: "applications",
+                localField: "disbursal.sanction.application",
+                foreignField: "_id",
+                as: "disbursal.sanction.application"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction.application", preserveNullAndEmptyArrays: true } },
+
+        // Lookup Lead inside Application
+        {
+            $lookup: {
+                from: "leads",
+                localField: "disbursal.sanction.application.lead",
+                foreignField: "_id",
+                as: "disbursal.sanction.application.lead"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction.application.lead", preserveNullAndEmptyArrays: true } },
+
+        // Lookup Documents inside Lead
+        {
+            $lookup: {
+                from: "documents",
+                localField: "disbursal.sanction.application.lead.documents",
+                foreignField: "_id",
+                as: "disbursal.sanction.application.lead.documents"
+            }
+        },
+
+        // Lookup CreditManagerId inside Application
+        {
+            $lookup: {
+                from: "users",
+                localField: "disbursal.sanction.application.creditManagerId",
+                foreignField: "_id",
+                as: "disbursal.sanction.application.creditManagerId"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction.application.creditManagerId", preserveNullAndEmptyArrays: true } },
+
+        // Lookup RecommendedBy inside Application
+        {
+            $lookup: {
+                from: "users",
+                localField: "disbursal.sanction.application.recommendedBy",
+                foreignField: "_id",
+                as: "disbursal.sanction.application.recommendedBy"
+            }
+        },
+        { $unwind: { path: "$disbursal.sanction.application.recommendedBy", preserveNullAndEmptyArrays: true } },
+
+        // Project only required fields
+        {
+            $project: {
+                pan: 1,
+                loanNo: 1,
+                isClosed: 1,
+                isActive: 1,
+                disbursal: 1, // Keep full disbursal structure
+            }
+        }
+    ]
+    );
+
+    if (!leadInfo) {
         res.status(404);
         throw new Error({
             success: false,
@@ -657,21 +736,20 @@ export const getActiveLead = asyncHandler(async (req, res) => {
 
     // Fetch the CAM data and add to disbursalObj
     const cam = await CamDetails.findOne({
-        leadId: activeRecord?.disbursal?.sanction?.application?.lead
+        leadId: leadInfo[0]?.disbursal?.sanction?.application?.lead
             ._id,
     });
 
-    const activeLeadObj = activeRecord.toObject();
+    // const activeLeadObj = activeRecord.toObject();
 
-    // Extract the matched data object from the array
-    const matchedData = activeLeadObj; // Since $elemMatch returns a single matching element
-    matchedData.disbursal.sanction.application.cam = cam
-        ? { ...cam.toObject() }
-        : null;
+    // // Extract the matched data object from the array
+    // const matchedData = activeLeadObj; // Since $elemMatch returns a single matching element
+    leadInfo[0].disbursal.sanction.application.cam = cam
+        
 
     return res.json({
-        pan: activeLeadObj.pan, // Include the parent fields
-        data: matchedData, // Send the matched object as a single object
+        // pan: activeLeadObj.pan, // Include the parent fields
+        data: leadInfo[0], // Send the matched object as a single object
     });
 
 
@@ -904,7 +982,7 @@ export const getClosedList = asyncHandler(async (req, res) => {
                 $match: {
                     isActive: false,
                     isClosed: true,
-                    isDisbursed: true
+                    // isDisbursed: true
                 }
             },
 
@@ -918,6 +996,11 @@ export const getClosedList = asyncHandler(async (req, res) => {
             },
 
             { $unwind: "$disbursalDetails" },
+            {
+                $match: {
+                    "disbursalDetails.isDisbursed": true
+                }
+            },
 
             {
                 $lookup: {
@@ -1047,119 +1130,125 @@ export const allocate = asyncHandler(async (req, res) => {
 
 // list of  allocated collectionLead by a  collection executive  
 export const getAllocatedList = asyncHandler(async (req, res) => {
-    console.log('collectionExecutive')
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
-        let collectionExecutiveId = req.employee._id.toString();
 
-        const pipeline = [
-            {
-                $match: {
-                    collectionExecutiveId: new mongoose.Types.ObjectId(collectionExecutiveId)
-                }
-            },
-            {
-                $lookup: {
-                    from: "closes",
-                    localField: "close",
-                    foreignField: "_id",
-                    as: "closedDetails"
-                }
-            },
-            {
-                $unwind: "$closedDetails"
-            },
-            {
-                $match: {
-                    "closedDetails.data": {
-                        $elemMatch: {
-                            isActive: true,
-                            isClosed: false,
-                            isDisbursed: true
-                        }
+    let collectionExecutiveId = req.employee._id.toString();
+
+    let query;
+    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead") {
+        query = {
+            collectionExecutiveId: new mongoose.Types.ObjectId(collectionExecutiveId)
+        }
+    } else if (req.activeRole === "admin") {
+        query = {}
+    }
+    console.log('collectionExecutive')
+
+
+    const pipeline = [
+        ...(Object.keys(query).length ? [{ $match: query }] : []),
+        {
+            $lookup: {
+                from: "closes",
+                localField: "close",
+                foreignField: "_id",
+                as: "closedDetails"
+            }
+        },
+        {
+            $unwind: "$closedDetails"
+        },
+        {
+            $match: {
+                "closedDetails.data": {
+                    $elemMatch: {
+                        isActive: true,
+                        isClosed: false,
+                        isDisbursed: true
                     }
                 }
-            },
-            {
-                $lookup: {
-                    from: "leads",
-                    localField: "leadNo",
-                    foreignField: "leadNo",
-                    as: "leadDetails"
-                }
-            },
-            {
-                $unwind: "$leadDetails"
-            },
-            {
-                $lookup: {
-                    from: "disbursals",
-                    localField: "disbursal",
-                    foreignField: "_id",
-                    as: "disbursalDetails"
-                }
-            },
-            {
-                $unwind: "$disbursalDetails"
-            },
-            {
-                $lookup: {
-                    from: "employees",
-                    localField: "disbursalDetails.disbursedBy",
-                    foreignField: "_id",
-                    as: "employeeDetails"
-                }
-            },
-            {
-                $unwind: "$employeeDetails"
-            },
-            {
-                $lookup: {
-                    from: "camdetails",
-                    localField: "leadNo",
-                    foreignField: "leadNo",
-                    as: "camDetails"
-                }
-            },
-            {
-                $unwind: "$camDetails"
-            },
-            {
-                $match: {
-                    "camDetails.repaymentAmount": { $gt: 0 }
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    disbursedBy: {
-                        $concat: [
-                            "$employeeDetails.fName",
-                            " ",
-                            "$employeeDetails.lName"
-                        ]
-                    },
-                    sanctionAmount:
-                        "$camDetails.loanRecommended",
-                    fName: "$leadDetails.fName",
-                    mName: "$leadDetails.mName",
-                    lName: "$leadDetails.lName",
-                    gender: "$leadDetails.gender",
-                    dob: "$leadDetails.dob",
-                    aadhaar: "$leadDetails.aadhaar",
-                    pan: "$leadDetails.pan",
-                    mobile: "$leadDetails.mobile",
-                    personalEmail: "$leadDetails.personalEmail",
-                    state: "$leadDetails.state",
-                    city: "$leadDetails.city",
-                    salary: "$leadDetails.salary",
-                    leadNo: "$leadDetails.leadNo",
-                    loanNo: 1
-                }
             }
-        ]
-        const collectionList = await Collection.aggregate(pipeline)
-        return res.status(200).json({ message: "Collection List get sucessfully", collectionList })
-    }
+        },
+        {
+            $lookup: {
+                from: "leads",
+                localField: "leadNo",
+                foreignField: "leadNo",
+                as: "leadDetails"
+            }
+        },
+        {
+            $unwind: "$leadDetails"
+        },
+        {
+            $lookup: {
+                from: "disbursals",
+                localField: "disbursal",
+                foreignField: "_id",
+                as: "disbursalDetails"
+            }
+        },
+        {
+            $unwind: "$disbursalDetails"
+        },
+        {
+            $lookup: {
+                from: "employees",
+                localField: "disbursalDetails.disbursedBy",
+                foreignField: "_id",
+                as: "employeeDetails"
+            }
+        },
+        {
+            $unwind: "$employeeDetails"
+        },
+        {
+            $lookup: {
+                from: "camdetails",
+                localField: "leadNo",
+                foreignField: "leadNo",
+                as: "camDetails"
+            }
+        },
+        {
+            $unwind: "$camDetails"
+        },
+        {
+            $match: {
+                "camDetails.repaymentAmount": { $gt: 0 }
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                disbursedBy: {
+                    $concat: [
+                        "$employeeDetails.fName",
+                        " ",
+                        "$employeeDetails.lName"
+                    ]
+                },
+                sanctionAmount:
+                    "$camDetails.loanRecommended",
+                fName: "$leadDetails.fName",
+                mName: "$leadDetails.mName",
+                lName: "$leadDetails.lName",
+                gender: "$leadDetails.gender",
+                dob: "$leadDetails.dob",
+                aadhaar: "$leadDetails.aadhaar",
+                pan: "$leadDetails.pan",
+                mobile: "$leadDetails.mobile",
+                personalEmail: "$leadDetails.personalEmail",
+                state: "$leadDetails.state",
+                city: "$leadDetails.city",
+                salary: "$leadDetails.salary",
+                leadNo: "$leadDetails.leadNo",
+                loanNo: 1
+            }
+        }
+    ]
+    const collectionList = await Collection.aggregate(pipeline)
+    return res.status(200).json({ message: "Collection List get sucessfully", collectionList })
+
     return res.status(400).json({ message: "You are not authorized to access this resource" })
 
 })
@@ -1293,7 +1382,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                             "$employeeDetails.lName"
                         ]
                     },
-                    sanctionAmount:"$camDetails.loanRecommended",
+                    sanctionAmount: "$camDetails.loanRecommended",
                     fName: "$leadDetails.fName",
                     mName: "$leadDetails.mName",
                     lName: "$leadDetails.lName",

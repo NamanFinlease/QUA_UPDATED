@@ -5,9 +5,9 @@ import Payment from "../models/Payment.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
 import { calculateReceivedPayment } from "./calculateReceivedPayment.js";
 
-export const verifyPaymentCalculation = async (loanNo, transactionId, accountRemarks = "", accountEmpId = null, session) => {
+export const verifyPaymentCalculation = async (loanNo, transactionId,closingType, accountRemarks = "", accountEmpId = null, session) => {
     try {
-        
+
         const collectionData = await Collection.aggregate([
             {
                 $match: { loanNo }
@@ -71,8 +71,8 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
         if (outstandingAmount < 1) {
             calculatedAmount.principalDiscount += outstandingAmount
         }
-        
-        
+
+
         let updatedPayment = await Payment.findOneAndUpdate(
             {
                 loanNo,
@@ -94,9 +94,9 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
                     principalReceived: Number(Number(calculatedAmount.principalReceived).toFixed(2)),
                     totalReceivedAmount: Number(Number(calculatedAmount.receivedAmount).toFixed(2)),
                     excessAmount: Number(Number(calculatedAmount.excessAmount).toFixed(2)),
-                    
+
                 }
-                
+
             },
             { new: true, runValidators: true, session }
         );
@@ -104,7 +104,7 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
             return false;
         }
         const { interest, penalty, principalAmount } = calculatedAmount
-        
+
         let updateCollection = await Collection.findOneAndUpdate(
             {
                 loanNo,
@@ -121,9 +121,11 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
             { new: true, runValidators: true, session }
         );
 
-        
-        if (updateCollection.outstandingAmount < 1) {
-            
+
+        if (updateCollection.outstandingAmount < 1
+            // || [ "closed" ,  "settled" ,  "writeOff"].includes(closingType)
+            ) {
+
             const closed = await Close.findOneAndUpdate(
                 {
                     pan: collectionData[0].pan,
@@ -132,7 +134,9 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
                 {
                     $set: {
                         isClosed: true,
-                        isActive: false
+                        isActive: false,
+                        isSettled: closingType === "settled",
+                        isWriteOff: closingType === "writeOff",
                     }
                 },
                 {
@@ -140,12 +144,10 @@ export const verifyPaymentCalculation = async (loanNo, transactionId, accountRem
                     session
                 }
             );
-            
-            console.log('in verify payment ---->')
+
             const loanDetails = await LoanApplication.findOneAndUpdate({ loanNo: loanNo }, {
                 applicationStatus: "CLOSED"
-            }, { new: true , session })
-            console.log("loandetails ----->", loanDetails)
+            }, { new: true, session })
         }
 
         return updatedPayment
