@@ -215,8 +215,8 @@ export const allocatedList = asyncHandler(async (req, res) => {
                 {
                     $match: {
                         screenerId: { $exists: true, $ne: null },
-                        isRejected:  { $ne: true },
-                        isComplete:  { $ne: true } 
+                        isRejected: { $ne: true },
+                        isComplete: { $ne: true }
                     }
                 },
                 {
@@ -236,8 +236,8 @@ export const allocatedList = asyncHandler(async (req, res) => {
 
                     $match: {
                         screenerId: { $exists: true, $ne: null },
-                        isRejected:  { $ne: true },
-                        isComplete:  { $ne: true } 
+                        isRejected: { $ne: true },
+                        isComplete: { $ne: true }
                     },
                 },
                 {
@@ -314,6 +314,7 @@ export const completedList = asyncHandler(async (req, res) => {
 // @access Private
 export const reject = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { remarks } = req.body
     if (!id) {
         return res.status(400).json({
             success: false,
@@ -352,7 +353,7 @@ export const reject = asyncHandler(async (req, res) => {
     // Update the lead with assignedTo and status
     lead.rejectedBy = screenerId;
     lead.isRejected = true;
-    lead.remarks = req?.body?.remarks || "";
+    lead.remarks = remarks || "";
 
     // Save the updated lead
     await lead.save();

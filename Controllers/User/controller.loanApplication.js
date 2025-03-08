@@ -4,7 +4,7 @@ import LoanApplication from '../../models/User/model.loanApplication.js';
 import Documents from '../../models/Documents.js';
 import Lead from '../../models/Leads.js'
 import LeadStatus from '../../models/LeadStatus.js'
-import { nextSequence } from "../../utils/nextSequence.js";
+import { checkSequence, nextSequence, resetSequence } from "../../utils/nextSequence.js";
 import { postLogs } from "../../Controllers/logs.js"
 import checkUploadedDocuments from "../../utils/User/isDocumentUploaded.js"
 import splitName from "../../utils/splitName.js"
@@ -311,6 +311,11 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     console.log("bank details 17")
 
     const leadNo = await nextSequence("leadNo", "QUALED", 10);
+    const breCounter = await checkSequence("breCounter");
+
+    let leadBreCounter = breCounter < 5 ? await nextSequence("breCounter") : await resetSequence("breCounter")
+
+
 
     console.log("bank details 17", new Date(userDetails.personalDetails.dob))
     const leadStatus = new LeadStatus({
@@ -318,6 +323,8 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         leadNo,
         isInProcess: true,
     });
+
+
     await leadStatus.save({ session });
 
 
@@ -361,6 +368,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
         isPanVerified: true,
         isEmailVerified: true,
         isMobileVerified: true,
+        breCounter:leadBreCounter,
         loanApplicationId: loanDetails._id,
         mothersName: userDetails.personalDetails.mothersName ? userDetails.personalDetails.mothersName : "",
         fathersName: userDetails.personalDetails.fathersName ? userDetails.personalDetails.fathersName : "",

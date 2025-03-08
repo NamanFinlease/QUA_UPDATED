@@ -539,8 +539,8 @@ export const sanctioned = asyncHandler(async (req, res) => {
                     {
                         $project: {
                             _id: 0,
-                            loanRecommended: "$details.loanRecommended",
-                            actualNetSalary: "$details.actualNetSalary",
+                            loanRecommended: "$loanRecommended",
+                            actualNetSalary: "$actualNetSalary",
                         },
                     },
                 ],

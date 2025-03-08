@@ -40,19 +40,120 @@ export const getNewDisbursal = asyncHandler(async (req, res) => {
             sanctionESigned: { $eq: true }
         };
 
-        const disbursals = await Disbursal.find(query)
-            .sort({ updatedAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate({
-                path: "sanction", // Populating the 'sanction' field in Disbursal
-                populate: {
-                    path: "application", // Inside 'sanction', populate the 'application' field
-                    populate: {
-                        path: "lead", // Inside 'application', populate the 'lead' field
-                    },
-                },
-            });
+        // const disbursals = await Disbursal.find(query)
+        //     .sort({ updatedAt: -1 })
+        //     .skip(skip)
+        //     .limit(limit)
+        //     .populate({
+        //         path: "sanction", // Populating the 'sanction' field in Disbursal
+        //         populate: {
+        //             path: "application", // Inside 'sanction', populate the 'application' field
+        //             populate: {
+        //                 path: "lead", // Inside 'application', populate the 'lead' field
+        //             },
+        //         },
+        //     });
+
+       let pipeline =  [
+            {
+                $match: {
+                    disbursalManagerId: null,
+                    isRecommended: { $ne: true },
+                    isApproved: { $ne: true },
+                    sanctionESigned: true
+                }
+            },
+            {
+                $sort: { updatedAt: -1 } // Sort by updatedAt in descending order
+            },
+
+            // {
+            //     $skip: skip
+            // },
+            // {
+            //     $limit: limit
+            // },
+            
+            {
+                $lookup: {
+                    from: "sanctions", // Reference to the 'sanctions' collection
+                    localField: "sanction",
+                    foreignField: "_id",
+                    as: "sanctionData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$sanctionData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: "applications",
+                    localField: "sanctionData.application",
+                    foreignField: "_id",
+                    as: "applicationData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$applicationData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: "leads",
+                    localField: "applicationData.lead",
+                    foreignField: "_id",
+                    as: "leadData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$leadData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+           {
+                $lookup: {
+                    from: "camdetails",
+                    localField: "leadData._id",
+                    foreignField: "leadId",
+                    as: "camData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$camData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                  loanNo:1,
+                  fName:"$leadData.fName",
+                  mName:"$leadData.mName",
+                  lName:"$leadData.lName",
+                  pan:"$leadData.pan",
+                  aadhaar:"$leadData.aadhaar",
+                  mobile:"$leadData.mobile",
+                  leadNo:"$leadData.leadNo",
+                  source:"$leadData.source",
+                  city:"$leadData.city",
+                  state:"$leadData.state",
+                  loanRecommended:"$camData.loanRecommended",
+                  actualNetSalary:"$camData.actualNetSalary",
+                }
+            }
+        ]
+
+
+        const disbursals = await Disbursal.aggregate(pipeline)
+        
+        
+        
 
         const totalDisbursals = await Disbursal.countDocuments(query);
 
@@ -667,8 +768,8 @@ export const disbursed = asyncHandler(async (req, res) => {
                         {
                             $project: {
                                 _id: 0,
-                                loanRecommended: "$details.loanRecommended",
-                                actualNetSalary: "$details.actualNetSalary",
+                                loanRecommended: "$loanRecommended",
+                                actualNetSalary: "$actualNetSalary",
                             },
                         },
                     ],

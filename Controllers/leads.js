@@ -498,7 +498,18 @@ export const updateLead = asyncHandler(async (req, res) => {
 // @route Patch /api/lead/recommend/:id
 // @access Private
 export const recommendLead = sessionAsyncHandler(async (req, res, session) => {
+    if (req.activeRole !== "screener"){
+        res.status(401)
+        throw new Error("You are not authorized for this action")
+
+    }
     const { id } = req.params;
+    const { remarks } = req.body;
+
+    // if(!remarks){
+    //     res.status(400)
+    //     throw new Error("Please add a remark!")
+    // }
     if (req.activeRole === "screener") {
         // Find the lead by its ID
         const lead = await Lead.findById(id)
@@ -618,7 +629,7 @@ export const recommendLead = sessionAsyncHandler(async (req, res, session) => {
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
             }`,
             `Lead approved by ${lead.screenerId.fName} ${lead.screenerId.lName}`,
-            "",
+            remarks,
             session
         );
         if (!lead.userId) {
@@ -712,6 +723,11 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
 // @route GET /api/verify/equifax/:id
 // @access Private
 export const fetchCibil = asyncHandler(async (req, res) => {
+
+    if(req.activeRole !== "screener"){
+        res.status(401)
+        throw new Error("You are not authorized for this action.")
+    }
     const { id } = req.params;
     const lead = await Lead.findById(id);
     const docs = await Documents.findById({ _id: lead.documents.toString() });

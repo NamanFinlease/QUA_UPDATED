@@ -30,6 +30,10 @@ export const getPanDetails = asyncHandler(async (req, res) => {
     // Call the get panDetails Function
     const response = await panVerify(id, pan);
 
+    if(!response.success){
+        res.status(400)
+        throw new Error(response.message)
+    }
     if (response.result_code !== 101) {
         res.status(400);
         throw new Error("Error with Digitap!");

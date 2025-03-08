@@ -15,7 +15,7 @@ import Payment from '../models/Payment.js';
 import Collection from '../models/Collection.js';
 import moment from 'moment';
 import { calculateReceivedPayment } from '../utils/calculateReceivedPayment.js';
-import OTP from '../models/User/model.Otp.js'
+import OTP from '../models/User/model.otp.js'
 import AadhaarDetails from '../models/AadhaarDetails.js';
 import { createObjectCsvWriter } from "csv-writer";
 import { formatFullName } from "../utils/nameFormatter.js";

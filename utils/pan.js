@@ -6,17 +6,24 @@ export async function panVerify(leadId, pan) {
         pan: `${pan}`,
     };
 
-    const response = await axios.post(
-        "https://svc.digitap.ai/validation/kyc/v1/pan_details",
-        data,
-        {
-            headers: {
-                authorization: process.env.DIGITAP_AUTH_KEY,
-                "Content-Type": "application/json",
-            },
-        }
-    );
-    return response.data;
+    try {
+
+        const response = await axios.post(
+            "https://svc.digitap.ai/validation/kyc/v1/pan_details",
+            data,
+            {
+                headers: {
+                    authorization: process.env.DIGITAP_AUTH_KEY,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.log('return error',error.response.data.error)
+        return { success: false, message: error.response.data.error }
+
+    }
 }
 
 export async function panAadhaarLinkage(pan, aadhaar) {

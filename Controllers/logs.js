@@ -2,6 +2,7 @@ import asyncHandler from "../middleware/asyncHandler.js";
 import Lead from "../models/Leads.js";
 import LogHistory from "../models/LeadLogHistory.js";
 import UserLogHistory from "../models/User/model.userLogs.js";
+import moment from "moment";
 
 // @desc Post logs with status
 // @access Private
@@ -14,6 +15,7 @@ export const postLogs = async (
     session
 ) => {
     try {
+        const time = moment().format("DD/MM/YYYY HH:mm:ss")
         if (session) {
 
             // Check if the lead is present
@@ -27,7 +29,7 @@ export const postLogs = async (
             // Create the new log initally
             const createloghistory = new LogHistory({
                 lead: leadId,
-                logDate: new Date(),
+                logDate: time,
                 status: leadStatus,
                 borrower: borrower,
                 leadRemark: leadRemark,
@@ -49,7 +51,7 @@ export const postLogs = async (
             // Create the new log initally
             const createloghistory = await LogHistory.create({
                 lead: leadId,
-                logDate: new Date(),
+                logDate: time,
                 status: leadStatus,
                 borrower: borrower,
                 leadRemark: leadRemark,

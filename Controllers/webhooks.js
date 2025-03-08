@@ -29,7 +29,7 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
         if (!docsResult.success) {
             const logs = await postLogs(
                 lead._id,
-                 `Failed to analyse bankstatement at ${time}.` ,
+                 `Failed to analyse bankstatement.` ,
                 `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
                 }`,
                  `Documents sent for analysis by ${employee.fName} ${employee.lName}` 

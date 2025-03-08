@@ -287,8 +287,12 @@ export const getPendingPaymentVerification = asyncHandler(async (req, res) => {
 
 // @desc Reject the payment verification if the payment is not received and remove the requested status
 export const rejectPaymentVerification = asyncHandler(async (req, res) => {
+    if (req.activeRole !== "accountExecutive" && req.activeRole !== "accountHead") {
+        res.status(401)
+        throw new Error("You are not authorized for this action!")
+    }
     if (req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
-        const { transactionId, accountRemarks } = req.body;
+        const { transactionId, remarks } = req.body;
         let accountEmpId = req.employee._id.toString();
 
         // Find the payment record based on loanNo and transactionId
@@ -303,6 +307,8 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
                 paymentHistory: 1,
             }
         );
+
+        console.log('payment record',paymentRecord)
 
         if (!paymentRecord || !paymentRecord.paymentHistory?.length) {
             res.status(400).json({
@@ -342,7 +348,7 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
             }`,
             `Payment Rejected by ${employee.fName} ${employee.lName}`,
-            `${accountRemarks}`,
+            `${remarks}`,
         );
         // Send a success response
         return res.json({

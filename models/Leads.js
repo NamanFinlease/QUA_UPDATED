@@ -88,6 +88,10 @@ const leadSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        breCounter: {
+            type: Number,
+            // required: true,
+        },
         salary: {
             type: Number,
             required: true,

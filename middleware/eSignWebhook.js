@@ -9,7 +9,7 @@ export const eSignWebhook = async (req, res, next) => {
         const lead = await Lead.findOne({ referenceId: data.referenceId });
         logs = await postLogs(
             lead._id,
-            `ESIGN FAILED BY THE CUSTOMER ${time}`,
+            `ESIGN FAILED BY THE CUSTOMER.`,
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${
                 lead.lName && ` ${lead.lName}`
             }`,

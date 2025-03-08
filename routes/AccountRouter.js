@@ -13,7 +13,7 @@ const router = express.Router();
 // router.route("/active/verify").get(protect, activeLeadsToVerify);
 router.route("/payment/verify/:loanNo").patch(protect, verifyPayment); // transaction
 router
-    .route("/active/verify/reject/:loanNo")
+    .route("/payment/reject/:loanNo")
     .patch(protect, rejectPaymentVerification);
 
 router.get("/pendingPaymentVerification/:loanNo" , protect , getPendingPaymentVerification) // for a particular loan
