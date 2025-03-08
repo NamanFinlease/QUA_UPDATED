@@ -61,6 +61,8 @@ export const verifyPaymentCalculation = async (loanNo, transactionId,closingType
         if (!collectionData) {
             return false;
         }
+
+        console.log('collectionData',collectionData)
         
         const calculatedAmount = calculateReceivedPayment(collectionData)
         

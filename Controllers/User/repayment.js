@@ -263,6 +263,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
     const response = await fetch(url, options);
     const data = await response.json();
     console.log('callback 3',data)
+    
     // console.log("data--->", data);
 
 
@@ -408,7 +409,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             if (!updatedPayment) {
                 // await session.abortTransaction();
                 throw new Error("Payment didn't update");
-                return res.status(400).json({ error: `Payment didn't update` });
+                // return res.status(400).json({ error: `Payment didn't update` });
             }
 
             console.log("---> updated payment details --->", updatedPayment)

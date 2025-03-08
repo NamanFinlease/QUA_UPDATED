@@ -6,7 +6,7 @@ const adjustValue = (received, payable) => {
 };
 
 export const calculateReceivedPayment = (collectionData) => {
-    console.log('Receive Payment 1')
+    console.log('Receive Payment 1',collectionData)
     let {
         filteredPaymentHistory,
         camDetails,
