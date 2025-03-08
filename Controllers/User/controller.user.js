@@ -900,6 +900,12 @@ const getLoanList = asyncHandler(async (req, res) => {
             }
         },
         {
+            $match: {
+                "camDetails.repaymentAmount": { $gt: 0 } // Filtering repaymentAmount > 0
+            }
+        },
+       
+        {
             $project: {
                 loanNo: 1,
                 leadNo: 1,
