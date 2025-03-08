@@ -8,6 +8,8 @@ const camSchema = new mongoose.Schema(
         },
         leadNo: {
             type: String,
+            unique:true,
+            sparse:true
             // required: true
         },
         leadId: {

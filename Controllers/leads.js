@@ -506,132 +506,133 @@ export const recommendLead = sessionAsyncHandler(async (req, res, session) => {
     const { id } = req.params;
     const { remarks } = req.body;
 
+    
     // if(!remarks){
-    //     res.status(400)
-    //     throw new Error("Please add a remark!")
-    // }
-    if (req.activeRole === "screener") {
-        // Find the lead by its ID
-        const lead = await Lead.findById(id)
+        //     res.status(400)
+        //     throw new Error("Please add a remark!")
+        // }
+        if (req.activeRole === "screener") {
+            // Find the lead by its ID
+            const lead = await Lead.findById(id)
             .populate({
                 path: "screenerId",
                 select: "fName mName lName",
             })
             .populate("documents")
             .session(session);
-
-        if (!lead) {
-            throw new Error("Lead not found"); // This error will be caught by the error handler
-        }
-
-        if (lead.isRejected) {
-            throw new Error("Lead already rejected"); // This error will be caught by the error handler
-        }
-        if (lead.isRecommended) {
-            throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
-        }
-
-        const status = await LeadStatus.findById({
-            _id: lead.leadStatus.toString(),
-        }).session(session);
-
-        if (!status) {
-            res.status(404);
-            throw new Error("Status not found");
-        }
-
-        const result = await checkApproval(
-            lead,
-            {},
-            req.employee._id.toString(),
-            ""
-        );
-
-        console.log("check approval result --->", result)
-        if (!result.approved) {
-            res.status(400);
-            throw new Error(`${result.message}`);
-        }
-
-        const screenerName = `${lead.screenerId.fName}${lead.screenerId.mName && ` ${lead.screenerId.mName}`
-            } ${lead.screenerId.lName}`;
-
-        const {
-            pan,
-            aadhaar,
-            fName,
-            mName,
-            lName,
-            gender,
-            dob,
-            mobile,
-            alternateMobile,
-            personalEmail,
-            officeEmail,
-            leadNo
-        } = lead;
-        console.log("---> lead", lead)
-        const details = {
-            pan,
-            aadhaar,
-            fName,
-            mName,
-            lName,
-            gender,
-            dob,
-            mobile,
-            alternateMobile,
-            personalEmail,
-            officeEmail,
-            screenedBy: screenerName,
-            extraDetails: lead.extraDetails,
-            leadNo
-        };
-        // need to add logic from lead 
-        const applicant = await applicantDetails(details, session);
-
-        await postCamDetails(id, lead.cibilScore, lead.loanAmount, leadNo, pan, session);
-
-        const newApplication = new Application({
-            leadNo: lead.leadNo,
-            pan: pan,
-            lead: id,
-            applicant: applicant._id,
-        });
-        const response = await newApplication.save({ session });
-
-        if (!response) {
-            res.status(400);
-            throw new Error("Could not recommend this lead!!");
-        }
-
-        // Change lead status to Application (showing the lead is in the application stage)
-        status.stage = "APPLICATION";
-        status.subStage = "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
-        await status.save({ session });
-
-        // Approve the lead by updating its status
-        lead.isRecommended = true;
-        lead.recommendedBy = req.employee._id;
-        await lead.save({ session });
-
-        await LeadStatus.findOneAndUpdate({
-            leadNo: lead.leadNo
-        },
-            {
-                stage: "APPLICATION",
-                subStage: "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
+            
+            if (!lead) {
+                throw new Error("Lead not found"); // This error will be caught by the error handler
+            }
+            
+            if (lead.isRejected) {
+                throw new Error("Lead already rejected"); // This error will be caught by the error handler
+            }
+            if (lead.isRecommended) {
+                throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
+            }
+            
+            const status = await LeadStatus.findById({
+                _id: lead.leadStatus.toString(),
+            }).session(session);
+            
+            if (!status) {
+                res.status(404);
+                throw new Error("Status not found");
+            }
+            
+            const result = await checkApproval(
+                lead,
+                {},
+                req.employee._id.toString(),
+                ""
+            );
+            
+            console.log("check approval result --->", result)
+            if (!result.approved) {
+                res.status(400);
+                throw new Error(`${result.message}`);
+            }
+            const screenerName = `${lead.screenerId.fName}${lead.screenerId.mName && ` ${lead.screenerId.mName}`
+                } ${lead.screenerId.lName}`;
+    
+            const {
+                pan,
+                aadhaar,
+                fName,
+                mName,
+                lName,
+                gender,
+                dob,
+                mobile,
+                alternateMobile,
+                personalEmail,
+                officeEmail,
+                leadNo
+            } = lead;
+            console.log("---> lead", lead)
+            const details = {
+                pan,
+                aadhaar,
+                fName,
+                mName,
+                lName,
+                gender,
+                dob,
+                mobile,
+                alternateMobile,
+                personalEmail,
+                officeEmail,
+                screenedBy: screenerName,
+                extraDetails: lead.extraDetails,
+                leadNo
+            };
+            
+            // need to add logic from lead 
+            const applicant = await applicantDetails(details, session);
+            
+            await postCamDetails(id, lead.cibilScore, lead.loanAmount, leadNo, pan, session);
+            
+            const newApplication = new Application({
+                leadNo: lead.leadNo,
+                pan: pan,
+                lead: id,
+                applicant: applicant._id,
+            });
+            const response = await newApplication.save({ session });
+            
+            if (!response) {
+                res.status(400);
+                throw new Error("Could not recommend this lead!!");
+            }
+            
+            // Change lead status to Application (showing the lead is in the application stage)
+            status.stage = "APPLICATION";
+            status.subStage = "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
+            await status.save({ session });
+            
+            // Approve the lead by updating its status
+            lead.isRecommended = true;
+            lead.recommendedBy = req.employee._id;
+            await lead.save({ session });
+            await LeadStatus.findOneAndUpdate({
+                leadNo: lead.leadNo
             },
-            { session })
-        const logs = await postLogs(
-            lead._id,
-            "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
-            }`,
-            `Lead approved by ${lead.screenerId.fName} ${lead.screenerId.lName}`,
-            remarks,
-            session
-        );
+                {
+                    stage: "APPLICATION",
+                    subStage: "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
+                },
+                { session })
+            const logs = await postLogs(
+                lead._id,
+                "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER",
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+                }`,
+                `Lead approved by ${lead.screenerId.fName} ${lead.screenerId.lName}`,
+                remarks,
+                session
+            );
+
         if (!lead.userId) {
             console.log("userId hi nhi aa rhi h ---->")
         }

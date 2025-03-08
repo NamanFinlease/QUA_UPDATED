@@ -6,7 +6,7 @@ import {
     generateAadhaarLink,
     checkAadhaarDetails,
 } from "../Controllers/aadhaarController.js";
-import { bankVerification } from "../Controllers/applicantPersonalDetails.js";
+import { bankVerification, pennyDrop } from "../Controllers/applicantPersonalDetails.js";
 import {
     getPanDetails,
     savePanDetails,
@@ -29,6 +29,7 @@ router.post("/mobile/verify-otp", verifyOtp);
 
 // Bank Verify
 router.route("/bank/:id").post(protect, bankVerification);
+router.route("/bank/pennyDrop").get(protect, pennyDrop); //Veryfy existing Bank through pennydrop
 
 // send Aadhaar verification mail
 router.route("/generate-link/:id").get(protect, generateAadhaarLink);

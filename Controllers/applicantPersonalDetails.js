@@ -6,6 +6,7 @@ import Employee from "../models/Employees.js";
 import Lead from "../models/Leads.js";
 import { postLogs } from "./logs.js";
 import { verifyBank } from "../utils/verifyBank.js";
+import LoanApplication from "../models/User/model.loanApplication.js";
 
 // @desc Post applicant details
 // @access Private
@@ -106,6 +107,7 @@ export const applicantDetails = async (details = null, session) => {
         let addBankDetails
         let disbursalBankDetails = details?.extraDetails?.disbursalBankDetails
         const isAlreadyBankAccount = await Bank.findOne({ borrowerId: applicant._id }).session(session)
+        console.log('check bank account', isAlreadyBankAccount)
         if (isAlreadyBankAccount) {
             addBankDetails = await Bank.findOneAndUpdate(
                 { borrowerId: applicant._id },
@@ -129,7 +131,7 @@ export const applicantDetails = async (details = null, session) => {
                 bankName: disbursalBankDetails?.bankName || "",
                 branchName: disbursalBankDetails?.branchName || "",
             });
-            addBankDetails.save({ session })
+            await addBankDetails.save({ session })
         }
 
 
@@ -192,6 +194,58 @@ export const bankVerification = asyncHandler(async (req, res) => {
         });
     }
     res.json({ success: false, message: "Bank couldn't be verified!!" });
+});
+// @desc Bank Verify and add the back.
+// @route POST /api/verify/bank/pennyDrop
+// @access Private
+export const pennyDrop = asyncHandler(async (req, res) => {
+    const { borrowerId, bankAccNo } = req.query;
+
+
+    const applicant = await Applicant.findById(borrowerId);
+    const bank = await Bank.findOne({ bankAccNo, borrowerId });
+
+    if (!applicant) {
+        res.status(404);
+        throw new Error("No applicant found!!!");
+    }
+
+    if (!bank) {
+        res.status(404);
+        throw new Error("No bank account found for this applicant!");
+    }
+
+    // if (bank) {
+    //     res.status(400);
+    //     throw new Error("This account number is already regested!!!");
+    // }
+
+    const response = await verifyBank(bankAccNo, bank.ifscCode);
+
+    if (!response.success) {
+        res.status(400);
+        throw new Error(response.message);
+    }
+
+    const updatedBank = await Bank.findOneAndUpdate({ bankAccNo, borrowerId }, { isPennyDropped: true }, { new: true });
+
+    // const newBank = await Bank.create({
+    //     borrowerId: id,
+    //     beneficiaryName,
+    //     bankName,
+    //     bankAccNo,
+    //     accountType,
+    //     ifscCode,
+    //     branchName,
+    // });
+
+    // if (newBank) {
+    //     return res.json({
+    //         success: true,
+    //         message: "Bank verified and saved.",
+    //     });
+    // }
+    res.json({ success: true, message: "Bank couldn't be verified!!", data: response });
 });
 
 // @desc Update applicant details

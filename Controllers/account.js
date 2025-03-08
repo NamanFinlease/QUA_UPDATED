@@ -308,8 +308,7 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
             }
         );
 
-        console.log('payment record',paymentRecord)
-
+        
         if (!paymentRecord || !paymentRecord.paymentHistory?.length) {
             res.status(400).json({
                 message: "Loan number not found.",
@@ -322,10 +321,14 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
                 "paymentHistory.transactionId": transactionId,
             },
             {
-                "paymentHistory.paymentUpdateRequest": false,
-                "paymentHistory.isRejected": true,
-                "paymentHistory.isPaymentVerified": true
-            }
+
+                $set: {
+                    "paymentHistory.$[elem].paymentUpdateRequest": false,
+                    "paymentHistory.$[elem].isRejected": true,
+                    "paymentHistory.$[elem].isPaymentVerified": true,
+                },
+            },
+            { arrayFilters: [{ "elem.transactionId": transactionId }], new: true }
         );
 
         console.log("PaymentDetails-->", paymentDetails)

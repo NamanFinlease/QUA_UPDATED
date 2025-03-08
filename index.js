@@ -39,10 +39,10 @@ var corsOption = {
         "https://preprod-web.qualoan.com",
         "http://localhost:5173",
         "http://localhost:5174",
-        "http://192.168.1.30:5173",
-        "http://192.168.1.30:5174",
-        "http://192.168.11.66:5173",
-        "http://192.168.11.66:5174",
+        // "http://192.168.1.30:5173",
+        // "http://192.168.1.30:5174",
+        // "http://192.168.11.66:5173",
+        // "http://192.168.11.66:5174",
         "https://www.crm.qualoan.com",
         "https://crm.qualoan.com",
     ],
@@ -116,6 +116,6 @@ app.use("/api/accounts", accountRouter); // Use the account routes
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT,"0.0.0.0", () => {
+app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });

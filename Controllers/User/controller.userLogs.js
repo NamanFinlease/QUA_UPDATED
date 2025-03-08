@@ -1,3 +1,4 @@
+import moment from "moment";
 import asyncHandler from "../../middleware/asyncHandler.js";
 import User from "../../models/User/model.user.js";
 import UserLogHistory from "../../models/User/model.userLogs.js";
@@ -19,10 +20,12 @@ export const postUserLogs = async (
                 throw new Error("User not found!!!");
             }
 
+            const time = moment().format("DD/MM/YYYY HH:mm:ss")
+
             // Create the new log initally
             const createloghistory = new UserLogHistory({
                 userId,
-                logDate: new Date(),
+                logDate: time,
                 userRemark,
             });
 

@@ -26,6 +26,10 @@ const bankSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        isPennyDropped: {
+            type: Boolean,
+            // required: true,
+        },
         beneficiaryName: {
             type: String,
             required: true,

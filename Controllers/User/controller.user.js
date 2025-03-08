@@ -333,9 +333,9 @@ const verifyPan = asyncHandler(async (req, res) => {
     // Call the get panDetails Function
     const response = await panVerify(userId, pan);
 
-    if (response.result_code !== 101) {
+    if (response.data.result_code !== 101) {
         res.status(400);
-        throw new Error("Error with Digitap!");
+        throw new Error("3rd party API error!");
     }
 
 
@@ -360,7 +360,7 @@ const verifyPan = asyncHandler(async (req, res) => {
         { upsert: true, new: true } // Create a new record if not found
     );
 
-    if (!response?.result?.aadhaar_linked) {
+    if (!response?.data?.result?.aadhaar_linked) {
         return res.status(400).json({
             message: "Your PAN is not linked to AADHAAR"
         });
