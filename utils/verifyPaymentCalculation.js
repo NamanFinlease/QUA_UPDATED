@@ -150,6 +150,8 @@ export const verifyPaymentCalculation = async (loanNo, transactionId,closingType
             }, { new: true, session })
         }
 
+        console.log('return updated payment',updatedPayment)
+
         return updatedPayment
     } catch (error) {
         console.log('errororroror', error)

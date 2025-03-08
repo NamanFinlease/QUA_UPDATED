@@ -128,11 +128,12 @@ export const getLoanNumber = asyncHandler(async (req, res) => {
 
 export const payNow = asyncHandler(async (req, res) => {
 
+    console.log('payment gateway 1')
+    
     const { loanNo } = req.body;
-
-
-
-    // fetch amount from collection table from loanNo
+    
+    
+    
     const pipeline = [
         {
             $match: {
@@ -164,12 +165,13 @@ export const payNow = asyncHandler(async (req, res) => {
             }
         }
     ]
-
+    console.log('payment gateway 2')
+    // fetch amount from collection table from loanNo
+    
     const collectionDetails = await Collection.aggregate(pipeline)
     console.log("collectionDetails--->", collectionDetails)
     const { amount, fName, mName, lName, email, phone, pan } = collectionDetails[0];
     console.log(" reciptId--->", generateReceiptId())
-    // Parameters to send to the payment gateway
     let params = {
         amount: amount * 100,
         currency: 'INR',
@@ -184,22 +186,25 @@ export const payNow = asyncHandler(async (req, res) => {
             udf2: loanNo,
         }
     };
-
+    console.log('payment gateway 3')
+    // Parameters to send to the payment gateway
+    
     // Sort and hash the parameters
     let sorted_params = Object.keys(params).sort().reduce((acc, key) => {
         acc[key] = params[key];
         return acc;
     }, {});
-
+    
+    console.log('payment gateway 4')
     let value_string = Object.values(sorted_params)
-        .filter(value => typeof value !== 'object')
-        .join('|') + `|${process.env.PAYTRING_PROD_KEY}`;
-
+    .filter(value => typeof value !== 'object')
+    .join('|') + `|${process.env.PAYTRING_PROD_KEY}`;
+    
     const hash = CryptoJS.SHA512(value_string).toString();
     params.hash = hash;
-
+    
     console.log("params---->", params)
-
+    
     // Send request to Paytring's API
     const response = await fetch('https://api.paytring.com/api/v2/order/create', {
         method: 'POST',
@@ -210,6 +215,7 @@ export const payNow = asyncHandler(async (req, res) => {
         },
         body: JSON.stringify(params)
     });
+    console.log('payment gateway 5',response)
 
     const data = await response.json();
     if (!data.order_id) {
@@ -231,16 +237,18 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             leadRemark: `${JSON.stringify(callbackResponse)}`
         },
     )
+
     // console.log("logData--->", logData)
     const { order_id } = req.body
     // console.log("received object is ---->", callbackResponse)
-
+    
+    console.log('callback 2',order_id)
     if (!order_id) {
         return res.status(400).json({ message: '--Order ID not provided in callback' });
     }
-
+    
     console.log("OrderId ----->", order_id)
-
+    
     const url = 'https://api.paytring.com/api/v2/order/fetch';
     const options = {
         method: 'POST',
@@ -251,9 +259,10 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         },
         body: JSON.stringify({ key: process.env.PAYTRING_PROD_KEY, id: callbackResponse.order_id, hash: callbackResponse.hash })
     };
-
+    
     const response = await fetch(url, options);
     const data = await response.json();
+    console.log('callback 3',data)
     // console.log("data--->", data);
 
 
