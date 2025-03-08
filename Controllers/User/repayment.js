@@ -405,7 +405,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
 
         if (order_status === "success") {
 
-            const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, "", null, session)
+            const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, "", null,null, session)
             if (!updatedPayment) {
                 // await session.abortTransaction();
                 throw new Error("Payment didn't update");
