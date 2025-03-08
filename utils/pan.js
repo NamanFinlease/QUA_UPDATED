@@ -18,7 +18,7 @@ export async function panVerify(leadId, pan) {
                 },
             }
         );
-        return response.data;
+        return {success: true,data:response.data};
     } catch (error) {
         console.log('return error',error.response.data.error)
         return { success: false, message: error.response.data.error }

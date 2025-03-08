@@ -34,12 +34,12 @@ export const getPanDetails = asyncHandler(async (req, res) => {
         res.status(400)
         throw new Error(response.message)
     }
-    if (response.result_code !== 101) {
+    if (response.data.result_code !== 101) {
         res.status(400);
         throw new Error("Error with Digitap!");
     }
 
-    if (!response.result.aadhaar_linked) {
+    if (!response.data.result.aadhaar_linked) {
         lead.isRejected = true;
         lead.isRejectedBySystem = true;
 
@@ -63,7 +63,7 @@ export const getPanDetails = asyncHandler(async (req, res) => {
 
     // Now respond with status 200 with JSON success true
     return res.json({
-        data: response.result,
+        data: response.data.result,
     });
 });
 

@@ -39,6 +39,10 @@ var corsOption = {
         "https://preprod-web.qualoan.com",
         "http://localhost:5173",
         "http://localhost:5174",
+        "http://192.168.1.30:5173",
+        "http://192.168.1.30:5174",
+        "http://192.168.11.66:5173",
+        "http://192.168.11.66:5174",
         "https://www.crm.qualoan.com",
         "https://crm.qualoan.com",
     ],
@@ -48,18 +52,18 @@ var corsOption = {
     optionsSuccessStatus: 204,
 };
 app.use(cors(corsOption));
-app.use(
-    session({
-        secret: process.env.SESSION_KEY, // Replace with a secure, random string
-        resave: false, // Avoid resaving session variables if they haven't changed
-        saveUninitialized: false, // Don't save uninitialized sessions
-        cookie: {
-            httpOnly: true, // Helps prevent XSS attacks
-            secure: false, // Use HTTPS in production
-            maxAge: 5 * 60 * 1000, // 5 minute
-        },
-    })
-);
+// app.use(
+//     session({
+//         secret: process.env.SESSION_KEY, // Replace with a secure, random string
+//         resave: false, // Avoid resaving session variables if they haven't changed
+//         saveUninitialized: false, // Don't save uninitialized sessions
+//         cookie: {
+//             httpOnly: true, // Helps prevent XSS attacks
+//             secure: false, // Use HTTPS in production
+//             maxAge: 5 * 60 * 1000, // 5 minute
+//         },
+//     })
+// );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //cookie parser middlerware
@@ -112,6 +116,6 @@ app.use("/api/accounts", accountRouter); // Use the account routes
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT,"0.0.0.0", () => {
     console.log(`Server is running on port: ${PORT}`);
 });
