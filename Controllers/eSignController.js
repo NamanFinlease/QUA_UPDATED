@@ -160,7 +160,7 @@ export const getDoc = async (referenceId, data, time) => {
             return { success: false, message: "Disbursal Esign failed!!" };
         }
         console.log('upload docs 5')
-        logs = await postLogs(
+        let logs = await postLogs(
             lead._id,
             `Sanction Letter eSigned on ${time}`,
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${
@@ -182,6 +182,10 @@ export const getDoc = async (referenceId, data, time) => {
             message: "File uploaded.",
         };
     } catch (error) {
-        console.log('errorr', error.data);
+        console.log('errorr', error);
+        return {
+            success:false,
+            message:error
+        }
     }
 };
