@@ -100,37 +100,48 @@ export const eSignWebhook = asyncHandler(async (req, res) => {
     const data = req.body;
 
     console.log('data',data)
-    if (data.data.dscData && Object.keys(data.data.dscData).length > 0) {
-        const time = new Date();
-        const response = await getDoc(data.referenceId, data, time);
-        console.log('esign webhook ',response)
-        if (!response.success) {
-            res.status(400);
-            throw new Error(response.message);
+    try {
+        
+        if (data.data.dscData && Object.keys(data.data.dscData).length > 0) {
+            const time = new Date();
+            const response = await getDoc(data.referenceId, data, time);
+            console.log('esign webhook ',response)
+            if (!response.success) {
+                res.status(400);
+                throw new Error(response.message);
+            }
+            return res.status(200).json({
+                success: true,
+                message: "Document signed and saved successfully.",
+            });
         }
-        return res.status(200).json({
-            success: true,
-            message: "Document signed and saved successfully.",
-        });
+        return res.json({ success: true });
+    } catch (error) {
+
+        console.log('webhook error',error)
+        
     }
-    return res.json({ success: true });
 });
 
 export const getDoc = async (referenceId, data, time) => {
     try {
+        console.log('get doc 1')
         const lead = await Lead.findOne({ referenceId: referenceId });
         const docs = await Documents.findOne({ _id: lead.documents });
-
+        console.log('get doc 2',data.data)
+        
         const eSignStepfive = await axios.get(data.data.result.esignedFile, {
             responseType: "arraybuffer", // Important to preserve the binary data
         });
-
+        
+        console.log('get doc 3',)
         const application = await Application.findOne({ lead: lead._id });
         const sanction = await Sanction.findOneAndUpdate(
             { application: application._id },
             { eSigned: true, eSignPending: false },
             { new: true }
         );
+        console.log('get doc 4',)
 
         // Use the utility function to upload the PDF buffer
         const result = await uploadDocs(docs, null, null, {
