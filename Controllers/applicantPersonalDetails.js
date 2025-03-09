@@ -7,6 +7,7 @@ import Lead from "../models/Leads.js";
 import { postLogs } from "./logs.js";
 import { verifyBank } from "../utils/verifyBank.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
+import PennyDrop from "../models/pennyDrop.js";
 
 // @desc Post applicant details
 // @access Private
@@ -196,20 +197,19 @@ export const bankVerification = asyncHandler(async (req, res) => {
     res.json({ success: false, message: "Bank couldn't be verified!!" });
 });
 // @desc Bank Verify and add the back.
-// @route POST /api/verify/bank/pennyDrop
+// @route POST /api/verify/bank/pennyDrop/:bankAccount/:borrowerId
 // @access Private
 export const pennyDrop = asyncHandler(async (req, res) => {
-    const { borrowerId, bankAccNo } = req.query;
-
+    const { borrowerId, bankAccNo } = req.params;
 
     const applicant = await Applicant.findById(borrowerId);
-    const bank = await Bank.findOne({ bankAccNo, borrowerId });
-
+  
     if (!applicant) {
         res.status(404);
         throw new Error("No applicant found!!!");
     }
-
+    const bank = await Bank.findOne({ bankAccNo, borrowerId });
+  
     if (!bank) {
         res.status(404);
         throw new Error("No bank account found for this applicant!");
@@ -226,8 +226,28 @@ export const pennyDrop = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error(response.message);
     }
-
+    
     const updatedBank = await Bank.findOneAndUpdate({ bankAccNo, borrowerId }, { isPennyDropped: true }, { new: true });
+    const pennydropData = await PennyDrop.findOneAndUpdate(
+        {accountNo:bankAccNo},
+        {
+            $set: {
+                name: response.data?.data?.name,
+                accountNo: response.data?.data?.accountNumber,
+                ifsc: response.data?.data?.ifsc,
+                bankName: response.data?.data?.bankName,
+                utr: response.data?.data?.utr,
+                referenceId: response.data?.data?.referenceId,
+                branch: response.data?.data?.branch,
+            }
+        },
+        {
+            new:true,
+            upsert: true
+        }
+        
+    )
+    console.log('bank verified',pennydropData)
 
     // const newBank = await Bank.create({
     //     borrowerId: id,
@@ -245,7 +265,7 @@ export const pennyDrop = asyncHandler(async (req, res) => {
     //         message: "Bank verified and saved.",
     //     });
     // }
-    res.json({ success: true, message: "Bank couldn't be verified!!", data: response });
+    res.json({ success: true, message: "Bank verified!!",pennydropData });
 });
 
 // @desc Update applicant details

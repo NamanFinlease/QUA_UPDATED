@@ -29,7 +29,7 @@ router.post("/mobile/verify-otp", verifyOtp);
 
 // Bank Verify
 router.route("/bank/:id").post(protect, bankVerification);
-router.route("/bank/pennyDrop").get(protect, pennyDrop); //Veryfy existing Bank through pennydrop
+router.route("/bank/pennyDrop/:bankAccNo/:borrowerId").get(protect, pennyDrop); //Veryfy existing Bank through pennydrop
 
 // send Aadhaar verification mail
 router.route("/generate-link/:id").get(protect, generateAadhaarLink);

@@ -20,7 +20,7 @@ export const verifyBank = async (bankAccNo, ifscCode) => {
         );
 
         if (response.data?.responseCode === "SRC001") {
-            return { success: true, message: "Bank verified successfully!!" };
+            return { success: true, message: "Bank verified successfully!!",data:response.data };
         }
 
         return { success: false, message: "Bank couldn't be verified!!" };
