@@ -221,7 +221,6 @@ export const getDocs = async (docs, docType, docId) => {
         "eAadhaar",
         "panCard",
         "cibilReport",
-        "sanctionLetter",
         "profileImage",
     ].includes(docType);
 
@@ -266,7 +265,6 @@ export const getProfileDocs = async (docs, docType, docId) => {
         "eAadhaar",
         "panCard",
         "cibilReport",
-        "sanctionLetter",
         "profileImage",
     ].includes(docType);
 
