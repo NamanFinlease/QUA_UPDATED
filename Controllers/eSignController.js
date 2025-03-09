@@ -145,7 +145,7 @@ export const getDoc = async (referenceId, data, time) => {
 
         // Use the utility function to upload the PDF buffer
         const result = await uploadDocs(docs, null, null, {
-            rawPdf: eSignStepfive.data,
+            rawFile: eSignStepfive.data,
             rawPdfKey: "sanctionLetter",
             rawPdfRemarks: sanction.loanNo,
         });
