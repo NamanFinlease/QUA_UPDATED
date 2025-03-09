@@ -141,7 +141,7 @@ export const getDoc = async (referenceId, data, time) => {
             { eSigned: true, eSignPending: false },
             { new: true }
         );
-        console.log('get doc 4',)
+        console.log('get doc 4',eSignStepfive)
 
         // Use the utility function to upload the PDF buffer
         const result = await uploadDocs(docs, null, null, {

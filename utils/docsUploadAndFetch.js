@@ -19,8 +19,8 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
         rawFileRemarks = "",
     } = options;
 
-    console.log('upload sanction check 1')
-    
+    console.log('upload sanction check 1', options)
+
     // Prepare an array to store all upload promises
     // const uploadPromises = [];
     const singleDocUpdates = [];
@@ -32,8 +32,8 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
         statementAnalyser: [],
         others: [],
     };
-    console.log('upload sanction check 2')
-    
+    console.log('upload sanction check 2', rawFile, rawFileKey)
+
     if (rawFile && rawFileKey) {
         console.log('upload sanction check 3')
         const name = `${rawFileKey}-${rawFileRemarks}`;
@@ -50,28 +50,28 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
             remarks: rawFileRemarks,
         });
     }
-    console.log('upload sanction check 4',fieldName)
+    console.log('upload sanction check 4', fieldName)
     if (isBuffer && fieldName) {
         // Handle buffer
         const key = `${docs.pan}/${fieldName}-${Date.now()}.pdf`;
-        
+
         // Check if the document type already exists in the lead's document.singleDocument array
         const existingDocIndex = docs.document.singleDocuments.findIndex(
             (doc) => doc.type === fieldName
         );
-        
+
         console.log('upload sanction check 5')
         if (existingDocIndex !== -1) {
             // Delete the old file and upload the new file
             const oldFileKey =
-            docs.document.singleDocuments[existingDocIndex].url;
+                docs.document.singleDocuments[existingDocIndex].url;
             if (oldFileKey) {
                 await deleteFilesFromS3(oldFileKey);
             }
             console.log('upload sanction check 6')
             // Upload the new file
             const res = await uploadFilesToS3(buffer, key);
-            console.log('upload sanction check 7',res)
+            console.log('upload sanction check 7', res)
             docs.document.singleDocuments[existingDocIndex].url = res.Key;
         } else {
             console.log('upload sanction check 7.1',)
@@ -161,7 +161,7 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
     if (singleDocUpdates.length > 0) {
         docs.document.singleDocuments.push(...singleDocUpdates);
     }
-    
+
     // Add multiple document updates to the lead document
     for (const [field, document] of Object.entries(multipleDocUpdates)) {
         if (document.length > 0) {
@@ -169,7 +169,7 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
         }
     }
     console.log('upload sanction check 8',)
-    
+
     // Use findByIdAndUpdate to only update the document field
     const updatedDocs = await Documents.findByIdAndUpdate(
         docs._id,
@@ -177,7 +177,7 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
         { new: true, runValidators: false } // Disable validation for other fields
     );
     console.log('upload sanction check 9',)
-    
+
     if (!updatedDocs) {
         return { success: false };
     }
@@ -185,7 +185,7 @@ export const uploadDocs = async (docs, files, remarks, options = {}) => {
     return { success: true };
 };
 
-export const getBSADocs = async (docType, url,key) => {
+export const getBSADocs = async (docType, url, key) => {
 
     try {
 
@@ -193,9 +193,9 @@ export const getBSADocs = async (docType, url,key) => {
 
         // Generate a pre-signed URL for this specific document
         // const preSignedUrl = generatePresignedUrl(url, mimeType);
-        const buffer = await getBSADocBuffer(process.env.AWS_BUCKET_NAME,url)
+        const buffer = await getBSADocBuffer(process.env.AWS_BUCKET_NAME, url)
 
-        console.log('buffer',buffer)
+        console.log('buffer', buffer)
 
 
         // const rawData = await axios.get(preSignedUrl)
@@ -249,7 +249,7 @@ export const getDocs = async (docs, docType, docId) => {
 
 
     // Generate a pre-signed URL for this specific document
- 
+
     const preSignedUrl = generatePresignedUrl(document.url, mimeType);
 
 
