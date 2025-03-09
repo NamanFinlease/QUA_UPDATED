@@ -316,39 +316,47 @@ const verifyPan = asyncHandler(async (req, res) => {
     const { pan } = req.params;
     const userId = req.user._id
 
+    console.log("pan 1")
+    
     // Validate that aaadhaar is present in the leads
     if (!pan) {
         res.status(400);
         throw new Error({ success: false, message: "Pan number is required." });
     }
-
+    
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-
+    
+    console.log("pan 2")
     // Validate the PAN number
     if (!panRegex.test(pan)) {
         res.status(400);
         throw new Error({ success: false, message: "Invalid PAN!!!" });
     }
-
+    console.log("pan 3")
+    
     // Call the get panDetails Function
     const response = await panVerify(userId, pan);
-
+    
+    console.log("pan 4",response,pan)
     if (response.data.result_code !== 101) {
         res.status(400);
         throw new Error("3rd party API error!");
     }
-
-
+    
+    console.log("pan 5",response,pan)
+    
     // update in user table 
     await User.findByIdAndUpdate(
         userId,
         { registrationStatus: "PAN_VERIFIED", previousJourney: "MOBILE_VERIFIED", PAN: pan, isPanVerify: true },
         { new: true }
     );
-
+    console.log("pan 6",response,pan)
+    
     await postUserLogs(userId, `User PAN Verified Successfully!`)
-
+    
     // add pan details in panDetails table
+    console.log("pan 7",response,pan)
     await PanDetails.findOneAndUpdate(
         {
             $or: [
@@ -356,7 +364,7 @@ const verifyPan = asyncHandler(async (req, res) => {
                 { "data.pan": pan }, // Check if data.pan matches
             ],
         },
-        { data: response.result }, // Update data
+        { data: response.data.result }, // Update data
         { upsert: true, new: true } // Create a new record if not found
     );
 
@@ -369,7 +377,7 @@ const verifyPan = asyncHandler(async (req, res) => {
 
     // Now respond with status 200 with JSON success true
     return res.status(200).json({
-        data: response.result,
+        data: response.data.result,
     });
 
 })

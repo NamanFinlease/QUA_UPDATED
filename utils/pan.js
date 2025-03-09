@@ -6,8 +6,9 @@ export async function panVerify(leadId, pan) {
         pan: `${pan}`,
     };
 
+    
     try {
-
+        
         const response = await axios.post(
             "https://svc.digitap.ai/validation/kyc/v1/pan_details",
             data,
@@ -18,6 +19,7 @@ export async function panVerify(leadId, pan) {
                 },
             }
         );
+        console.log('pan verify 2',response)
         return {success: true,data:response.data};
     } catch (error) {
         console.log('return error',error.response.data.error)
