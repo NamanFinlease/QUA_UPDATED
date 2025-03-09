@@ -98,6 +98,8 @@ export const eSignStepFour = async (referenceId) => {
 // @access Public
 export const eSignWebhook = asyncHandler(async (req, res) => {
     const data = req.body;
+
+    console.log('data',data)
     if (data.data.dscData && Object.keys(data.data.dscData).length > 0) {
         const time = new Date();
         const response = await getDoc(data.referenceId, data, time);
@@ -180,6 +182,6 @@ export const getDoc = async (referenceId, data, time) => {
             message: "File uploaded.",
         };
     } catch (error) {
-        console.log(error.data);
+        console.log('errorr', error.data);
     }
 };

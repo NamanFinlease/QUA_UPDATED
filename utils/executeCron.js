@@ -19,14 +19,14 @@ const preCollectionAllocate = new CronJob(
   '*/20 * * * * *',
   preAllocate,
   null,
-  true,
+  false,
   "Asia/Kolkata"
 );
 const cron = new CronJob(
   '*/20 * * * * *',
   schedulInterestCal,
   null,
-  true,
+  false,
   "Asia/Kolkata"
 );
 
