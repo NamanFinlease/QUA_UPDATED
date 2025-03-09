@@ -6,7 +6,7 @@ const adjustValue = (received, payable) => {
 };
 
 export const calculateReceivedPayment = (collectionData) => {
-    console.log('Receive Payment 1',collectionData)
+    // console.log('Receive Payment 1',collectionData)
     let {
         filteredPaymentHistory,
         camDetails,
@@ -57,7 +57,7 @@ export const calculateReceivedPayment = (collectionData) => {
         
         // console.log('updated calculated',{ key, payable: remainingAdjustable, discount: appliedDiscount, received },currentRemainingAmount)
         
-        console.log('Receive Payment 2')
+        // console.log('Receive Payment 2')
         return { key, payable: Number(remainingPayable.toFixed(2)), discount: Number(appliedDiscount.toFixed(2)), received: Number(received.toFixed(2)) };
     });
 

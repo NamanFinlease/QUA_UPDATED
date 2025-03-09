@@ -7,7 +7,7 @@ const paymentHistory = new mongoose.Schema(
         paymentDate: { type: Date, required: true },
         paymentMode: { type: String,  enum: ["offline", "online", "paymentGateway"] },
         transactionId: { type: String, },
-        closingType: { type: String, enum: ["partPayment", "closed", "writeOff", "settled"] },
+        closingType: { type: String, enum: ["partPayment", "closed", "writeOff", "settled",""] },
         paymentUpdateRequest: { type: Boolean },
         discount: { type: Number },
         isPaymentVerified: { type: Boolean, default: false },

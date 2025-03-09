@@ -101,6 +101,7 @@ export const eSignWebhook = asyncHandler(async (req, res) => {
     if (data.data.dscData && Object.keys(data.data.dscData).length > 0) {
         const time = new Date();
         const response = await getDoc(data.referenceId, data, time);
+        console.log('esign webhook ',response)
         if (!response.success) {
             res.status(400);
             throw new Error(response.message);
@@ -135,22 +136,28 @@ export const getDoc = async (referenceId, data, time) => {
             rawPdfKey: "sanctionLetter",
             rawPdfRemarks: sanction.loanNo,
         });
+
+        console.log('upload docs 1')
         if (!result) {
             return { success: false, message: "Failed to upload PDF." };
         }
-
+        console.log('upload docs 2')
+        
         if (!sanction) {
             return { success: false, message: "Sanction Esign failed!!" };
         }
-
+        console.log('upload docs 3')
+        
         const disbursal = await Disbursal.findOneAndUpdate(
             { loanNo: sanction.loanNo },
             { sanctionESigned: true }
         );
-
+        console.log('upload docs 4')
+        
         if (!disbursal) {
             return { success: false, message: "Disbursal Esign failed!!" };
         }
+        console.log('upload docs 5')
         logs = await postLogs(
             lead._id,
             `Sanction Letter eSigned on ${time}`,
@@ -173,6 +180,6 @@ export const getDoc = async (referenceId, data, time) => {
             message: "File uploaded.",
         };
     } catch (error) {
-        console.log(error.data.message);
+        console.log(error.data);
     }
 };

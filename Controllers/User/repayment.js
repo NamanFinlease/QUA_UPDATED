@@ -442,7 +442,8 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         // return res.status(200).json({
         //     message: 'Payment verified successfully',
         // });
-        return res.redirect(`https://preprod-web.qualoan.com/verify-repayment`)
+        // return res.redirect(`https://preprod-web.qualoan.com/verify-repayment`)
+        return res.redirect(`https://qualoan.com/verify-repayment`)
 
     }
 

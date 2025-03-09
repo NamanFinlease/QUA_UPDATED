@@ -3,7 +3,7 @@ import csv from 'csv-parser';
 import fs from 'fs';
 
 // MongoDB connection configuration
-const MONGO_URI = "mongodb+srv://STAGINGUSER:mongoStagingPass1234badal@staging.th9vc.mongodb.net/closeMigration?retryWrites=true&w=majority&appName=STAGING";
+const MONGO_URI = "mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QuaUpgraded?retryWrites=true&w=majority&appName=CRMProject";
 const MONGO_OPTIONS = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -72,10 +72,10 @@ async function importCSVData() {
                 mapHeaders: ({ header }) => header.trim() // Trim headers to remove extra spaces
             }))
             .on('data', (row) => {
-                console.log("--->" , row['PAID DATE'])
+                console.log("--->" , row)
                 const processedRow = {
-                    LAN: row['LAN']?.trim() || '',
-                    NAME: row['NAME']?.trim() || '',
+                    LAN: row['LOAN ID']?.trim() || '',
+                    NAME: row['Customer Name']?.trim() || '',
                     PAN: row['PAN']?.trim() || '',
                     STATUS : row['STATUS']?.trim()|| '',
                     MOBILE_NO: row['MOBILE NO.']?.trim() || '',

@@ -28,7 +28,7 @@ import { sanctioned } from "../Controllers/sanction.js";
 const BATCH_SIZE = 200;
 // const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
 // const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
-const MONGO_URI = "mongodb+srv://STAGINGUSER:mongoStagingPass1234badal@staging.th9vc.mongodb.net/closeMigration?retryWrites=true&w=majority&appName=STAGING";
+const MONGO_URI = "mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QuaUpgraded?retryWrites=true&w=majority&appName=CRMProject";
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -593,6 +593,10 @@ async function createPaymentCollection() {
       ]
       )
 
+      if(disbursal[0].leadNo === "QUALED0000003770"){
+        console.log('testtttt',disbursal,doc)
+      }
+
       console.log('disbursallll', disbursal[0].loanNo, disbursal[0].leadNo)
       const updatedDoc = {
         pan: doc.PAN || "",
@@ -610,9 +614,9 @@ async function createPaymentCollection() {
           isPaymentVerified: true,
           isRejected: false,
           transactionId: closedDocs[0].utr || "",
-          isPartialPaid: doc.STATUS === "Part Paid" ? true : false,
-          closingType: doc.STATUS === "Closed" ? "closed"
-            : doc.STATUS === "Part Paid" ? "partPayment"
+          isPartialPaid: doc.STATUS === "PART PAID" ? true : false,
+          closingType: doc.STATUS === "CLOSED" ? "closed"
+            : doc.STATUS === "PART PAID" ? "partPayment"
               : doc.STATUS === "settel" ? "settled"
                 : "", isPaymentVerified: true,
         }] : [],
@@ -660,8 +664,8 @@ async function createPaymentCollection() {
 
     // }
   }
+  fs.writeFileSync('paymentsData.json', JSON.stringify(paymentFile, null, 2));
   await Payment.insertMany(paymentFile)
-  // fs.writeFileSync('paymentsData.json', JSON.stringify(paymentFile, null, 2));
   logProgress('payments');
 }
 
@@ -807,6 +811,8 @@ async function createCollectionData() {
     let paymentDate = null;
     let closingType = '';
 
+    console.log('loan no',loanNo)
+
     if (Array.isArray(paymentHistory) && paymentHistory.length > 0) {
       receivedAmount = paymentHistory[0]?.receivedAmount || 0;
       closingType = paymentHistory[0]?.closingType || 0;
@@ -829,6 +835,7 @@ async function createCollectionData() {
       localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
     if (elapseDays > tenure) {
       dpd = elapseDays - tenure
+    if(leadNo === "QUALED0000003770") console.log('lead number details',elapseDays,tenure,dpd)
       penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
       interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
     } else {
@@ -864,13 +871,13 @@ async function createCollectionData() {
       principalAmount,
     }])
 
-    if(closingType === "partPayment"){
-      console.log('payment details',calculatedData)
-    }
+    // if(closingType === "partPayment"){
+    //   console.log('payment details',calculatedData)
+    // }
 
     let outstandingAmount = calculatedData.interest + calculatedData.penalty + calculatedData.principalAmount
 
-    if (closingType === "settled") {
+    if (closingType === "settled" || closingType === "closed") {
       calculatedData.principalDiscount += outstandingAmount
       calculatedData.principalAmount = 0
       outstandingAmount = 0
@@ -922,7 +929,7 @@ async function createCollectionData() {
       { new: true, runValidators: true, }
     );
 
-    if (outstandingAmount < 1) {
+    if (outstandingAmount < 1 || closingType === "closed") {
 
       const closed = await Close.findOneAndUpdate(
         {
@@ -1210,19 +1217,19 @@ async function runMigration() {
     // await withRetry(() => migrateOTP());
     // await withRetry(() => migrateLoanApplications());
     // await withRetry(() => migrateCamDetails());
-    // await withRetry(() => createPaymentCollection());
-    await withRetry(() => createCollectionData());
-    // await withRetry(() => verifiedLeads());
     // await withRetry(() => closeMigration());
+    // await withRetry(() => createPaymentCollection());
+    // await withRetry(() => createCollectionData());
+    // await withRetry(() => verifiedLeads());
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
     // console.log('OTP:', progress.otp);
     // console.log('Loans:', progress.loans);
     // console.log('CAM Details:', progress.camDetails);
-    // console.log('Payments:', progress.payments);
-    console.log('Collection:', progress.collections);
     // console.log('Close:', progress.close);
+    // console.log('Payments:', progress.payments);
+    // console.log('Collection:', progress.collections);
 
   } catch (error) {
     console.error('Migration failed:', error);
