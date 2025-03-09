@@ -14,6 +14,7 @@ const s3Pr = new S3({ region, accessKeyIdProfile, secretAccessKeyProfile });
 
 // Upload files to S3
 async function uploadFilesToS3(buffer, key) {
+    console.log('upload to s3 1')
     const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
     try {
         // Check file size before uploading
@@ -27,12 +28,13 @@ async function uploadFilesToS3(buffer, key) {
         };
         // Get file extension from the key
         const extension = key.split(".").pop().toLowerCase();
-
+        
         // If it's an .xlsx file, set the ContentType to application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
         if (extension === "xlsx") {
             params.ContentType =
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         }
+        console.log('upload to s3 2')
         return await s3.upload(params).promise();
     } catch (error) {
         console.log(error);
