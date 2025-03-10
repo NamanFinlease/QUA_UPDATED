@@ -73,7 +73,7 @@ const camSchema = new mongoose.Schema(
         },
         customerType: {
             type: String,
-            enum: ['NEW', 'EXISTING'],
+            enum: ['NEW', 'REPEAT'],
             // required: true,
         },
         dedupeCheck: {
