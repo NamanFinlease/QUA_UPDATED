@@ -45,7 +45,7 @@ export function sanctionLetter(
                     Number(camDetails?.loanRecommended)
             )}`,
             repaymentDate: dateFormatter(camDetails?.repaymentDate),
-            penalInterest: Number(camDetails?.roi) * 2,
+            penalInterest: 2,
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
             )}`,
