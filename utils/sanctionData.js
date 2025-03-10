@@ -99,8 +99,8 @@ export const getSanctionData = async (id) => {
 
     // Date validation
     if (
-        (sanction.sanctionDate && localDisbursedDate > localSanctionDate) || // Strip time from `sanctionDate`
-        localDisbursedDate > localSanctionDate
+        (sanction.sanctionDate && localDisbursedDate < localSanctionDate) || // Strip time from `sanctionDate`
+        localDisbursedDate < localSanctionDate
     ) {
         throw new Error(
             "Disbursal Date cannot be in the past. It must be the present date or future date!"
