@@ -65,7 +65,6 @@ const migrateApplicationsToSanctions = async () => {
                 await newSanction.save();
                 // console.log(newSanction);
 
-
                 console.log(
                     `Created sanction for application ID: ${application._id}`
                 );
@@ -551,7 +550,7 @@ const sanctionActiveLeadsMigration = async () => {
                     const newActiveLead = await Closed.create({
                         pan: sanction.application.lead.pan,
                         data: [dataToAdd],
-                        leadNo: disbursal.leadNo
+                        leadNo: disbursal.leadNo,
                     });
 
                     if (!newActiveLead) {
@@ -840,13 +839,15 @@ export const exportApprovedSanctions = async () => {
                         timeZone: "Asia/Kolkata",
                     });
 
-                    const repaymentDate =
-                        cam?.details?.repaymentDate.toLocaleString("en-US", {
+                    const repaymentDate = cam?.repaymentDate.toLocaleString(
+                        "en-US",
+                        {
                             month: "short",
                             day: "2-digit",
                             year: "numeric",
                             timeZone: "Asia/Kolkata",
-                        });
+                        }
+                    );
 
                     return {
                         "Lead Created": createdDate || "N/A",
@@ -863,17 +864,16 @@ export const exportApprovedSanctions = async () => {
                         "Alternate Mobile": lead.alternateMobile,
                         Email: lead.personalEmail,
                         "Office Email": lead.officeEmail,
-                        "Sanctioned Amount": cam?.details?.loanRecommended || 0,
-                        ROI: cam?.details?.roi,
-                        Tenure: cam?.details?.eligibleTenure,
+                        "Sanctioned Amount": cam?.loanRecommended || 0,
+                        ROI: cam?.roi,
+                        Tenure: cam?.eligibleTenure,
                         "Interest Amount":
-                            Number(cam?.details?.repaymentAmount) -
-                            Number(cam?.details?.loanRecommended),
-                        "Disbursal Amount":
-                            cam?.details?.netDisbursalAmount || 0,
-                        "Repayment Amount": cam?.details?.repaymentAmount || 0,
-                        PF: cam?.details?.netAdminFeeAmount || 0,
-                        "PF%": cam?.details?.adminFeePercentage || 0,
+                            Number(cam?.repaymentAmount) -
+                            Number(cam?.loanRecommended),
+                        "Disbursal Amount": cam?.netDisbursalAmount || 0,
+                        "Repayment Amount": cam?.repaymentAmount || 0,
+                        PF: cam?.netAdminFeeAmount || 0,
+                        "PF%": cam?.adminFeePercentage || 0,
                         "Beneficiary Bank Name": bank?.bankName || "N/A",
                         accountNo: bank?.bankAccNo || "N/A",
                         IFSC: bank?.ifscCode || "N/A",
@@ -1018,13 +1018,15 @@ export const exportNewDisbursals = async () => {
                         timeZone: "Asia/Kolkata",
                     });
 
-                    const repaymentDate =
-                        cam?.details?.repaymentDate.toLocaleString("en-US", {
+                    const repaymentDate = cam?.repaymentDate.toLocaleString(
+                        "en-US",
+                        {
                             month: "short",
                             day: "2-digit",
                             year: "numeric",
                             timeZone: "Asia/Kolkata",
-                        });
+                        }
+                    );
 
                     return {
                         "Lead Created": createdDate || "N/A",
@@ -1041,17 +1043,16 @@ export const exportNewDisbursals = async () => {
                         "Alternate Mobile": lead.alternateMobile,
                         Email: lead.personalEmail,
                         "Office Email": lead.officeEmail,
-                        "Sanctioned Amount": cam?.details?.loanRecommended || 0,
-                        ROI: cam?.details?.roi,
-                        Tenure: cam?.details?.eligibleTenure,
+                        "Sanctioned Amount": cam?.loanRecommended || 0,
+                        ROI: cam?.roi,
+                        Tenure: cam?.eligibleTenure,
                         "Interest Amount":
-                            Number(cam?.details?.repaymentAmount) -
-                            Number(cam?.details?.loanRecommended),
-                        "Disbursal Amount":
-                            cam?.details?.netDisbursalAmount || 0,
-                        "Repayment Amount": cam?.details?.repaymentAmount || 0,
-                        PF: cam?.details?.netAdminFeeAmount || 0,
-                        "PF%": cam?.details?.adminFeePercentage || 0,
+                            Number(cam?.repaymentAmount) -
+                            Number(cam?.loanRecommended),
+                        "Disbursal Amount": cam?.netDisbursalAmount || 0,
+                        "Repayment Amount": cam?.repaymentAmount || 0,
+                        PF: cam?.netAdminFeeAmount || 0,
+                        "PF%": cam?.adminFeePercentage || 0,
                         "Beneficiary Bank Name": bank?.bankName || "N/A",
                         accountNo: bank?.bankAccNo || "N/A",
                         IFSC: bank?.ifscCode || "N/A",
@@ -1198,13 +1199,14 @@ export const exportDisbursedData = async () => {
                     );
 
                     // console.log('cam repay date',cam?.repaymentDate)
-                    const repaymentDate = cam?.repaymentDate ?
-                        cam?.repaymentDate.toLocaleString("en-US", {
-                            month: "short",
-                            day: "2-digit",
-                            year: "numeric",
-                            timeZone: "Asia/Kolkata",
-                        }):null;
+                    const repaymentDate = cam?.repaymentDate
+                        ? cam?.repaymentDate.toLocaleString("en-US", {
+                              month: "short",
+                              day: "2-digit",
+                              year: "numeric",
+                              timeZone: "Asia/Kolkata",
+                          })
+                        : null;
 
                     let data = {
                         "Lead Created": createdDate || "N/A",
@@ -1278,11 +1280,10 @@ export const exportDisbursedData = async () => {
 
                     // console.log('disbursed report bank',data)
 
-                    return data
+                    return data;
                 })
             )
         ).filter((entry) => entry !== null);
-
 
         return data;
     } catch (error) {
