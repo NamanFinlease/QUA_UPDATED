@@ -13,7 +13,10 @@ import PennyDrop from "../models/pennyDrop.js";
 // @access Private
 export const applicantDetails = async (details = null, session) => {
     try {
-        console.log("&&&&&&&&&&&&&&&&&---details to make applicant---&&&&&&->", details)
+        console.log(
+            "&&&&&&&&&&&&&&&&&---details to make applicant---&&&&&&->",
+            details
+        );
         if (!details) {
             throw new Error("Details are required");
         }
@@ -27,11 +30,10 @@ export const applicantDetails = async (details = null, session) => {
         };
 
         // Define the data to update if the applicant exists, or to create if not
-        // yhi se hi lead se data pass  krna h yha 
+        // yhi se hi lead se data pass  krna h yha
 
-        let updateData
-        const applicantDetails = await Applicant.findOne(filter)
-
+        let updateData;
+        const applicantDetails = await Applicant.findOne(filter);
 
         if (applicantDetails) {
             updateData = {
@@ -49,23 +51,40 @@ export const applicantDetails = async (details = null, session) => {
                     pan: details.pan,
                     aadhaar: details.aadhaar,
                 },
-                residence: details?.extraDetails?.residenceDetails || applicantDetails?.residence,
-                incomeDetails: details?.extraDetails?.incomeDetails || applicantDetails?.incomeDetails,
+                residence:
+                    details?.extraDetails?.residenceDetails ||
+                    applicantDetails?.residence,
+                incomeDetails:
+                    details?.extraDetails?.incomeDetails ||
+                    applicantDetails?.incomeDetails,
                 employment: {
-                    companyName: details?.extraDetails?.employeDetails?.companyName || applicantDetails?.employment?.companyName,
-                    companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || applicantDetails?.employment?.companyAddress,
-                    state: details?.extraDetails?.employeDetails?.state || applicantDetails?.employment?.state,
-                    city: details?.extraDetails?.employeDetails?.city || applicantDetails?.employment?.city,
-                    pincode: details?.extraDetails?.employeDetails?.pincode || applicantDetails?.employment?.pincode,
-                    department: details?.extraDetails?.employeDetails?.companyType || applicantDetails?.employment?.department,
-                    designation: details?.extraDetails?.employeDetails?.designation || applicantDetails?.employment?.designation,
-                    employedSince: details?.extraDetails?.employeDetails?.employedSince || applicantDetails?.employment?.employedSince
+                    companyName:
+                        details?.extraDetails?.employeDetails?.companyName ||
+                        applicantDetails?.employment?.companyName,
+                    companyAddress:
+                        details?.extraDetails?.employeDetails?.officeAddrress ||
+                        applicantDetails?.employment?.companyAddress,
+                    state:
+                        details?.extraDetails?.employeDetails?.state ||
+                        applicantDetails?.employment?.state,
+                    city:
+                        details?.extraDetails?.employeDetails?.city ||
+                        applicantDetails?.employment?.city,
+                    pincode:
+                        details?.extraDetails?.employeDetails?.pincode ||
+                        applicantDetails?.employment?.pincode,
+                    department:
+                        details?.extraDetails?.employeDetails?.companyType ||
+                        applicantDetails?.employment?.department,
+                    designation:
+                        details?.extraDetails?.employeDetails?.designation ||
+                        applicantDetails?.employment?.designation,
+                    employedSince:
+                        details?.extraDetails?.employeDetails?.employedSince ||
+                        applicantDetails?.employment?.employedSince,
                 },
             };
-
-        }
-        else {
-
+        } else {
             updateData = {
                 personalDetails: {
                     fName: details.fName,
@@ -84,36 +103,50 @@ export const applicantDetails = async (details = null, session) => {
                 residence: details?.extraDetails?.residenceDetails || {},
                 incomeDetails: details?.extraDetails?.incomeDetails || {},
                 employment: {
-                    companyName: details?.extraDetails?.employeDetails?.companyName || "",
-                    companyAddress: details?.extraDetails?.employeDetails?.officeAddrress || "",
+                    companyName:
+                        details?.extraDetails?.employeDetails?.companyName ||
+                        "",
+                    companyAddress:
+                        details?.extraDetails?.employeDetails?.officeAddrress ||
+                        "",
                     state: details?.extraDetails?.employeDetails?.state || "",
                     city: details?.extraDetails?.employeDetails?.city || "",
-                    pincode: details?.extraDetails?.employeDetails?.pincode || "",
-                    department: details?.extraDetails?.employeDetails?.companyType || "",
-                    designation: details?.extraDetails?.employeDetails?.designation || "",
-                    employedSince: details?.extraDetails?.employeDetails?.employedSince || null
+                    pincode:
+                        details?.extraDetails?.employeDetails?.pincode || "",
+                    department:
+                        details?.extraDetails?.employeDetails?.companyType ||
+                        "",
+                    designation:
+                        details?.extraDetails?.employeDetails?.designation ||
+                        "",
+                    employedSince:
+                        details?.extraDetails?.employeDetails?.employedSince ||
+                        null,
                 },
             };
         }
-
 
         // Find the applicant by criteria and update if found, or create a new one
         const applicant = await Applicant.findOneAndUpdate(filter, updateData, {
             upsert: true,
             new: true,
-            session
+            session,
         });
-        console.log("details---->")
+        console.log("details---->");
 
-        let addBankDetails
-        let disbursalBankDetails = details?.extraDetails?.disbursalBankDetails
-        const isAlreadyBankAccount = await Bank.findOne({ borrowerId: applicant._id }).session(session)
-        console.log('check bank account', isAlreadyBankAccount)
-        if (isAlreadyBankAccount) {
+        let addBankDetails;
+        let disbursalBankDetails = details?.extraDetails?.disbursalBankDetails;
+        console.log("object", disbursalBankDetails);
+        const isAlreadyBankAccount = await Bank.findOne({
+            borrowerId: applicant._id,
+        }).session(session);
+        console.log("check bank account", isAlreadyBankAccount);
+        if (isAlreadyBankAccount && disbursalBankDetails) {
             addBankDetails = await Bank.findOneAndUpdate(
                 { borrowerId: applicant._id },
                 {
-                    beneficiaryName: disbursalBankDetails?.beneficiaryName || "",
+                    beneficiaryName:
+                        disbursalBankDetails?.beneficiaryName || "",
                     bankAccNo: disbursalBankDetails?.accountNumber || "",
                     accountType: disbursalBankDetails?.accountType || "",
                     ifscCode: disbursalBankDetails?.ifscCode || "",
@@ -122,6 +155,8 @@ export const applicantDetails = async (details = null, session) => {
                 },
                 { session, new: true }
             );
+        } else if (isAlreadyBankAccount) {
+            return applicant;
         } else {
             addBankDetails = new Bank({
                 borrowerId: applicant._id,
@@ -132,17 +167,14 @@ export const applicantDetails = async (details = null, session) => {
                 bankName: disbursalBankDetails?.bankName || "",
                 branchName: disbursalBankDetails?.branchName || "",
             });
-            await addBankDetails.save({ session })
+            await addBankDetails.save({ session });
         }
-
-
 
         return applicant;
     } catch (error) {
         throw new Error(error.message);
     }
 };
-
 
 // @desc Bank Verify and add the back.
 // @route POST /api/verify/bank
@@ -203,13 +235,13 @@ export const pennyDrop = asyncHandler(async (req, res) => {
     const { borrowerId, bankAccNo } = req.params;
 
     const applicant = await Applicant.findById(borrowerId);
-  
+
     if (!applicant) {
         res.status(404);
         throw new Error("No applicant found!!!");
     }
     const bank = await Bank.findOne({ bankAccNo, borrowerId });
-  
+
     if (!bank) {
         res.status(404);
         throw new Error("No bank account found for this applicant!");
@@ -226,10 +258,14 @@ export const pennyDrop = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error(response.message);
     }
-    
-    const updatedBank = await Bank.findOneAndUpdate({ bankAccNo, borrowerId }, { isPennyDropped: true }, { new: true });
+
+    const updatedBank = await Bank.findOneAndUpdate(
+        { bankAccNo, borrowerId },
+        { isPennyDropped: true },
+        { new: true }
+    );
     const pennydropData = await PennyDrop.findOneAndUpdate(
-        {accountNo:bankAccNo},
+        { accountNo: bankAccNo },
         {
             $set: {
                 name: response.data?.data?.name,
@@ -239,15 +275,14 @@ export const pennyDrop = asyncHandler(async (req, res) => {
                 utr: response.data?.data?.utr,
                 referenceId: response.data?.data?.referenceId,
                 branch: response.data?.data?.branch,
-            }
+            },
         },
         {
-            new:true,
-            upsert: true
+            new: true,
+            upsert: true,
         }
-        
-    )
-    console.log('bank verified',pennydropData)
+    );
+    console.log("bank verified", pennydropData);
 
     // const newBank = await Bank.create({
     //     borrowerId: id,
@@ -265,7 +300,7 @@ export const pennyDrop = asyncHandler(async (req, res) => {
     //         message: "Bank verified and saved.",
     //     });
     // }
-    res.json({ success: true, message: "Bank verified!!",pennydropData });
+    res.json({ success: true, message: "Bank verified!!", pennydropData });
 });
 
 // @desc Update applicant details
@@ -297,7 +332,7 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
         throw new Error("Applicant not found!");
     }
 
-    console.log('applicant', updates)
+    console.log("applicant", updates);
     // Update residence if provided
     if (updates.residence) {
         applicant.residence = {
@@ -334,9 +369,10 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
                 applicantsWithSameReference.forEach((applicants) => {
                     refCheck.push({
                         type: "Applicant",
-                        applicant: `${applicants.personalDetails.fName}${applicants.personalDetails.mName ??
+                        applicant: `${applicants.personalDetails.fName}${
+                            applicants.personalDetails.mName ??
                             ` ${applicants.personalDetails.mName} ${applicants.personalDetails.lName}`
-                            }`,
+                        }`,
                         mobile: `${applicants.personalDetails.mobile}`,
                         companyName: `${applicants.employment.companyName}`,
                     });
@@ -356,8 +392,9 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
                     refCheck.push({
                         type: "Lead",
                         leadId: lead._id,
-                        name: `${lead.fName}${lead.mName && ` ${lead.mName}`} ${lead.lName
-                            }`,
+                        name: `${lead.fName}${lead.mName && ` ${lead.mName}`} ${
+                            lead.lName
+                        }`,
                         email: lead.personalEmail,
                         officeEmail: lead.officeEmail,
                         mobile: lead.mobile,
@@ -369,7 +406,7 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
         });
     }
 
-    console.log('applicant save', applicant)
+    console.log("applicant save", applicant);
 
     // Save the updated applicant
     await applicant.save();
@@ -380,7 +417,8 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
     const logs = await postLogs(
         application.lead._id,
         "APPLICANT PERSONAL DETAILS UPDATED",
-        `${application.lead.fName} ${application.lead.mName ?? ""} ${application.lead.lName
+        `${application.lead.fName} ${application.lead.mName ?? ""} ${
+            application.lead.lName
         }`,
         `Applicant personal details updated by ${employee.fName} ${employee.lName}`
     );
