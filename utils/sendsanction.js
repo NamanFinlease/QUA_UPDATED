@@ -57,82 +57,82 @@ export const generateSanctionLetter = async (
         );
         const stepFour = await eSignStepFour(stepThree.data.referenceId);
 
-        const letter = new FormData();
-        letter.append("from", "credit@qualoan.com");
-        letter.append("to", `${lead.personalEmail}`);
-        letter.append("subject", `${subject}`);
-        letter.append(
-            "html",
-            `<p>
-                Please verify and E-sign the sanction letter to
-                acknowledge.${" "}
-                    ${stepFour.data.result.url}
-            </p>`
-        );
-
-        // Setup the options for the ZeptoMail API
-        const options = {
-            method: "POST",
-            url: "https://api.mailgun.net/v3/qualoan.com/messages",
-            data: letter,
-            headers: {
-                accept: "application/json",
-                authorization: `Basic ${process.env.MAILGUN_AUTH}`,
-                ...formData.getHeaders(),
-            },
-        };
-
-        // Make the request to the ZeptoMail API
-        const response = await axios(options);
-        if (
-            response.data.id !== "" ||
-            response.data.id !== null ||
-            response.data.id !== undefined
-        ) {
-            return {
-                success: true,
-                message: "Sanction letter sent successfully",
-            };
-        }
+        // const letter = new FormData();
+        // letter.append("from", "credit@qualoan.com");
+        // letter.append("to", `${lead.personalEmail}`);
+        // letter.append("subject", `${subject}`);
+        // letter.append(
+        //     "html",
+        //     `<p>
+        //         Please verify and E-sign the sanction letter to
+        //         acknowledge.${" "}
+        //             ${stepFour.data.result.url}
+        //     </p>`
+        // );
 
         // Setup the options for the ZeptoMail API
         // const options = {
         //     method: "POST",
-        //     url: "https://api.zeptomail.in/v1.1/email",
+        //     url: "https://api.mailgun.net/v3/qualoan.com/messages",
+        //     data: letter,
         //     headers: {
         //         accept: "application/json",
-        //         authorization: `Zoho-enczapikey PHtE6r1eFL/rjzF68UcBsPG/Q8L1No16/b5jKgkU44hBCPMFS00Eo49/xjO/ohkqU6JBRqTJy45v572e4u/TcWflNm1JWGqyqK3sx/VYSPOZsbq6x00etVkdd03eVoLue95s0CDfv9fcNA==`,
-        //         "cache-control": "no-cache",
-        //         "content-type": "application/json",
+        //         authorization: `Basic ${process.env.MAILGUN_AUTH}`,
+        //         ...formData.getHeaders(),
         //     },
-        //     data: JSON.stringify({
-        //         from: { address: "credit@qualoan.com" },
-        //         to: [
-        //             {
-        //                 email_address: {
-        //                     address: lead.personalEmail,
-        //                     name: fullname,
-        //                 },
-        //             },
-        //         ],
-        //         subject: subject,
-        //         htmlbody: `<p>
-        //                 Please verify and E-sign the sanction letter to
-        //                 acknowledge.${" "}
-        //                     ${stepFour.data.result.url}
-        //             </p>`,
-        //         // htmlbody: htmlToSend,
-        //     }),
         // };
 
         // Make the request to the ZeptoMail API
         // const response = await axios(options);
-        // if (response.data.message === "OK") {
+        // if (
+        //     response.data.id !== "" ||
+        //     response.data.id !== null ||
+        //     response.data.id !== undefined
+        // ) {
         //     return {
         //         success: true,
         //         message: "Sanction letter sent successfully",
         //     };
         // }
+
+        // Setup the options for the ZeptoMail API
+        const options = {
+            method: "POST",
+            url: "https://api.zeptomail.in/v1.1/email",
+            headers: {
+                accept: "application/json",
+                authorization: `${process.env.ZOHO_APIKEY}`,
+                "cache-control": "no-cache",
+                "content-type": "application/json",
+            },
+            data: JSON.stringify({
+                from: { address: "credit@qualoan.com" },
+                to: [
+                    {
+                        email_address: {
+                            address: lead.personalEmail,
+                            name: fullname,
+                        },
+                    },
+                ],
+                subject: subject,
+                htmlbody: `<p>
+                        Please verify and E-sign the sanction letter to
+                        acknowledge.${" "}
+                            ${stepFour.data.result.url}
+                    </p>`,
+                // htmlbody: htmlToSend,
+            }),
+        };
+
+        // Make the request to the ZeptoMail API
+        const response = await axios(options);
+        if (response.data.message === "OK") {
+            return {
+                success: true,
+                message: "Sanction letter sent successfully",
+            };
+        }
 
         return {
             success: false,
