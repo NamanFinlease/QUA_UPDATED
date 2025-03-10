@@ -18,7 +18,10 @@ export const getSanctionData = async (id) => {
         const sanctionDate = dateStripper(new Date());
         const disbursalDate = dateStripper(camDetails?.disbursalDate);
 
-        let localDisbursedDate = moment.utc(new Date(camDetails?.disbursalDate)).clone().local();
+        let localDisbursedDate = moment
+            .utc(new Date(camDetails?.disbursalDate))
+            .clone()
+            .local();
         let localSanctionDate = moment.utc(new Date()).clone().local();
 
         // Date validation
@@ -36,11 +39,13 @@ export const getSanctionData = async (id) => {
         const response = {
             sanctionDate: sanctionDate,
             title: "Mr./Ms.",
-            fullname: `${application.applicant.personalDetails.fName}${application.applicant.personalDetails.mName &&
+            fullname: `${application.applicant.personalDetails.fName}${
+                application.applicant.personalDetails.mName &&
                 ` ${application.applicant.personalDetails.mName}`
-                }${application.applicant.personalDetails.lName &&
+            }${
+                application.applicant.personalDetails.lName &&
                 ` ${application.applicant.personalDetails.lName}`
-                }`,
+            }`,
             loanNo: `${sanction.loanNo}`,
             pan: `${sanction.application.applicant.personalDetails.pan}`,
             residenceAddress: `${application.applicant.residence.address}, ${application.applicant.residence.city}`,
@@ -56,18 +61,19 @@ export const getSanctionData = async (id) => {
             )}`,
             tenure: `${camDetails?.eligibleTenure}`,
             repaymentDate: dateFormatter(camDetails?.repaymentDate),
-            penalInterest: Number(camDetails?.roi) * 2,
+            penalInterest: 2,
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
             )}`,
             // repaymentCheques: `${camDetails?.repaymentCheques || "-"}`,
             // bankName: `${bankName || "-"}`,
             bouncedCharges: "1000",
-            annualPercentageRate: `${((Number(camDetails?.roi) / 100) *
-            Number(camDetails?.eligibleTenure) +
-            Number(camDetails?.adminFeePercentage) / 100) *
-            (365 / Number(camDetails?.eligibleTenure)) *
-            100
+            annualPercentageRate: `${
+                ((Number(camDetails?.roi) / 100) *
+                    Number(camDetails?.eligibleTenure) +
+                    Number(camDetails?.adminFeePercentage) / 100) *
+                (365 / Number(camDetails?.eligibleTenure)) *
+                100
             }%`,
         };
 
@@ -86,7 +92,10 @@ export const getSanctionData = async (id) => {
     const sanctionDate = dateStripper(new Date());
     const disbursalDate = dateStripper(camDetails?.disbursalDate);
     let localSanctionDate = moment.utc(new Date()).clone().local();
-    let localDisbursedDate = moment.utc(new Date(camDetails?.disbursalDate)).clone().local();
+    let localDisbursedDate = moment
+        .utc(new Date(camDetails?.disbursalDate))
+        .clone()
+        .local();
 
     // Date validation
     if (
@@ -102,11 +111,13 @@ export const getSanctionData = async (id) => {
     const response = {
         sanctionDate: sanctionDate,
         title: "Mr./Ms.",
-        fullname: `${sanction.application.applicant.personalDetails.fName}${sanction.application.applicant.personalDetails.mName &&
+        fullname: `${sanction.application.applicant.personalDetails.fName}${
+            sanction.application.applicant.personalDetails.mName &&
             ` ${sanction.application.applicant.personalDetails.mName}`
-            }${sanction.application.applicant.personalDetails.lName &&
+        }${
+            sanction.application.applicant.personalDetails.lName &&
             ` ${sanction.application.applicant.personalDetails.lName}`
-            }`,
+        }`,
         loanNo: `${sanction.loanNo}`,
         pan: `${sanction.application.applicant.personalDetails.pan}`,
         residenceAddress: `${sanction.application.applicant.residence.address}, ${sanction.application.applicant.residence.city}`,
@@ -122,19 +133,20 @@ export const getSanctionData = async (id) => {
         )}`,
         tenure: `${camDetails?.eligibleTenure}`,
         repaymentDate: dateFormatter(camDetails?.repaymentDate),
-        penalInterest: Number(camDetails?.roi) * 2,
+        penalInterest: 2,
         processingFee: `${new Intl.NumberFormat().format(
             camDetails?.netAdminFeeAmount
         )}`,
         // repaymentCheques: `${camDetails?.repaymentCheques || "-"}`,
         // bankName: `${bankName || "-"}`,
         bouncedCharges: "1000",
-        annualPercentage: `${((Number(camDetails?.roi) / 100) *
-            Number(camDetails?.eligibleTenure) +
-            Number(camDetails?.adminFeePercentage) / 100) *
+        annualPercentage: `${
+            ((Number(camDetails?.roi) / 100) *
+                Number(camDetails?.eligibleTenure) +
+                Number(camDetails?.adminFeePercentage) / 100) *
             (365 / Number(camDetails?.eligibleTenure)) *
             100
-            }%`,
+        }%`,
     };
 
     return { sanction, camDetails, response };

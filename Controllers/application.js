@@ -19,7 +19,6 @@ export const getAllApplication = asyncHandler(async (req, res) => {
         req.activeRole !== "creditManager" &&
         req.activeRole !== "sanctionHead" &&
         req.activeRole !== "admin"
-
     ) {
         res.status(401);
         throw new Error("You don't have the authorization.");
@@ -206,7 +205,8 @@ export const allocateApplication = asyncHandler(async (req, res) => {
     const logs = await postLogs(
         application.lead._id,
         "APPLICATION IN PROCESS",
-        `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+        `${application.lead.fName}${
+            application.lead.mName && ` ${application.lead.mName}`
         }${application.lead.lName && ` ${application.lead.lName}`}`,
         `Application allocated to ${employee.fName} ${employee.lName}`
     );
@@ -351,7 +351,7 @@ export const postCamDetails = async (
 ) => {
     // need to add logic details come from lead
 
-    const existingCAM = await CamDetails.findById(leadId)
+    const existingCAM = await CamDetails.findOne({ leadId: leadId });
     if (!existingCAM) {
         const newCam = await CamDetails.create({
             pan: pan,
@@ -359,14 +359,13 @@ export const postCamDetails = async (
             leadId: leadId,
             cibilScore: cibilScore,
             loanAmount: loanAmount,
-
-        })
+        });
         if (!newCam) {
-            return { success: false, message: "Couldn't create CAM!" }
+            return { success: false, message: "Couldn't create CAM!" };
         }
-        return { success: true }
+        return { success: true };
     } else {
-        return { success: true }
+        return { success: true };
     }
 
     // await camDetails.save({ session });
@@ -452,7 +451,8 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
         const logs = await postLogs(
             application.lead._id,
             "APPLICATION IN PROCESS",
-            `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+            `${application.lead.fName}${
+                application.lead.mName && ` ${application.lead.mName}`
             }${application.lead.lName && ` ${application.lead.lName}`}`,
             `CAM details added by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`,
             `${cam?.loanAmount} ${cam?.loanRecommended} ${cam?.netDisbursalAmount} ${cam?.disbursalDate} ${cam?.repaymentDate} ${cam?.eligibleTenure} ${cam?.repaymentAmount}`
@@ -541,7 +541,8 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
             const logs = await postLogs(
                 application.lead._id,
                 "APPLICATION FORWARDED TO SANCTION HEAD",
-                `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+                `${application.lead.fName}${
+                    application.lead.mName && ` ${application.lead.mName}`
                 }${application.lead.lName && ` ${application.lead.lName}`}`,
                 `Application forwarded by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`
             );
