@@ -365,6 +365,7 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             receivedAmount,
             transactionId,
             paymentMode,
+            paymentMethod,
             closingType,
             remarks,
             discount = 0,
@@ -376,7 +377,7 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             paymentDate,
         } = req.body
 
-        console.log('loan number', transactionId, loanNo)
+       
 
         let isPartialPaid;
         const collectionData = await Collection.findOne({ loanNo }).session(session)
@@ -431,6 +432,7 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
                         "paymentHistory.$.receivedAmount": receivedAmount,
                         "paymentHistory.$.excessAmount": excessAmount,
                         "paymentHistory.$.paymentMode": paymentMode,
+                        "paymentHistory.$.paymentMethod": paymentMethod,
                         "paymentHistory.$.paymentDate": paymentDate,
                         "paymentHistory.$.closingType": closingType,
                         "paymentHistory.$.discountType": discountType,
@@ -455,6 +457,7 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
                         paymentHistory: {
                             receivedAmount,
                             paymentMode,
+                            paymentMethod,
                             paymentDate,
                             closingType,
                             discountType,
