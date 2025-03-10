@@ -4,6 +4,7 @@ import Lead from "../models/Leads.js";
 import Application from "../models/Applications.js";
 import Employee from "../models/Employees.js";
 import { postLogs } from "./logs.js";
+import LeadStatus from "../models/LeadStatus.js";
 import Sanction from "../models/Sanction.js";
 import Disbursal from "../models/Disbursal.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
@@ -55,7 +56,11 @@ export const rejected = asyncHandler(async (req, res) => {
 
         status = await LeadStatus.findByIdAndUpdate(
             { _id: lead.leadStatus },
-            { isRejected: true, stage: "APPLICATION", subStage: "LEAD REJECTED" },
+            {
+                isRejected: true,
+                stage: "APPLICATION",
+                subStage: "LEAD REJECTED",
+            },
             { new: true }
         );
 
@@ -67,7 +72,8 @@ export const rejected = asyncHandler(async (req, res) => {
         logs = await postLogs(
             lead._id,
             "LEAD REJECTED",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                lead.lName && ` ${lead.lName}`
             }`,
             `Lead rejected by ${lead.rejectedBy.fName} ${lead.rejectedBy.lName}`,
             `${reason}`
@@ -75,7 +81,11 @@ export const rejected = asyncHandler(async (req, res) => {
         // update loan Application while  rejected lead
         await LoanApplication.findOneAndUpdate(
             { leadNo: lead.leadNo },
-            { expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) , applicationStatus : "REJECTED" , sanction : "REJECTED" },
+            {
+                expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                applicationStatus: "REJECTED",
+                sanction: "REJECTED",
+            },
             { new: true }
         );
         return res.json({ lead, logs });
@@ -94,7 +104,11 @@ export const rejected = asyncHandler(async (req, res) => {
 
         status = await LeadStatus.findByIdAndUpdate(
             { _id: application.lead.leadStatus },
-            { isRejected: true, stage: "APPLICATION", subStage: "APPLICATION REJECTED" },
+            {
+                isRejected: true,
+                stage: "APPLICATION",
+                subStage: "APPLICATION REJECTED",
+            },
             { new: true }
         );
 
@@ -106,7 +120,8 @@ export const rejected = asyncHandler(async (req, res) => {
         logs = await postLogs(
             application.lead._id,
             "APPLICATION REJECTED",
-            `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
+            `${application.lead.fName}${
+                application.lead.mName && ` ${application.lead.mName}`
             }${application.lead.lName && ` ${application.lead.lName}`}`,
             `APPLICATION rejected by ${application.rejectedBy.fName} ${application.rejectedBy.lName}`,
             `${reason}`
@@ -114,7 +129,11 @@ export const rejected = asyncHandler(async (req, res) => {
         // update loan Application while  rejected lead
         await LoanApplication.findOneAndUpdate(
             { leadNo: lead.leadNo },
-            { expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) , applicationStatus : "REJECTED" , sanction : "REJECTED" },
+            {
+                expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                applicationStatus: "REJECTED",
+                sanction: "REJECTED",
+            },
             { new: true }
         );
         return res.json({ application, logs });
@@ -137,7 +156,11 @@ export const rejected = asyncHandler(async (req, res) => {
 
         status = await LeadStatus.findByIdAndUpdate(
             { _id: sanction.application.lead.leadStatus },
-            { isRejected: true, stage: "SANCTION", subStage: "SANCTION REJECTED" },
+            {
+                isRejected: true,
+                stage: "SANCTION",
+                subStage: "SANCTION REJECTED",
+            },
             { new: true }
         );
 
@@ -149,10 +172,12 @@ export const rejected = asyncHandler(async (req, res) => {
         logs = await postLogs(
             sanction.application.lead._id,
             "SANCTION REJECTED",
-            `${sanction.application.lead.fName}${sanction.application.lead.mName &&
-            ` ${sanction.application.lead.mName}`
-            }${sanction.application.lead.lName &&
-            ` ${sanction.application.lead.lName}`
+            `${sanction.application.lead.fName}${
+                sanction.application.lead.mName &&
+                ` ${sanction.application.lead.mName}`
+            }${
+                sanction.application.lead.lName &&
+                ` ${sanction.application.lead.lName}`
             }`,
             `SANCTION rejected by ${sanction.rejectedBy.fName} ${sanction.rejectedBy.lName}`,
             `${reason}`
@@ -160,7 +185,11 @@ export const rejected = asyncHandler(async (req, res) => {
         // update loan Application while  rejected lead
         await LoanApplication.findOneAndUpdate(
             { leadNo: lead.leadNo },
-            { expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) , applicationStatus : "REJECTED" , sanction : "REJECTED" },
+            {
+                expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                applicationStatus: "REJECTED",
+                sanction: "REJECTED",
+            },
             { new: true }
         );
         return res.json({ sanction, logs });
@@ -188,7 +217,11 @@ export const rejected = asyncHandler(async (req, res) => {
 
         status = await LeadStatus.findByIdAndUpdate(
             { _id: disbursal.sanction.application.lead.leadStatus },
-            { isRejected: true, subStage: "DISBURSAL REJECTED", stage: "DISBURSAL" },
+            {
+                isRejected: true,
+                subStage: "DISBURSAL REJECTED",
+                stage: "DISBURSAL",
+            },
             { new: true }
         );
 
@@ -212,10 +245,12 @@ export const rejected = asyncHandler(async (req, res) => {
         logs = await postLogs(
             disbursal.sanction.application.lead._id,
             "DISBURSAL REJECTED",
-            `${disbursal.sanction.application.lead.fName}${disbursal.sanction.application.lead.mName &&
-            ` ${disbursal.sanction.application.lead.mName}`
-            }${disbursal.sanction.application.lead.lName &&
-            ` ${disbursal.sanction.application.lead.lName}`
+            `${disbursal.sanction.application.lead.fName}${
+                disbursal.sanction.application.lead.mName &&
+                ` ${disbursal.sanction.application.lead.mName}`
+            }${
+                disbursal.sanction.application.lead.lName &&
+                ` ${disbursal.sanction.application.lead.lName}`
             }`,
             `Disbursal rejected by ${disbursal.rejectedBy.fName} ${disbursal.rejectedBy.lName}`,
             `${reason}`
@@ -223,7 +258,11 @@ export const rejected = asyncHandler(async (req, res) => {
         // update loan Application while  rejected lead
         await LoanApplication.findOneAndUpdate(
             { leadNo: lead.leadNo },
-            { expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) , applicationStatus : "REJECTED" , disbursed : "REJECTED" },
+            {
+                expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                applicationStatus: "REJECTED",
+                disbursed: "REJECTED",
+            },
             { new: true }
         );
         return res.json({ disbursal, logs });
