@@ -18,11 +18,13 @@ export const getSanctionData = async (id) => {
         const sanctionDate = dateStripper(new Date());
         const disbursalDate = dateStripper(camDetails?.disbursalDate);
 
+        let localSanctionDate = moment.utc(new Date()).clone().local();
         let localDisbursedDate = moment
             .utc(new Date(camDetails?.disbursalDate))
             .clone()
             .local();
-        let localSanctionDate = moment.utc(new Date()).clone().local();
+
+        console.log("Date 1: ", localSanctionDate, localDisbursedDate);
 
         // Date validation
         if (
@@ -97,7 +99,7 @@ export const getSanctionData = async (id) => {
         .clone()
         .local();
 
-    console.log("Date: ", localSanctionDate, localDisbursedDate);
+    console.log("Date 2: ", localSanctionDate, localDisbursedDate);
 
     // Date validation
     if (
