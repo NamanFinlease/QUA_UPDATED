@@ -94,10 +94,9 @@ export const getSanctionData = async (id) => {
     const sanctionDate = dateStripper(new Date());
     const disbursalDate = dateStripper(camDetails?.disbursalDate);
     let localSanctionDate = moment.utc(new Date()).clone().local();
-    let localDisbursedDate = moment
-        .utc(camDetails?.disbursalDate)
-        .clone()
-        .local();
+    let localDisbursedDate = moment(
+        new Date(camDetails?.disbursalDate)
+    ).local();
 
     console.log("Date 2: ", localSanctionDate, localDisbursedDate);
 
