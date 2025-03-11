@@ -3,7 +3,8 @@ import Closed from "../models/Closed.js";
 import { createActiveLead } from "./collection.js";
 import { dateFormatter } from "../utils/dateFormatter.js";
 import Disbursal from "../models/Disbursal.js";
-import { exportApprovedSanctions } from "../utils/dataChange.js";
+// import { exportApprovedSanctions } from "../utils/dataChange.js";
+import { exportApprovedSanctions } from "../utils/MIS/sanction/ApprovedSanctions.js";
 import { generateSanctionLetter } from "../utils/sendsanction.js";
 import { getSanctionData } from "../utils/sanctionData.js";
 import mongoose from "mongoose";
@@ -23,7 +24,7 @@ import moment from "moment";
 // @route GET /api/sanction/recommended
 // @access Private
 export const getPendingSanctions = asyncHandler(async (req, res) => {
-    if (req.activeRole === "sanctionHead"||req.activeRole === "admin") {
+    if (req.activeRole === "sanctionHead" || req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;
@@ -61,7 +62,7 @@ export const getPendingSanctions = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/eSignPending
 // @access Private
 export const getPendingESign = asyncHandler(async (req, res) => {
-    if (req.activeRole === "sanctionHead"||req.activeRole === "admin") {
+    if (req.activeRole === "sanctionHead" || req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;
@@ -101,7 +102,7 @@ export const getPendingESign = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/recommended
 // @access Private
 export const recommendedApplications = asyncHandler(async (req, res) => {
-    if (req.activeRole === "creditManager"||req.activeRole === "admin") {
+    if (req.activeRole === "creditManager" || req.activeRole === "admin") {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
         const skip = (page - 1) * limit;
@@ -173,7 +174,6 @@ export const recommendedApplications = asyncHandler(async (req, res) => {
 // @route GET /api/sanction/:id
 // @access Private
 export const getSanction = asyncHandler(async (req, res) => {
-
     const { id } = req.params;
     const sanction = await Sanction.findOne({ _id: id }).populate({
         path: "application",
@@ -216,9 +216,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
         try {
             const { id } = req.params;
 
-            const { sanction, response, leadNo } = await getSanctionData(
-                id
-            );
+            const { sanction, response, leadNo } = await getSanctionData(id);
 
             const { fName, mName, lName, pan } =
                 sanction.application.applicant.personalDetails;
@@ -230,11 +228,11 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
             const activeLead = await Close.findOne(
                 {
                     pan,
-                    isActive:true,
+                    isActive: true,
                 },
                 {
                     pan: 1,
-                    isActive:1
+                    isActive: 1,
                 }
             );
 
@@ -257,24 +255,16 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
             );
 
             // insert loanNo in loanApplication (user side)
-            let user
-            user = await User.findOne(
-                { PAN:pan },
-               
-            );
-            if(user){
+            let user;
+            user = await User.findOne({ PAN: pan });
+            if (user) {
                 const loanDetails = await LoanApplication.findOneAndUpdate(
                     { userId: user._id },
                     { loanNo: newLoanNo },
                     { new: true, sort: { createdAt: -1 } }
                 );
-                console.log("loanDetails--->" , loanDetails)
-
+                console.log("loanDetails--->", loanDetails);
             }
-
-            
-
-            
 
             const existing = await Sanction.findById(id);
 
@@ -298,14 +288,15 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                 );
             }
 
-
-            await LeadStatus.findOneAndUpdate({
-                leadNo: lead.leadNo
-            },
+            await LeadStatus.findOneAndUpdate(
                 {
-                    subStage : "SANCTION APPROVED AND LOAN NUMBER ALLOTTED",
-                    stage: "SANCTION"
-                })
+                    leadNo: lead.leadNo,
+                },
+                {
+                    subStage: "SANCTION APPROVED AND LOAN NUMBER ALLOTTED",
+                    stage: "SANCTION",
+                }
+            );
             const logs = await postLogs(
                 sanction.application.lead,
                 "SANCTION APPROVED AND LOAN NUMBER ALLOTTED",
@@ -313,7 +304,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                 `Sanction approved by ${req.employee.fName} ${req.employee.lName}`
             );
 
-            return res.json({ success: true, logs , leadNo :lead.leadNo  });
+            return res.json({ success: true, logs, leadNo: lead.leadNo });
         } catch (error) {
             console.log("error", error);
             res.status(500);
@@ -348,7 +339,6 @@ export const sendESign = asyncHandler(async (req, res) => {
 
             const docs = await Documents.findOne({ _id: lead.documents });
 
-
             // Call the generateSanctionLetter utility function
             const emailResponse = await generateSanctionLetter(
                 `SANCTION LETTER - ${response.fullname}`,
@@ -380,13 +370,12 @@ export const sendESign = asyncHandler(async (req, res) => {
 
             const existing = await Sanction.findById(id);
 
-            console.log('existing',existing)
+            console.log("existing", existing);
 
             if (!update) {
                 res.status(400);
                 throw new Error("There was some problem with update!!");
             }
-
 
             const newDisbursal = new Disbursal({
                 sanction: sanction._id,
@@ -422,13 +411,15 @@ export const sendESign = asyncHandler(async (req, res) => {
                 );
             }
 
-            await LeadStatus.findOneAndUpdate({
-                leadNo: lead.leadNo
-            },
+            await LeadStatus.findOneAndUpdate(
                 {
-                    stage : "SANCTION" , 
-                    subStage: "SANCTION LETTER SENT TO CLIENT FOR E-SIGN"
-                })
+                    leadNo: lead.leadNo,
+                },
+                {
+                    stage: "SANCTION",
+                    subStage: "SANCTION LETTER SENT TO CLIENT FOR E-SIGN",
+                }
+            );
             const logs = await postLogs(
                 sanction.application.lead,
                 "SANCTION LETTER SENT TO CLIENT FOR E-SIGN",
@@ -461,15 +452,15 @@ export const sanctioned = asyncHandler(async (req, res) => {
             creditManagerId: req.employee._id.toString(),
             eSigned: { $ne: true },
         };
-    } else if (req.activeRole === "sanctionHead" || req.activeRole === "admin" ) {
+    } else if (
+        req.activeRole === "sanctionHead" ||
+        req.activeRole === "admin"
+    ) {
         query = {
             // eSigned: { $eq: true },
             isApproved: { $eq: true },
             // isDisbursed: { $ne: true },
-            $or: [
-                { eSigned: { $eq: true } },
-                { eSignPending: { $eq: true } }
-            ]
+            $or: [{ eSigned: { $eq: true } }, { eSignPending: { $eq: true } }],
         };
     }
     const sanction = await Sanction.aggregate([
