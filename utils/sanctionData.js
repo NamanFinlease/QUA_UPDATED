@@ -97,10 +97,13 @@ export const getSanctionData = async (id) => {
         .clone()
         .local();
 
+    console.log("Date: ", localSanctionDate, localDisbursedDate);
+
     // Date validation
     if (
-        (sanction.sanctionDate && localDisbursedDate < localSanctionDate) || // Strip time from `sanctionDate`
-        localDisbursedDate < localSanctionDate
+        localDisbursedDate
+            .startOf("day")
+            .isBefore(localSanctionDate.startOf("day"))
     ) {
         throw new Error(
             "Disbursal Date cannot be in the past. It must be the present date or future date!"
