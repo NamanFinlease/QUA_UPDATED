@@ -4,15 +4,21 @@ import Bank from "../models/ApplicantBankDetails.js";
 import CamDetails from "../models/CAM.js";
 import Closed from "../models/Closed.js";
 import Disbursal from "../models/Disbursal.js";
-import {
-    exportNewDisbursals,
-    exportDisbursedData,
-} from "../utils/dataChange.js";
+// import {
+//     exportNewDisbursals,
+//     exportDisbursedData,
+// } from "../utils/dataChange.js";
+import { exportNewDisbursals } from "../utils/MIS/disbursal/NewDisbursal.js";
+import { exportDisbursedData } from "../utils/MIS/disbursal/Disbursed.js";
 import { postLogs } from "./logs.js";
-import generateHashCode from "../utils/generateHash.js"
+import generateHashCode from "../utils/generateHash.js";
 import Lead from "../models/Leads.js";
-import { createBeneficiary, createPayout, fetchPayout } from "../utils/payOutPG.js"
-import generateReceiptId from "../utils/receiptIDgenerator.js"
+import {
+    createBeneficiary,
+    createPayout,
+    fetchPayout,
+} from "../utils/payOutPG.js";
+import generateReceiptId from "../utils/receiptIDgenerator.js";
 import LeadStatus from "../models/LeadStatus.js";
 import Collection from "../models/Collection.js";
 import Payment from "../models/Payment.js";
@@ -27,7 +33,8 @@ import Close from "../models/close.js";
 export const getNewDisbursal = asyncHandler(async (req, res) => {
     if (
         req.activeRole === "disbursalManager" ||
-        req.activeRole === "disbursalHead" || req.activeRole === "admin"
+        req.activeRole === "disbursalHead" ||
+        req.activeRole === "admin"
     ) {
         const page = parseInt(req.query.page); // current page
         const limit = parseInt(req.query.limit); // items per page
@@ -37,7 +44,7 @@ export const getNewDisbursal = asyncHandler(async (req, res) => {
             disbursalManagerId: null,
             isRecommended: { $ne: true },
             isApproved: { $ne: true },
-            sanctionESigned: { $eq: true }
+            sanctionESigned: { $eq: true },
         };
 
         // const disbursals = await Disbursal.find(query)
@@ -54,17 +61,17 @@ export const getNewDisbursal = asyncHandler(async (req, res) => {
         //         },
         //     });
 
-       let pipeline =  [
+        let pipeline = [
             {
                 $match: {
                     disbursalManagerId: null,
                     isRecommended: { $ne: true },
                     isApproved: { $ne: true },
-                    sanctionESigned: true
-                }
+                    sanctionESigned: true,
+                },
             },
             {
-                $sort: { updatedAt: -1 } // Sort by updatedAt in descending order
+                $sort: { updatedAt: -1 }, // Sort by updatedAt in descending order
             },
 
             // {
@@ -73,87 +80,83 @@ export const getNewDisbursal = asyncHandler(async (req, res) => {
             // {
             //     $limit: limit
             // },
-            
+
             {
                 $lookup: {
                     from: "sanctions", // Reference to the 'sanctions' collection
                     localField: "sanction",
                     foreignField: "_id",
-                    as: "sanctionData"
-                }
+                    as: "sanctionData",
+                },
             },
             {
                 $unwind: {
                     path: "$sanctionData",
-                    preserveNullAndEmptyArrays: true
-                }
+                    preserveNullAndEmptyArrays: true,
+                },
             },
             {
                 $lookup: {
                     from: "applications",
                     localField: "sanctionData.application",
                     foreignField: "_id",
-                    as: "applicationData"
-                }
+                    as: "applicationData",
+                },
             },
             {
                 $unwind: {
                     path: "$applicationData",
-                    preserveNullAndEmptyArrays: true
-                }
+                    preserveNullAndEmptyArrays: true,
+                },
             },
             {
                 $lookup: {
                     from: "leads",
                     localField: "applicationData.lead",
                     foreignField: "_id",
-                    as: "leadData"
-                }
+                    as: "leadData",
+                },
             },
             {
                 $unwind: {
                     path: "$leadData",
-                    preserveNullAndEmptyArrays: true
-                }
+                    preserveNullAndEmptyArrays: true,
+                },
             },
-           {
+            {
                 $lookup: {
                     from: "camdetails",
                     localField: "leadData._id",
                     foreignField: "leadId",
-                    as: "camData"
-                }
+                    as: "camData",
+                },
             },
             {
                 $unwind: {
                     path: "$camData",
-                    preserveNullAndEmptyArrays: true
-                }
+                    preserveNullAndEmptyArrays: true,
+                },
             },
             {
                 $project: {
-                  loanNo:1,
-                  fName:"$leadData.fName",
-                  mName:"$leadData.mName",
-                  lName:"$leadData.lName",
-                  pan:"$leadData.pan",
-                  aadhaar:"$leadData.aadhaar",
-                  mobile:"$leadData.mobile",
-                  leadNo:"$leadData.leadNo",
-                  source:"$leadData.source",
-                  city:"$leadData.city",
-                  state:"$leadData.state",
-                  loanRecommended:"$camData.loanRecommended",
-                  actualNetSalary:"$camData.actualNetSalary",
-                }
-            }
-        ]
+                    loanNo: 1,
+                    fName: "$leadData.fName",
+                    mName: "$leadData.mName",
+                    lName: "$leadData.lName",
+                    pan: "$leadData.pan",
+                    aadhaar: "$leadData.aadhaar",
+                    mobile: "$leadData.mobile",
+                    leadNo: "$leadData.leadNo",
+                    source: "$leadData.source",
+                    city: "$leadData.city",
+                    state: "$leadData.state",
+                    loanRecommended: "$camData.loanRecommended",
+                    actualNetSalary: "$camData.actualNetSalary",
+                },
+            },
+        ];
 
-
-        const disbursals = await Disbursal.aggregate(pipeline)
-        
-        
-        
+        const disbursals = await Disbursal.aggregate(pipeline);
 
         const totalDisbursals = await Disbursal.countDocuments(query);
 
@@ -245,35 +248,37 @@ export const allocateDisbursal = asyncHandler(async (req, res) => {
     }
 
     // update leadStatus
-    await LeadStatus.findOneAndUpdate({
-        leadNo: disbursal.leadNo
-    },
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: disbursal.leadNo,
+        },
         {
             stage: "DISBURSAL",
-            subStage: "DISBURSAL IN PROCESS"
+            subStage: "DISBURSAL IN PROCESS",
         }
-    )
+    );
     const logs = await postLogs(
         disbursal?.sanction?.application.lead._id,
         "DISBURSAL IN PROCESS",
-        `${disbursal?.sanction?.application.lead.fName}${disbursal?.sanction?.application.lead.mName &&
-        ` ${disbursal?.sanction?.application.lead.mName}`
+        `${disbursal?.sanction?.application.lead.fName}${
+            disbursal?.sanction?.application.lead.mName &&
+            ` ${disbursal?.sanction?.application.lead.mName}`
         } ${disbursal?.sanction?.application.lead.lName}`,
         `Disbursal application approved by ${req.employee.fName} ${req.employee.lName}`
     );
 
     // update user Status
     if (disbursal.sanction.application.lead.userId) {
-        const userResult = await LoanApplication.findOneAndUpdate({
-            leadNo: disbursal.leadNo,
-        },
+        const userResult = await LoanApplication.findOneAndUpdate(
+            {
+                leadNo: disbursal.leadNo,
+            },
             {
                 sanction: "SUCCESS",
             }
-        )
-        console.log("user status----> allocate disbursal", userResult)
+        );
+        console.log("user status----> allocate disbursal", userResult);
     }
-
 
     // Send the updated lead as a JSON response
     return res.json({ disbursal, logs }); // This is a successful response
@@ -374,23 +379,26 @@ export const recommendDisbursal = asyncHandler(async (req, res) => {
         disbursal.recommendedBy = req.employee._id.toString();
         await disbursal.save();
 
-        await LeadStatus.findOneAndUpdate({
-            leadNo: disbursal.leadNo
-        },
+        await LeadStatus.findOneAndUpdate(
+            {
+                leadNo: disbursal.leadNo,
+            },
             {
                 stage: "DISBURSAL",
-                subStage: "DISBURSAL APPLICATION RECOMMENDED. SENDING TO DISBURSAL HEAD"
-            })
+                subStage:
+                    "DISBURSAL APPLICATION RECOMMENDED. SENDING TO DISBURSAL HEAD",
+            }
+        );
         const logs = await postLogs(
             disbursal.sanction.application.lead._id,
             "DISBURSAL APPLICATION RECOMMENDED. SENDING TO DISBURSAL HEAD",
-            `${disbursal.sanction.application.lead.fName}${disbursal.sanction.application.lead.mName &&
-            ` ${disbursal.sanction.application.lead.mName}`
+            `${disbursal.sanction.application.lead.fName}${
+                disbursal.sanction.application.lead.mName &&
+                ` ${disbursal.sanction.application.lead.mName}`
             } ${disbursal.sanction.application.lead.lName}`,
             `Disbursal approved by ${req.employee.fName} ${req.employee.lName}`,
             `${remarks}`
         );
-
 
         return res.json({ success: true, logs });
     }
@@ -453,222 +461,282 @@ export const disbursalPending = asyncHandler(async (req, res) => {
 // @desc Adding details after the payment is made
 // @route PATCH /api/disbursals/approve/:id
 // @access Private
-export const approveDisbursal = sessionAsyncHandler(async (req, res, session) => {
-    if (req.activeRole === "disbursalHead") {
-        const { id } = req.params;
+export const approveDisbursal = sessionAsyncHandler(
+    async (req, res, session) => {
+        if (req.activeRole === "disbursalHead") {
+            const { id } = req.params;
 
-        const {
-            payableAccount,
-            paymentMode,
-            amount,
-            channel,
-            disbursalDate,
-            remarks,
-        } = req.body;
-
-        const disbursalData = await Disbursal.findById(id).populate({
-            path: "sanction",
-            populate: { path: "application" },
-        }).session(session);
-        const cam = await CamDetails.findOne({
-            leadId: disbursalData?.sanction?.application?.lead.toString(),
-        }).session(session);
-        // if()
-        let currentDisbursalDate = new Date(disbursalDate);
-        let camDisbursalDate = new Date(cam.disbursalDate);
-        let camRepaymentDate = new Date(cam.repaymentDate);
-        if (
-            camDisbursalDate.toLocaleDateString() !==
-            currentDisbursalDate.toLocaleDateString()
-        ) {
-            const tenure = Math.ceil(
-                (camRepaymentDate.getTime() - currentDisbursalDate.getTime()) /
-                (1000 * 3600 * 24)
-            );
-            const repaymentAmount =
-                Number(cam.loanRecommended) +
-                (Number(cam.loanRecommended) *
-                    Number(tenure) *
-                    Number(cam.roi)) /
-                100;
-
-            await CamDetails.findByIdAndUpdate(
-                cam._id,
-                {
-                    eligibleTenure: tenure,
-                    disbursalDate: currentDisbursalDate,
-                    repaymentAmount: Number(repaymentAmount.toFixed(2)),
-                },
-                { new: true, session }
-            );
-        }
-
-        const leadData = await Lead.findById(disbursalData?.sanction?.application?.lead.toString()).session(session);
-        if (!leadData) {
-            throw new Error("Lead data not found");
-        }
-        // add paytring payout
-        if (paymentMode.toLowerCase() === "online" && channel.toLowerCase() === "imps") {
-            console.log("I am in Paytrin payement")
-            const isBankAccountPresent = await Bank.findOne({ bankAccNo: payableAccount }).session(session)
-            if (!isBankAccountPresent) {
-                return res.status(400).json({ message: "Please select valid Account Number" })
-            }
-
-            console.log("lead data", leadData)
-            const { fName, lName, mobile, personalEmail, city, state } = leadData
-            const { ifscCode } = isBankAccountPresent
-            console.log("isBankAccountPresent-->", isBankAccountPresent)
-
-            const hash = await generateHashCode(payableAccount, fName, lName, mobile, personalEmail, city, state, ifscCode)
-            const beneficaryResponse = await createBeneficiary(payableAccount, fName, lName, mobile, personalEmail, city, state, ifscCode, hash)
-            console.log(beneficaryResponse, "beneficaryResponse-->")
-
-            if (!beneficaryResponse || !beneficaryResponse.status) {
-                return res.status(500).json({ message: 'Issue in creating beneficiary' });
-            }
-
-            const receiptId = generateReceiptId()
-            const payoutResponse = await createPayout(amount, payableAccount, beneficaryResponse.beneficiary_id, receiptId, hash)
-            console.log("payoutResponse", payoutResponse)
-            if (!payoutResponse || !payoutResponse.status) {
-                return res.status(500).json({ message: 'Issue in creating payout' });
-            }
-
-            const fetchPayoutResponse = await fetchPayout(payoutResponse.transfer_id, hash)
-
-            if (!fetchPayoutResponse || !fetchPayoutResponse.status) {
-                return res.status(500).json({ message: 'Issue in fetching payout' });
-            }
-
-            disbursalData.transactionHinstory = fetchPayoutResponse
-            await disbursalData.save({ session })
-
-        }
-
-        const disbursal = await Disbursal.findByIdAndUpdate(
-            id,
-            {
+            const {
                 payableAccount,
                 paymentMode,
                 amount,
                 channel,
-                disbursedAt: disbursalDate,
-                utr: remarks,
-                isDisbursed: true,
-                disbursedBy: req.employee._id.toString(),
-            },
-            { new: true, session }
-        ).populate({
-            path: "sanction",
-            populate: [
-                { path: "approvedBy" },
-                {
-                    path: "application",
-                    populate: [
-                        { path: "lead", populate: { path: "documents" } }, // Nested populate for lead and documents
-                        { path: "recommendedBy" },
-                    ],
-                },
-            ],
-        });
+                disbursalDate,
+                remarks,
+            } = req.body;
 
-        const objectId = new mongoose.Types.ObjectId(id);
-        const closed = await Close.findOneAndUpdate(
-            { disbursal: objectId }, // Find the document where data.disbursal matches
-            {
-                $set: { isDisbursed: true } // Use array filter reference
-            },
-            {
-                returnDocument: 'after', // Return the updated document
-                session: session // Include transaction session if needed
+            const disbursalData = await Disbursal.findById(id)
+                .populate({
+                    path: "sanction",
+                    populate: { path: "application" },
+                })
+                .session(session);
+            const cam = await CamDetails.findOne({
+                leadId: disbursalData?.sanction?.application?.lead.toString(),
+            }).session(session);
+            // if()
+            let currentDisbursalDate = new Date(disbursalDate);
+            let camDisbursalDate = new Date(cam.disbursalDate);
+            let camRepaymentDate = new Date(cam.repaymentDate);
+            if (
+                camDisbursalDate.toLocaleDateString() !==
+                currentDisbursalDate.toLocaleDateString()
+            ) {
+                const tenure = Math.ceil(
+                    (camRepaymentDate.getTime() -
+                        currentDisbursalDate.getTime()) /
+                        (1000 * 3600 * 24)
+                );
+                const repaymentAmount =
+                    Number(cam.loanRecommended) +
+                    (Number(cam.loanRecommended) *
+                        Number(tenure) *
+                        Number(cam.roi)) /
+                        100;
+
+                await CamDetails.findByIdAndUpdate(
+                    cam._id,
+                    {
+                        eligibleTenure: tenure,
+                        disbursalDate: currentDisbursalDate,
+                        repaymentAmount: Number(repaymentAmount.toFixed(2)),
+                    },
+                    { new: true, session }
+                );
             }
-        );
 
-        console.log("close--->", closed)
+            const leadData = await Lead.findById(
+                disbursalData?.sanction?.application?.lead.toString()
+            ).session(session);
+            if (!leadData) {
+                throw new Error("Lead data not found");
+            }
+            // add paytring payout
+            if (
+                paymentMode.toLowerCase() === "online" &&
+                channel.toLowerCase() === "imps"
+            ) {
+                console.log("I am in Paytrin payement");
+                const isBankAccountPresent = await Bank.findOne({
+                    bankAccNo: payableAccount,
+                }).session(session);
+                if (!isBankAccountPresent) {
+                    return res.status(400).json({
+                        message: "Please select valid Account Number",
+                    });
+                }
 
-        if (leadData.userId) {
-            const userResult = await LoanApplication.findOneAndUpdate({
-                leadNo: leadData.leadNo
-            },
+                console.log("lead data", leadData);
+                const { fName, lName, mobile, personalEmail, city, state } =
+                    leadData;
+                const { ifscCode } = isBankAccountPresent;
+                console.log("isBankAccountPresent-->", isBankAccountPresent);
+
+                const hash = await generateHashCode(
+                    payableAccount,
+                    fName,
+                    lName,
+                    mobile,
+                    personalEmail,
+                    city,
+                    state,
+                    ifscCode
+                );
+                const beneficaryResponse = await createBeneficiary(
+                    payableAccount,
+                    fName,
+                    lName,
+                    mobile,
+                    personalEmail,
+                    city,
+                    state,
+                    ifscCode,
+                    hash
+                );
+                console.log(beneficaryResponse, "beneficaryResponse-->");
+
+                if (!beneficaryResponse || !beneficaryResponse.status) {
+                    return res
+                        .status(500)
+                        .json({ message: "Issue in creating beneficiary" });
+                }
+
+                const receiptId = generateReceiptId();
+                const payoutResponse = await createPayout(
+                    amount,
+                    payableAccount,
+                    beneficaryResponse.beneficiary_id,
+                    receiptId,
+                    hash
+                );
+                console.log("payoutResponse", payoutResponse);
+                if (!payoutResponse || !payoutResponse.status) {
+                    return res
+                        .status(500)
+                        .json({ message: "Issue in creating payout" });
+                }
+
+                const fetchPayoutResponse = await fetchPayout(
+                    payoutResponse.transfer_id,
+                    hash
+                );
+
+                if (!fetchPayoutResponse || !fetchPayoutResponse.status) {
+                    return res
+                        .status(500)
+                        .json({ message: "Issue in fetching payout" });
+                }
+
+                disbursalData.transactionHinstory = fetchPayoutResponse;
+                await disbursalData.save({ session });
+            }
+
+            const disbursal = await Disbursal.findByIdAndUpdate(
+                id,
                 {
-                    disbursed: "SUCCESS",
-                    loanNo: disbursalData?.loanNo ?? ""
+                    payableAccount,
+                    paymentMode,
+                    amount,
+                    channel,
+                    disbursedAt: disbursalDate,
+                    utr: remarks,
+                    isDisbursed: true,
+                    disbursedBy: req.employee._id.toString(),
+                },
+                { new: true, session }
+            ).populate({
+                path: "sanction",
+                populate: [
+                    { path: "approvedBy" },
+                    {
+                        path: "application",
+                        populate: [
+                            { path: "lead", populate: { path: "documents" } }, // Nested populate for lead and documents
+                            { path: "recommendedBy" },
+                        ],
+                    },
+                ],
+            });
+
+            const objectId = new mongoose.Types.ObjectId(id);
+            const closed = await Close.findOneAndUpdate(
+                { disbursal: objectId }, // Find the document where data.disbursal matches
+                {
+                    $set: { isDisbursed: true }, // Use array filter reference
+                },
+                {
+                    returnDocument: "after", // Return the updated document
+                    session: session, // Include transaction session if needed
+                }
+            );
+
+            console.log("close--->", closed);
+
+            if (leadData.userId) {
+                const userResult = await LoanApplication.findOneAndUpdate(
+                    {
+                        leadNo: leadData.leadNo,
+                    },
+                    {
+                        disbursed: "SUCCESS",
+                        loanNo: disbursalData?.loanNo ?? "",
+                    },
+                    { session }
+                );
+                console.log("userResult from disbursed ---->", userResult);
+            }
+            if (!leadData.userId) {
+                console.log("-------> ID nhi mili h user ki");
+            }
+
+            // update lead stage
+            await LeadStatus.findOneAndUpdate(
+                {
+                    leadNo: disbursal.leadNo,
+                },
+                {
+                    stage: "DISBURSED",
+                    subStage: "AMOUNT DISBURSED TO CUSTOMER.",
                 },
                 { session }
-            )
-            console.log("userResult from disbursed ---->", userResult)
+            );
+
+            const updatedCAM = await CamDetails.findById(cam._id);
+
+            // calculate outstanding amount for the day of disbursal
+            let outstandingAmount =
+                updatedCAM.loanRecommended +
+                (updatedCAM.loanRecommended * updatedCAM.roi) / 100;
+            let interest = outstandingAmount - updatedCAM.loanRecommended;
+            // create collection  and payment document after  disbursed amount
+            const collectionData = new Collection({
+                pan: disbursal.pan,
+                leadNo: disbursal.leadNo,
+                loanNo: disbursal.loanNo,
+                repaymentDate: updatedCAM.repaymentDate,
+                penalRate: 2,
+                principalAmount: Number(updatedCAM.loanRecommended.toFixed(2)),
+                outstandingAmount: Number(outstandingAmount.toFixed(2)),
+                interest: Number(interest.toFixed(2)),
+                remainingAmount: Number(updatedCAM.loanRecommended),
+                disbursal: disbursal._id,
+                isDisbursed: true,
+                camDetails: updatedCAM._id,
+                close: closed._id,
+            });
+            await collectionData.save({ session });
+
+            if (!collectionData) {
+                return res
+                    .status(400)
+                    .json({ message: "Issue in creating collection document" });
+            }
+
+            const payment = new Payment({
+                pan: collectionData.pan,
+                leadNo: collectionData.leadNo,
+                loanNo: collectionData.loanNo,
+                repaymentDate: collectionData.repaymentDate,
+            });
+            await payment.save({ session });
+            if (!payment) {
+                return res
+                    .status(400)
+                    .json({ message: "Issue in creating payment document" });
+            }
+
+            await Collection.findByIdAndUpdate(
+                collectionData._id,
+                { payment: payment._id },
+                { session }
+            );
+
+            const logs = await postLogs(
+                disbursal.sanction.application.lead._id,
+                "AMOUNT DISBURSED TO CUSTOMER.",
+                `${disbursal.sanction.application.lead.fName}${
+                    disbursal.sanction.application.lead.mName &&
+                    ` ${disbursal.sanction.application.lead.mName}`
+                } ${disbursal.sanction.application.lead.lName}`,
+                `Amount Disbursed by ${req.employee.fName} ${req.employee.lName}`,
+                `${remarks}`,
+                session
+            );
+
+            res.json({ success: true, logs });
         }
-        if (!leadData.userId) {
-            console.log("-------> ID nhi mili h user ki")
-        }
-
-        // update lead stage
-        await LeadStatus.findOneAndUpdate({
-            leadNo: disbursal.leadNo
-        },
-            {
-                stage: "DISBURSED",
-                subStage: "AMOUNT DISBURSED TO CUSTOMER."
-
-            },
-            { session })
-
-        const updatedCAM = await CamDetails.findById(cam._id);
-
-
-        // calculate outstanding amount for the day of disbursal
-        let outstandingAmount = updatedCAM.loanRecommended + ((updatedCAM.loanRecommended * updatedCAM.roi) / 100)
-        let interest = outstandingAmount - updatedCAM.loanRecommended
-        // create collection  and payment document after  disbursed amount 
-        const collectionData = new Collection({
-            pan: disbursal.pan,
-            leadNo: disbursal.leadNo,
-            loanNo: disbursal.loanNo,
-            repaymentDate: updatedCAM.repaymentDate,
-            penalRate: 2,
-            principalAmount: Number(updatedCAM.loanRecommended.toFixed(2)),
-            outstandingAmount: Number(outstandingAmount.toFixed(2)),
-            interest: Number(interest.toFixed(2)),
-            remainingAmount: Number(updatedCAM.loanRecommended),
-            disbursal: disbursal._id,
-            isDisbursed: true,
-            camDetails: updatedCAM._id,
-            close: closed._id,
-        });
-        await collectionData.save({ session })
-
-        if (!collectionData) {
-            return res.status(400).json({ message: 'Issue in creating collection document' });
-        }
-
-        const payment = new Payment({
-            pan: collectionData.pan,
-            leadNo: collectionData.leadNo,
-            loanNo: collectionData.loanNo,
-            repaymentDate: collectionData.repaymentDate,
-        })
-        await payment.save({ session })
-        if (!payment) {
-            return res.status(400).json({ message: 'Issue in creating payment document' });
-        }
-
-        await Collection.findByIdAndUpdate(collectionData._id, { payment: payment._id }, { session });
-
-        const logs = await postLogs(
-            disbursal.sanction.application.lead._id,
-            "AMOUNT DISBURSED TO CUSTOMER.",
-            `${disbursal.sanction.application.lead.fName}${disbursal.sanction.application.lead.mName &&
-            ` ${disbursal.sanction.application.lead.mName}`
-            } ${disbursal.sanction.application.lead.lName}`,
-            `Amount Disbursed by ${req.employee.fName} ${req.employee.lName}`,
-            `${remarks}`,
-            session
-        );
-
-        res.json({ success: true, logs });
     }
-});
+);
 
 // @desc Get all the disbursed applications
 // @route GET /api/disbursals/disbursed
@@ -835,6 +903,7 @@ export const disbursed = asyncHandler(async (req, res) => {
 // @access Private
 export const newDisbursalReport = asyncHandler(async (req, res) => {
     const data = await exportNewDisbursals();
+    console.log("Data: ", data);
     return res.json({ data });
 });
 
@@ -843,5 +912,6 @@ export const newDisbursalReport = asyncHandler(async (req, res) => {
 // @access Private
 export const disbursedReport = asyncHandler(async (req, res) => {
     const data = await exportDisbursedData();
+    console.log("Data: ", data);
     return res.json({ data });
 });
