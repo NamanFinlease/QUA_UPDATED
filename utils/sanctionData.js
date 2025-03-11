@@ -100,15 +100,15 @@ export const getSanctionData = async (id) => {
     console.log("Date: ", localSanctionDate, localDisbursedDate);
 
     // Date validation
-    if (
-        localDisbursedDate
-            .startOf("day")
-            .isBefore(localSanctionDate.startOf("day"))
-    ) {
-        throw new Error(
-            "Disbursal Date cannot be in the past. It must be the present date or future date!"
-        );
-    }
+    // if (
+    //     localDisbursedDate
+    //         .startOf("day")
+    //         .isBefore(localSanctionDate.startOf("day"))
+    // ) {
+    //     throw new Error(
+    //         "Disbursal Date cannot be in the past. It must be the present date or future date!"
+    //     );
+    // }
 
     // Create a response object with all common fields
     const response = {
