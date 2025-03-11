@@ -99,13 +99,15 @@ export const exportNewDisbursals = async () => {
                         timeZone: "Asia/Kolkata",
                     });
 
-                    const repaymentDate =
-                        cam?.details?.repaymentDate.toLocaleString("en-US", {
+                    const repaymentDate = cam?.repaymentDate.toLocaleString(
+                        "en-US",
+                        {
                             month: "short",
                             day: "2-digit",
                             year: "numeric",
                             timeZone: "Asia/Kolkata",
-                        });
+                        }
+                    );
 
                     return {
                         "Lead Created": createdDate || "N/A",
