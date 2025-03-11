@@ -21,8 +21,8 @@ export const getSanctionData = async (id) => {
         let localSanctionDate = moment.utc(new Date()).clone().local();
         let localDisbursedDate = moment
             .utc(camDetails?.disbursalDate)
-            .clone()
-            .local();
+            .add(5, "hours")
+            .add(30, "minutes");
 
         console.log("Date 1: ", localSanctionDate, localDisbursedDate);
 
@@ -93,10 +93,14 @@ export const getSanctionData = async (id) => {
     // Stripping the time from the date to compare
     const sanctionDate = dateStripper(new Date());
     const disbursalDate = dateStripper(camDetails?.disbursalDate);
+
+    console.log("TimeZone: ", Intl.DateTimeFormat().resolvedOptions().timeZone);
+
     let localSanctionDate = moment.utc(new Date()).clone().local();
-    let localDisbursedDate = moment(
-        new Date(camDetails?.disbursalDate)
-    ).local();
+    let localDisbursedDate = moment
+        .utc(camDetails?.disbursalDate)
+        .add(5, "hours")
+        .add(30, "minutes");
 
     console.log("Date 2: ", localSanctionDate, localDisbursedDate);
 
