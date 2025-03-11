@@ -332,81 +332,95 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
         throw new Error("Applicant not found!");
     }
 
-    console.log("applicant", updates);
+
     // Update residence if provided
-    if (updates.residence) {
-        applicant.residence = {
-            ...applicant.residence, // Retain existing data
-            ...updates.residence, // Merge with new data
-        };
+    if (updates.residence && Object.keys(updates.residence).length > 0) {
+        Object.assign(applicant.residence, updates.residence);
     }
 
-    // Update employment if provided
-    if (updates.employment) {
-        applicant.employment = {
-            ...applicant.employment, // Retain existing data
-            ...updates.employment, // Merge with new data
-        };
+    // console.log('applicant 2')
+
+
+
+    if (updates.employment && Object.keys(updates.employment).length > 0) {
+        Object.assign(applicant.employment, updates.employment);
     }
 
-    // Fetch all applicants and leads
-    const allApplicants = await Applicant.find({});
-    const allLeads = await Lead.find({});
+
 
     let refCheck = [];
     // Update reference if provided
     if (updates.reference && updates.reference.length > 0) {
-        updates.reference.forEach((newRef) => {
-            // Find all applicants who have used the same reference (mobile number)
-            const applicantsWithSameReference = allApplicants.filter(
-                (applicants) =>
-                    applicants.reference.some(
-                        (oldRef) => oldRef.mobile === newRef.mobile
-                    )
-            );
-            if (applicantsWithSameReference.length > 0) {
-                // Add all applicants who used the same reference to refCheck
-                applicantsWithSameReference.forEach((applicants) => {
+
+        const newReferences = updates.reference;
+        let existingReferences = applicant.reference || [];
+
+        const newReferenceMobiles = new Set(newReferences.map((ref) => ref.mobile));
+
+        // Fetch existing applicants & leads using reference mobiles
+        const [applicantsWithSameReference, leadsWithSameMobile] = await Promise.all([
+            Applicant.find({ "reference.mobile": { $in: Array.from(newReferenceMobiles) } }).lean(),
+            Lead.find({
+                $or: [
+                    { mobile: { $in: Array.from(newReferenceMobiles) } },
+                    { alternateMobile: { $in: Array.from(newReferenceMobiles) } },
+                ],
+            }).lean(),
+        ]);
+
+        // console.log('ref 3', applicantsWithSameReference, leadsWithSameMobile)
+
+        // Check for duplicate references in other applicants
+        const duplicateApplicantReferences = new Set();
+        applicantsWithSameReference.forEach((app) => {
+
+            app.reference.forEach((oldRef) => {
+                if (newReferenceMobiles.has(oldRef.mobile) && app._id.toString() !== applicant._id.toString()) {
+                    duplicateApplicantReferences.add(oldRef.mobile);
                     refCheck.push({
                         type: "Applicant",
-                        applicant: `${applicants.personalDetails.fName}${
-                            applicants.personalDetails.mName ??
-                            ` ${applicants.personalDetails.mName} ${applicants.personalDetails.lName}`
-                        }`,
-                        mobile: `${applicants.personalDetails.mobile}`,
-                        companyName: `${applicants.employment.companyName}`,
+                        applicant: `${app.personalDetails.fName} ${app.personalDetails.mName ?? ""} ${app.personalDetails.lName}`,
+                        mobile: app.personalDetails.mobile,
+                        companyName: app.employment.companyName,
                     });
-                });
-            }
-
-            // Check if the reference mobile was ever a lead
-            const leadWithSameMobile = allLeads.filter(
-                (lead) =>
-                    lead.mobile === newRef.mobile ||
-                    lead.alternateMobile === newRef.mobile
-            );
-
-            if (leadWithSameMobile.length > 0) {
-                // Add all leads with the same mobile to refCheck
-                leadWithSameMobile.forEach((lead) => {
-                    refCheck.push({
-                        type: "Lead",
-                        leadId: lead._id,
-                        name: `${lead.fName}${lead.mName && ` ${lead.mName}`} ${
-                            lead.lName
-                        }`,
-                        email: lead.personalEmail,
-                        officeEmail: lead.officeEmail,
-                        mobile: lead.mobile,
-                        alternateMobile: lead.alternateMobile,
-                    });
-                });
-            }
-            applicant.reference.push(newRef);
+                }
+            });
         });
+
+        // Check if reference matches any lead's mobile
+        const duplicateLeadReferences = new Set();
+        leadsWithSameMobile.forEach((lead) => {
+            if (newReferenceMobiles.has(lead.mobile) || newReferenceMobiles.has(lead.alternateMobile)) {
+                duplicateLeadReferences.add(lead.mobile);
+                refCheck.push({
+                    type: "Lead",
+                    leadId: lead._id,
+                    name: `${lead.fName} ${lead.mName ?? ""} ${lead.lName}`,
+                    email: lead.personalEmail,
+                    officeEmail: lead.officeEmail,
+                    mobile: lead.mobile,
+                    alternateMobile: lead.alternateMobile,
+                });
+            }
+        });
+
+        // Replace existing references instead of adding new ones
+        newReferences.forEach((newRef,index) => {
+            if (!duplicateApplicantReferences.has(newRef.mobile) && !duplicateLeadReferences.has(newRef.mobile)) {
+
+                if (existingReferences[index]) {
+                    existingReferences[index] = newRef;
+                } else if (existingReferences.length < 2) {
+                    existingReferences.push(newRef);
+                }
+            }
+        });
+      // Ensure only 2 references are stored
+        applicant.reference = existingReferences.slice(0, 2);
+
     }
 
-    console.log("applicant save", applicant);
+    // console.log("applicant save", applicant);
 
     // Save the updated applicant
     await applicant.save();
@@ -417,8 +431,7 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
     const logs = await postLogs(
         application.lead._id,
         "APPLICANT PERSONAL DETAILS UPDATED",
-        `${application.lead.fName} ${application.lead.mName ?? ""} ${
-            application.lead.lName
+        `${application.lead.fName} ${application.lead.mName ?? ""} ${application.lead.lName
         }`,
         `Applicant personal details updated by ${employee.fName} ${employee.lName}`
     );
