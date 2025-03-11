@@ -122,17 +122,16 @@ export const exportNewDisbursals = async () => {
                         "Alternate Mobile": lead.alternateMobile,
                         Email: lead.personalEmail,
                         "Office Email": lead.officeEmail,
-                        "Sanctioned Amount": cam?.details?.loanRecommended || 0,
-                        ROI: cam?.details?.roi,
-                        Tenure: cam?.details?.eligibleTenure,
+                        "Sanctioned Amount": cam?.loanRecommended || 0,
+                        ROI: cam?.roi,
+                        Tenure: cam?.eligibleTenure,
                         "Interest Amount":
-                            Number(cam?.details?.repaymentAmount) -
-                            Number(cam?.details?.loanRecommended),
-                        "Disbursal Amount":
-                            cam?.details?.netDisbursalAmount || 0,
-                        "Repayment Amount": cam?.details?.repaymentAmount || 0,
-                        PF: cam?.details?.netAdminFeeAmount || 0,
-                        "PF%": cam?.details?.adminFeePercentage || 0,
+                            Number(cam?.repaymentAmount) -
+                            Number(cam?.loanRecommended),
+                        "Disbursal Amount": cam?.netDisbursalAmount || 0,
+                        "Repayment Amount": cam?.repaymentAmount || 0,
+                        PF: cam?.netAdminFeeAmount || 0,
+                        "PF%": cam?.adminFeePercentage || 0,
                         "Beneficiary Bank Name": bank?.bankName || "N/A",
                         accountNo: bank?.bankAccNo || "N/A",
                         IFSC: bank?.ifscCode || "N/A",
