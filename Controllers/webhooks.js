@@ -32,7 +32,7 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
                  `Failed to analyse bankstatement.` ,
                 `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
                 }`,
-                 `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+                 `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
             );
             res.status(400);
             throw new Error("Couldn't save the document!!");
@@ -42,7 +42,7 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
              `Bankstatement analyzed and saved successfully at ${time}.` ,
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
             }`,
-             `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+             `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
         );
         return res.status(200).json({
             success: true,
@@ -54,7 +54,7 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
          `Failed to analyse at ${time}.` ,
         `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
         }`,
-         `Documents sent for analysis by ${employee.fName} ${employee.lName}` 
+         `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
     );
     return res.json({ success: false });
 });
