@@ -2,6 +2,7 @@ import Disbursal from "../../../models/Disbursal.js";
 import CamDetails from "../../../models/CAM.js";
 import Bank from "../../../models/ApplicantBankDetails.js";
 import { formatFullName } from "../../nameFormatter.js";
+import AadhaarDetails from "../../../models/AadhaarDetails.js";
 
 export const exportDisbursedData = async () => {
     try {
@@ -67,6 +68,7 @@ export const exportDisbursedData = async () => {
                     if (
                         !lead ||
                         [
+                            "IUUpk1335L",
                             "AVZPC6217D",
                             "IJXPD6084F",
                             "HKCPK6182A",
@@ -78,6 +80,13 @@ export const exportDisbursedData = async () => {
                     const cam = await CamDetails.findOne({
                         leadId: lead._id.toString(),
                     });
+                    const aadhaarDetails = await AadhaarDetails.findOne({
+                        uniqueId: lead.aadhaar,
+                    });
+
+                    // if(!aadhaarDetails){
+                    //     return false
+                    // }
                     const bank = await Bank.findOne({
                         borrowerId: disbursed.sanction.application.applicant,
                     });
@@ -119,13 +128,13 @@ export const exportDisbursedData = async () => {
                         }`.trim(),
                         PAN: lead.pan || "N/A",
                         Aadhaar: lead.aadhaar
-                            ? `'${String(lead.aadhaar)}`
+                            ? `${String(lead.aadhaar)}`
                             : "N/A",
                         Mobile: lead.mobile,
                         "Alternate Mobile": lead.alternateMobile,
                         Email: lead.personalEmail,
                         "Office Email": lead.officeEmail,
-                        "Sanctioned Amount": cam?.details?.loanRecommended || 0,
+                        "Sanctioned Amount": cam?.loanRecommended || 0,
                         ROI: cam?.roi,
                         Tenure: cam?.eligibleTenure,
                         "Interest Amount":
@@ -136,11 +145,12 @@ export const exportDisbursedData = async () => {
                         PF: cam?.netAdminFeeAmount || 0,
                         "PF%": cam?.adminFeePercentage || 0,
                         "Beneficiary Bank Name": bank?.bankName || "N/A",
+                        "Beneficiary Name": bank?.beneficiaryName || "N/A",
                         accountNo: bank?.bankAccNo || "N/A",
                         IFSC: bank?.ifscCode || "N/A",
-                        "Disbursed From": disbursed.payableAccount || "N/A",
+                        "Disbursed Bank": disbursed.payableAccount || "N/A",
                         UTR: disbursed.utr
-                            ? `'${String(disbursed.utr)}`
+                            ? `${String(disbursed.utr)}`
                             : "N/A",
                         Screener: formatFullName(
                             lead.recommendedBy.fName,
@@ -162,7 +172,7 @@ export const exportDisbursedData = async () => {
                         "Residence City":
                             sanction.application.applicant.residence.city,
                         "Residence State":
-                            sanction.application.applicant.residence.state,
+                            aadhaarDetails?.details?.address?.state ?? "",
                         "Residence Pincode":
                             sanction.application.applicant.residence.pincode,
                         "Company Name":
