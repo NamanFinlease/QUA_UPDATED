@@ -1173,16 +1173,12 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
             $unwind: "$closedDetails"
         },
         {
-            $match: {
-                "closedDetails.data": {
-                    $elemMatch: {
-                        isActive: true,
-                        isClosed: false,
-                        isDisbursed: true
-                    }
-                }
+            "$match": {
+              "closedDetails.isActive": true,
+              "closedDetails.isClosed": false,
+              "closedDetails.isDisbursed": true
             }
-        },
+          },
         {
             $lookup: {
                 from: "leads",

@@ -16,6 +16,8 @@ import Close from "../models/close.js";
 export const rejected = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
+
+    console.log('reject 1')
     const employee = await Employee.findOne({ _id: req.employee._id });
 
     // List of roles that are authorized to hold a lead
@@ -30,6 +32,7 @@ export const rejected = asyncHandler(async (req, res) => {
         res.status(403);
         throw new Error("Not Authorized!!");
     }
+    console.log('reject 2')
 
     // if (!authorizedRoles.includes(req.employee.empRole)) {
     //     res.status(403);
@@ -44,16 +47,17 @@ export const rejected = asyncHandler(async (req, res) => {
     let logs;
 
     if (req.activeRole === "screener") {
+        console.log('reject 3')
         lead = await Lead.findByIdAndUpdate(
             id,
             { onHold: false, isRejected: true, rejectedBy: req.employee._id },
             { new: true }
         ).populate({ path: "rejectedBy", select: "fName mName lName" });
-
+        
         if (!lead) {
             throw new Error("Lead not found");
         }
-
+        
         status = await LeadStatus.findByIdAndUpdate(
             { _id: lead.leadStatus },
             {
@@ -63,17 +67,16 @@ export const rejected = asyncHandler(async (req, res) => {
             },
             { new: true }
         );
-
+        
         if (!status) {
             res.status(404);
             throw new Error("Status not found");
         }
-
+        
         logs = await postLogs(
             lead._id,
             "LEAD REJECTED",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
-                lead.lName && ` ${lead.lName}`
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
             }`,
             `Lead rejected by ${lead.rejectedBy.fName} ${lead.rejectedBy.lName}`,
             `${reason}`
@@ -90,18 +93,19 @@ export const rejected = asyncHandler(async (req, res) => {
         );
         return res.json({ lead, logs });
     } else if (req.activeRole === "creditManager") {
+        console.log('reject 4')
         application = await Application.findByIdAndUpdate(
             id,
             { isRejected: true, rejectedBy: req.employee._id },
             { new: true }
         )
-            .populate({ path: "lead", populate: { path: "documents" } })
-            .populate({ path: "rejectedBy", select: "fName mName lName" });
-
+        .populate({ path: "lead", populate: { path: "documents" } })
+        .populate({ path: "rejectedBy", select: "fName mName lName" });
+        
         if (!application) {
             throw new Error("Application not found");
         }
-
+        
         status = await LeadStatus.findByIdAndUpdate(
             { _id: application.lead.leadStatus },
             {
@@ -111,17 +115,16 @@ export const rejected = asyncHandler(async (req, res) => {
             },
             { new: true }
         );
-
+        
         if (!status) {
             res.status(404);
             throw new Error("Status not found");
         }
-
+        
         logs = await postLogs(
             application.lead._id,
             "APPLICATION REJECTED",
-            `${application.lead.fName}${
-                application.lead.mName && ` ${application.lead.mName}`
+            `${application.lead.fName}${application.lead.mName && ` ${application.lead.mName}`
             }${application.lead.lName && ` ${application.lead.lName}`}`,
             `APPLICATION rejected by ${application.rejectedBy.fName} ${application.rejectedBy.lName}`,
             `${reason}`
@@ -138,6 +141,7 @@ export const rejected = asyncHandler(async (req, res) => {
         );
         return res.json({ application, logs });
     } else if (req.activeRole === "sanctionHead") {
+        console.log('reject 4')
         sanction = await Sanction.findByIdAndUpdate(
             id,
             { isRejected: true, rejectedBy: req.employee._id },
@@ -172,12 +176,10 @@ export const rejected = asyncHandler(async (req, res) => {
         logs = await postLogs(
             sanction.application.lead._id,
             "SANCTION REJECTED",
-            `${sanction.application.lead.fName}${
-                sanction.application.lead.mName &&
-                ` ${sanction.application.lead.mName}`
-            }${
-                sanction.application.lead.lName &&
-                ` ${sanction.application.lead.lName}`
+            `${sanction.application.lead.fName}${sanction.application.lead.mName &&
+            ` ${sanction.application.lead.mName}`
+            }${sanction.application.lead.lName &&
+            ` ${sanction.application.lead.lName}`
             }`,
             `SANCTION rejected by ${sanction.rejectedBy.fName} ${sanction.rejectedBy.lName}`,
             `${reason}`
@@ -234,30 +236,28 @@ export const rejected = asyncHandler(async (req, res) => {
             loanNo: disbursal.loanNo,
         });
         if (closedDoc) {
-            closedDoc.data = closedDoc.data.map((item) =>
-                item.loanNo === disbursal.loanNo
-                    ? { ...item, isActive: false, isClosed: true }
-                    : item
-            );
+            
+                closedDoc.loanNo === disbursal.loanNo
+                    ? { ...closedDoc, isActive: false, isClosed: true }
+                    : closedDoc
+            
             await closedDoc.save();
         }
 
         logs = await postLogs(
             disbursal.sanction.application.lead._id,
             "DISBURSAL REJECTED",
-            `${disbursal.sanction.application.lead.fName}${
-                disbursal.sanction.application.lead.mName &&
-                ` ${disbursal.sanction.application.lead.mName}`
-            }${
-                disbursal.sanction.application.lead.lName &&
-                ` ${disbursal.sanction.application.lead.lName}`
+            `${disbursal.sanction.application.lead.fName}${disbursal.sanction.application.lead.mName &&
+            ` ${disbursal.sanction.application.lead.mName}`
+            }${disbursal.sanction.application.lead.lName &&
+            ` ${disbursal.sanction.application.lead.lName}`
             }`,
             `Disbursal rejected by ${disbursal.rejectedBy.fName} ${disbursal.rejectedBy.lName}`,
             `${reason}`
         );
         // update loan Application while  rejected lead
         await LoanApplication.findOneAndUpdate(
-            { leadNo: lead.leadNo },
+            { leadNo: disbursal.sanction.application?.lead.leadNo },
             {
                 expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 applicationStatus: "REJECTED",

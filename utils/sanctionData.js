@@ -26,16 +26,16 @@ export const getSanctionData = async (id) => {
 
         console.log("Date 1: ", localSanctionDate, localDisbursedDate);
 
-        // Date validation
-        if (
-            localDisbursedDate
-                .startOf("day")
-                .isBefore(localSanctionDate.startOf("day"))
-        ) {
-            throw new Error(
-                "Disbursal Date cannot be in the past. It must be the present date or future date!"
-            );
-        }
+        // // Date validation
+        // if (
+        //     localDisbursedDate
+        //         .startOf("day")
+        //         .isBefore(localSanctionDate.startOf("day"))
+        // ) {
+        //     throw new Error(
+        //         "Disbursal Date cannot be in the past. It must be the present date or future date!"
+        //     );
+        // }
 
         // Create a response object with all common fields
         const response = {
@@ -104,16 +104,16 @@ export const getSanctionData = async (id) => {
 
     console.log("Date 2: ", localSanctionDate, localDisbursedDate);
 
-    // Date validation
-    if (
-        localDisbursedDate
-            .startOf("day")
-            .isBefore(localSanctionDate.startOf("day"))
-    ) {
-        throw new Error(
-            "Disbursal Date cannot be in the past. It must be the present date or future date!"
-        );
-    }
+    // // Date validation
+    // if (
+    //     localDisbursedDate
+    //         .startOf("day")
+    //         .isBefore(localSanctionDate.startOf("day"))
+    // ) {
+    //     throw new Error(
+    //         "Disbursal Date cannot be in the past. It must be the present date or future date!"
+    //     );
+    // }
 
     // Create a response object with all common fields
     const response = {
@@ -135,12 +135,12 @@ export const getSanctionData = async (id) => {
             camDetails?.loanRecommended
         )}`,
         roi: `${camDetails?.roi}`,
-        disbursalDate: dateFormatter(camDetails?.disbursalDate),
+        disbursalDate: camDetails?.disbursalDate,
         repaymentAmount: `${new Intl.NumberFormat().format(
             camDetails?.repaymentAmount
         )}`,
         tenure: `${camDetails?.eligibleTenure}`,
-        repaymentDate: dateFormatter(camDetails?.repaymentDate),
+        repaymentDate: camDetails?.repaymentDate,
         penalInterest: 2,
         processingFee: `${new Intl.NumberFormat().format(
             camDetails?.netAdminFeeAmount
