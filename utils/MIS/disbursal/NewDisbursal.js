@@ -77,6 +77,7 @@ export const exportNewDisbursals = async () => {
                     if (
                         !lead ||
                         [
+                            "IUUPK1335L",
                             "AVZPC6217D",
                             "IJXPD6084F",
                             "HKCPK6182A",
