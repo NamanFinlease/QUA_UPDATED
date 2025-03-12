@@ -3,8 +3,10 @@ import CamDetails from "../../../models/CAM.js";
 import Bank from "../../../models/ApplicantBankDetails.js";
 import { formatFullName } from "../../nameFormatter.js";
 import AadhaarDetails from "../../../models/AadhaarDetails.js";
-
+import moment from "moment-timezone"
 export const exportDisbursedData = async () => {
+
+    console.log('report ')
     try {
         const disbursals = await Disbursal.find({
             isDisbursed: true,
@@ -91,41 +93,58 @@ export const exportDisbursedData = async () => {
                         borrowerId: disbursed.sanction.application.applicant,
                     });
 
-                    const createdDate = leadCreated.toLocaleString("en-US", {
-                        month: "short",
-                        day: "2-digit",
-                        year: "numeric",
-                        timeZone: "Asia/Kolkata",
-                    });
+                    // const createdDate = leadCreated.toLocaleString("en-US", {
+                    //     day: "2-digit",
+                    //     month: "short",
+                    //     year: "numeric",
+                    //     timeZone: "Asia/Kolkata",
+                    // });
+                    const createdDate = moment(leadCreated)
+                        .tz("Asia/Kolkata") // Set timezone
+                        .format("DD MMM YYYY");
 
-                    const disbursedDate = disbursed.disbursedAt.toLocaleString(
-                        "en-US",
-                        {
-                            month: "short",
-                            day: "2-digit",
-                            year: "numeric",
-                            timeZone: "Asia/Kolkata",
-                        }
-                    );
+                    // const disbursedDate = disbursed.disbursedAt.toLocaleString(
+                    //     "en-GB",
+                    //     {
+                    //         day: "2-digit",
+                    //         month: "short",
+                    //         year: "numeric",
+                    //         timeZone: "Asia/Kolkata",
+                    //     }
+                    // );
+                    //                     const options = { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" };
+                    // const disbursedDate = new Intl.DateTimeFormat("en-GB", options)
+                    //     .format(disbursed.disbursedAt)
+                    //     .replace(",", "");
+                    const disbursedDate = moment(disbursed.disbursedAt)
+                        .tz("Asia/Kolkata") // Set timezone
+                        .format("DD MMM YYYY");
 
-                    // console.log('cam repay date',cam?.repaymentDate)
-                    const repaymentDate = cam?.repaymentDate
-                        ? cam?.repaymentDate.toLocaleString("en-US", {
-                              month: "short",
-                              day: "2-digit",
-                              year: "numeric",
-                              timeZone: "Asia/Kolkata",
-                          })
-                        : null;
+                    // // console.log('cam repay date',cam?.repaymentDate)
+                    // const repaymentDate = cam?.repaymentDate
+                    //     ? cam?.repaymentDate.toLocaleString("en-US", {
+                    //         day: "2-digit",
+                    //           month: "short",
+                    //           year: "numeric",
+                    //           timeZone: "Asia/Kolkata",
+                    //       })
+                    //     : null;
+
+                    const repaymentDate = moment(cam?.repaymentDate)
+                        .tz("Asia/Kolkata") // Set timezone
+                        .format("DD MMM YYYY");
+
+                    // console.log('repayment date',repaymentDate)
+
+                    // console.log('bank',bank.beneficiaryName)
 
                     let data = {
                         "Lead Created": createdDate || "N/A",
                         "Disbursed Date": disbursedDate || "N/A",
                         "Repayment Date": repaymentDate,
                         "Loan No": disbursed.loanNo || "N/A",
-                        Name: `${lead.fName || ""} ${lead.mName || ""} ${
-                            lead.lName || ""
-                        }`.trim(),
+                        Name: `${lead.fName || ""} ${lead.mName || ""} ${lead.lName || ""
+                            }`.trim(),
                         PAN: lead.pan || "N/A",
                         Aadhaar: lead.aadhaar
                             ? `${String(lead.aadhaar)}`
@@ -137,6 +156,7 @@ export const exportDisbursedData = async () => {
                         "Sanctioned Amount": cam?.loanRecommended || 0,
                         ROI: cam?.roi,
                         Tenure: cam?.eligibleTenure,
+                        "Status": cam?.customerType,
                         "Interest Amount":
                             Number(cam?.repaymentAmount) -
                             Number(cam?.loanRecommended),
