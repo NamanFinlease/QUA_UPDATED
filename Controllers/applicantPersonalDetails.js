@@ -234,6 +234,11 @@ export const bankVerification = asyncHandler(async (req, res) => {
 export const pennyDrop = asyncHandler(async (req, res) => {
     const { borrowerId, bankAccNo } = req.params;
 
+    if(req.activeRole !== "creditManager" && req.activeRole !== "sanctionHead" && req.activeRole !== "disbursalHead"){
+        res.status(400)
+        throw new Error("You are not authorise for this action.")
+    }
+
     const applicant = await Applicant.findById(borrowerId);
 
     if (!applicant) {
@@ -403,6 +408,8 @@ export const updateApplicantDetails = asyncHandler(async (req, res) => {
                 });
             }
         });
+
+        console.log('lead dup',duplicateLeadReferences,'lead dup',duplicateApplicantReferences,leadsWithSameMobile)
 
         // Replace existing references instead of adding new ones
         newReferences.forEach((newRef,index) => {
