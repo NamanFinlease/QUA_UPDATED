@@ -165,7 +165,7 @@ export const getDoc = async (referenceId, data, time) => {
 
         await postLogs(
             lead._id,
-            `Sanction Letter eSigned on ${time}`,
+            `Sanction Letter eSigned.`,
             `${lead.fName}${lead.mName && ` ${lead.mName}`}${
                 lead.lName && ` ${lead.lName}`
             }`,
