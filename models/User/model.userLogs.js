@@ -6,19 +6,21 @@ const userLogHistorySchema = new mongoose.Schema({
         ref: "User",
     },
     logDate: {
-        type: Date,
+        type: String,
     },
     userRemark: {
         type: String,
     },
-    pan:{
-        type : String
+    pan: {
+        type: String,
     },
-    aadhaar:{
-        type : String
-    }
-    
+    aadhaar: {
+        type: String,
+    },
 });
 
-const UserLogHistory = new mongoose.model("UserLoghistory", userLogHistorySchema);
+const UserLogHistory = new mongoose.model(
+    "UserLoghistory",
+    userLogHistorySchema
+);
 export default UserLogHistory;
