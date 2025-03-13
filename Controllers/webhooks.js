@@ -12,7 +12,7 @@ import moment from "moment";
 // @access Public
 export const bsaWebhook = asyncHandler(async (req, res) => {
     const data = req.body;
-    const time = moment().format("DD/MM/YYYY HH:mm:ss")
+    const time = moment().format("DD/MM/YYYY HH:mm:ss");
     let lead;
     if (data.data && data.responseCode === "SRC001") {
         lead = await Lead.findOne({ bsaRefId: data.data.referenceId });
@@ -29,20 +29,22 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
         if (!docsResult.success) {
             const logs = await postLogs(
                 lead._id,
-                 `Failed to analyse bankstatement.` ,
-                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+                `Failed to analyse bankstatement.`,
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                    lead.lName && ` ${lead.lName}`
                 }`,
-                 `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
+                `Documents sent for analysis by ${employee?.fName} ${employee?.lName}`
             );
             res.status(400);
             throw new Error("Couldn't save the document!!");
         }
         const logs = await postLogs(
             lead._id,
-             `Bankstatement analyzed and saved successfully at ${time}.` ,
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            `Bankstatement analyzed and saved successfully.`,
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                lead.lName && ` ${lead.lName}`
             }`,
-             `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
+            `Documents sent for analysis by ${employee?.fName} ${employee?.lName}`
         );
         return res.status(200).json({
             success: true,
@@ -51,10 +53,11 @@ export const bsaWebhook = asyncHandler(async (req, res) => {
     }
     const logs = await postLogs(
         lead._id,
-         `Failed to analyse at ${time}.` ,
-        `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+        `Failed to analyse.`,
+        `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+            lead.lName && ` ${lead.lName}`
         }`,
-         `Documents sent for analysis by ${employee?.fName} ${employee?.lName}` 
+        `Documents sent for analysis by ${employee?.fName} ${employee?.lName}`
     );
     return res.json({ success: false });
 });
