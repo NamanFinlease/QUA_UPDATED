@@ -912,6 +912,10 @@ export const newDisbursalReport = asyncHandler(async (req, res) => {
 // @access Private
 export const disbursedReport = asyncHandler(async (req, res) => {
     const data = await exportDisbursedData();
-    console.log("Data: ", data);
+    if(!data) {
+        res.status(400)
+        throw new Error("Error in generating report")
+    }
+    // console.log("Data: ", data);
     return res.json({ data });
 });
