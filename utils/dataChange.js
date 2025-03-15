@@ -15,6 +15,7 @@ import { formatFullName } from "./nameFormatter.js";
 import { nextSequence } from "../utils/nextSequence.js";
 import { join } from "path";
 import { fileURLToPath } from "url";
+import LandingPageLead from "../models/LandingPageLead.js";
 
 // Fix for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -949,6 +950,162 @@ const savingUtrInDisbursal = async () => {
     }
 };
 
+// const send LeadNo and Pan to application, sanction, disbursal
+const sendLeadNoAndPan = async () => {
+    try {
+        // Step-1: Find all the disbursed leads with no PAN
+        const disbursals = await Disbursal.find({
+            isDisbursed: true,
+            pan: { $exists: false },
+        });
+        let count = 0;
+        for (const disbursal of disbursals) {
+            const sanction = await Sanction.findById(disbursal.sanction);
+            const application = await Application.findById(
+                sanction.application
+            );
+            const lead = await Lead.findById(application.lead);
+            count++;
+
+            disbursal.pan = lead.pan;
+            disbursal.leadNo = lead.leadNo;
+            await disbursal.save();
+        }
+        console.log("Count: ", count);
+        // // Step 1: Find all approved leads
+        // const leads = await Lead.find(
+        //     { isRecommended: true },
+        //     { _id: 1, leadNo: 1, pan: 1 }
+        // );
+
+        // if (!leads.length) {
+        //     console.log("No approved leads found.");
+        //     return;
+        // }
+
+        // // Step 2: Process each lead
+        // for (const lead of leads) {
+        //     const { _id, leadNo, pan } = lead;
+
+        //     // Update Application collection using leadId
+        //     const applicationDocs = await Application.find(
+        //         { lead: _id },
+        //         { _id: 1 } // Fetch only the application IDs
+        //     );
+
+        //     if (applicationDocs.length) {
+        //         // Add bulk operations for `Application`
+        //         const applicationBulkOps = applicationDocs.map(
+        //             (application) => ({
+        //                 updateOne: {
+        //                     filter: { _id: application._id }, // Match by lead in Application
+        //                     update: { $set: { leadNo, pan } }, // Add leadNo and pan
+        //                 },
+        //             })
+        //         );
+
+        //         await Application.bulkWrite(applicationBulkOps);
+        //         console.log(`Applications updated for lead ${leadNo}.`);
+        //     }
+
+        //     // Step 3: Update Sanction collection using application _id
+        //     const applicationIds = applicationDocs.map((app) => app._id);
+        //     const sanctionDocs = await Sanction.find(
+        //         { application: { $in: applicationIds } },
+        //         { _id: 1 } // Fetch only the sanction IDs
+        //     );
+
+        //     if (sanctionDocs.length) {
+        //         // Create bulk operations for sanctions
+        //         const sanctionBulkOps = sanctionDocs.map((sanction) => ({
+        //             updateOne: {
+        //                 filter: { _id: sanction._id },
+        //                 update: { $set: { leadNo, pan } },
+        //             },
+        //         }));
+
+        //         await Sanction.bulkWrite(sanctionBulkOps);
+        //         console.log(`Sanctions updated for lead ${leadNo}.`);
+        //     }
+
+        //     // Step 4: Update Disbursal collection using sanction _id
+        //     const sanctionIds = sanctionDocs.map((sanction) => sanction._id);
+        //     const disbursalDocs = await Disbursal.find(
+        //         { sanction: { $in: sanctionIds } },
+        //         { _id: 1 } // Fetch only the Disbursal IDs
+        //     );
+
+        //     if (disbursalDocs.length) {
+        //         // Create bulk operations for Disbursal
+        //         const disbursalBulkOps = disbursalDocs.map((disbursal) => ({
+        //             updateOne: {
+        //                 filter: { _id: disbursal._id },
+        //                 update: { $set: { leadNo, pan } },
+        //             },
+        //         }));
+
+        //         await Disbursal.bulkWrite(disbursalBulkOps);
+        //         console.log(`Disbursals updated for lead ${leadNo}.`);
+        //     }
+        // }
+    } catch (error) {
+        console.log("error", error);
+    }
+};
+
+// Bulk upload for marketing leads
+const bulkUpload = async () => {
+    try {
+        const workbook = xlsx.readFile("partialLeads.xlsx"); // Load Excel file
+        const sheetName = workbook.SheetNames[0]; // Get first sheet
+        const sheet = workbook.Sheets[sheetName];
+
+        const range = xlsx.utils.decode_range(sheet["!ref"]); // Get range of data
+
+        const partialLeads = [];
+
+        for (let row = 1; row <= range.e.r; row++) {
+            // Start from row 2 (skip header)
+            const fullName = sheet[`A${row + 1}`]?.v?.trim() || "";
+            const pan = sheet[`B${row + 1}`]?.v?.trim() || "";
+            const mobile =
+                sheet[`C${row + 1}`]?.v?.toString().replace(/\s+/g, "") || "";
+            const email = sheet[`D${row + 1}`]?.v?.trim() || "";
+            const pinCode = sheet[`E${row + 1}`]?.v?.toString().trim() || "";
+            const salary = sheet[`F${row + 1}`]?.v || 0;
+            const loanAmount = sheet[`G${row + 1}`]?.v || 0;
+            const source = sheet[`H${row + 1}`]?.v?.trim() || "";
+
+            // Ensure mandatory fields exist (adjust as needed)
+            if (!mobile || !fullName || !email || !pan) continue;
+
+            partialLeads.push({
+                fullName,
+                pan,
+                mobile,
+                email,
+                pinCode,
+                salary,
+                loanAmount,
+                source,
+            });
+        }
+
+        if (partialLeads.length) {
+            const bulkOps = partialLeads.map((partialLead) => ({
+                insertOne: { document: partialLead },
+            }));
+
+            await LandingPageLead.bulkWrite(bulkOps);
+            console.log("Bulk upload completed successfully");
+        } else {
+            console.log("No valid leads found to insert.");
+        }
+    } catch (error) {
+        console.error("Error in bulk upload:", error);
+    }
+};
+
 // // File paths
 // const missingFile = join(__dirname, "missing_numbers.xlsx");
 // const vodaFile = join(__dirname, "voda_bill_jan_2025_1.xlsx");
@@ -1083,6 +1240,7 @@ async function main() {
     // addRecommendedByToSanctions();
     // await sendApprovedSanctionToDisbursal();
     // await esignedSanctions();
+    // await sendLeadNoAndPan();
     // checkNumbers();
     // updateDisbursals();
     // await savingUtrInDisbursal();
