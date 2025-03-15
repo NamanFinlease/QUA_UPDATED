@@ -1138,7 +1138,6 @@ const bulkUpload = async () => {
 
 // Function to process a batch with MongoDB Transactions
 const processBatch = async (batch) => {
-    console.log("Batch: ", batch);
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
