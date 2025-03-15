@@ -13,6 +13,7 @@ import xlsx from "xlsx";
 import Bank from "../models/ApplicantBankDetails.js";
 import { formatFullName } from "./nameFormatter.js";
 import { nextSequence } from "../utils/nextSequence.js";
+import fs from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import LandingPageLead from "../models/LandingPageLead.js";
@@ -1056,53 +1057,101 @@ const sendLeadNoAndPan = async () => {
 // Bulk upload for marketing leads
 const bulkUpload = async () => {
     try {
-        const workbook = xlsx.readFile("partialLeads.xlsx"); // Load Excel file
-        const sheetName = workbook.SheetNames[0]; // Get first sheet
+        console.log("Starting bulk upload...");
+        const BATCH_SIZE = 500; // Number of records to process in a batch
+
+        const partialLeads = join(__dirname, "partialLeads.xlsx");
+        if (!fs.existsSync(partialLeads)) {
+            console.error("Excel file not found!");
+            return;
+        }
+
+        const workbook = xlsx.readFile(partialLeads, { cellDates: true });
+        const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
 
-        const range = xlsx.utils.decode_range(sheet["!ref"]); // Get range of data
+        const rows = xlsx.utils.sheet_to_json(sheet, { defval: "" }); // Convert sheet to JSON
+        console.log(`Total Records Found: ${rows.length}`);
 
-        const partialLeads = [];
+        if (!rows.length) {
+            console.log("No valid leads found.");
+            return;
+        }
 
-        for (let row = 1; row <= range.e.r; row++) {
-            // Start from row 2 (skip header)
-            const fullName = sheet[`A${row + 1}`]?.v?.trim() || "";
-            const pan = sheet[`B${row + 1}`]?.v?.trim() || "";
-            const mobile =
-                sheet[`C${row + 1}`]?.v?.toString().replace(/\s+/g, "") || "";
-            const email = sheet[`D${row + 1}`]?.v?.trim() || "";
-            const pinCode = sheet[`E${row + 1}`]?.v?.toString().trim() || "";
-            const salary = sheet[`F${row + 1}`]?.v || 0;
-            const loanAmount = sheet[`G${row + 1}`]?.v || 0;
-            const source = sheet[`H${row + 1}`]?.v?.trim() || "";
+        let batch = [];
+        let insertedCount = 0;
 
-            // Ensure mandatory fields exist (adjust as needed)
-            if (!mobile || !fullName || !email || !pan) continue;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
 
-            partialLeads.push({
-                fullName,
-                pan,
-                mobile,
-                email,
-                pinCode,
-                salary,
-                loanAmount,
-                source,
+            const marketingLead = {
+                fullName: row["Full Name"]?.trim() || "",
+                pan: row["PAN"]?.trim() || "",
+                mobile: row["Mobile"]?.toString().replace(/\s+/g, "") || "",
+                email: row["Email"]?.trim() || "",
+                pinCode: row["Pin Code"]?.toString().trim() || "",
+                salary: row["Salary"] || 0,
+                loanAmount: row["Loan Amount"] || 0,
+                source: row["Source"]?.trim() || "",
+            };
+
+            // Ensure mandatory fields exist
+            if (
+                !marketingLead.mobile ||
+                !marketingLead.fullName ||
+                !marketingLead.email ||
+                !marketingLead.pan
+            )
+                continue;
+
+            batch.push({
+                insertOne: { document: marketingLead },
             });
+
+            // Process batch when reaching batch size
+            if (batch.length >= BATCH_SIZE) {
+                const success = await processBatch(batch);
+                if (!success) {
+                    console.error("Batch failed! Stopping further processing.");
+                    return;
+                }
+                insertedCount += batch.length;
+                batch = []; // Reset batch
+            }
         }
 
-        if (partialLeads.length) {
-            const bulkOps = partialLeads.map((partialLead) => ({
-                insertOne: { document: partialLead },
-            }));
-
-            await LandingPageLead.bulkWrite(bulkOps);
-            console.log("Bulk upload completed successfully");
-        } else {
-            console.log("No valid leads found to insert.");
+        // Insert remaining records
+        if (batch.length > 0) {
+            const success = await processBatch(batch);
+            if (!success) {
+                console.error("Final batch failed!");
+                return;
+            }
+            insertedCount += batch.length;
         }
+
+        console.log(`Bulk upload completed. Total inserted: ${insertedCount}`);
     } catch (error) {
         console.error("Error in bulk upload:", error);
+    }
+};
+
+// Function to process a batch with MongoDB Transactions
+const processBatch = async (batch) => {
+    console.log("Batch: ", batch);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await LandingPageLead.bulkWrite(batch, { session });
+        await session.commitTransaction();
+        session.endSession();
+        console.log(`Inserted ${batch.length} records successfully.`);
+        return true;
+    } catch (error) {
+        console.error("Error in batch insertion:", error);
+        await session.abortTransaction();
+        session.endSession();
+        return false;
     }
 };
 
@@ -1241,6 +1290,7 @@ async function main() {
     // await sendApprovedSanctionToDisbursal();
     // await esignedSanctions();
     // await sendLeadNoAndPan();
+    // await bulkUpload();
     // checkNumbers();
     // updateDisbursals();
     // await savingUtrInDisbursal();
