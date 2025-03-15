@@ -27,44 +27,58 @@ export const getPanDetails = asyncHandler(async (req, res) => {
         throw new Error({ success: false, message: "Invalid PAN!!!" });
     }
 
-    // Call the get panDetails Function
-    const response = await panVerify(id, pan);
+    let panDetails = await PanDetails.findOne({"data.pan":pan})
 
-    if(!response.success){
-        res.status(400)
-        throw new Error(response.message)
-    }
-    if (response.data.result_code !== 101) {
-        res.status(400);
-        throw new Error("Error with Digitap!");
-    }
 
-    if (!response.data.result.aadhaar_linked) {
-        lead.isRejected = true;
-        lead.isRejectedBySystem = true;
+    if(!panDetails){
 
-        await lead.save();
+        console.log('on data')
 
-        await postLogs(
-            id,
-            "LEAD REJECTED BY SYSTEM",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
-                lead.lName && ` ${lead.lName}`
-            }`,
-            "Lead rejected by System",
-            "Lead rejected because PAN and aadhaar was not linked!!"
-        );
-
+        // Call the get panDetails Function
+        const response = await panVerify(id, pan);
+    
+        if(!response.success){
+            res.status(400)
+            throw new Error(response.message)
+        }
+        if (response.data.result_code !== 101) {
+            res.status(400);
+            throw new Error("Error with Digitap!");
+        }
+    
+        // if (!response.data.result.aadhaar_linked) {
+        //     lead.isRejected = true;
+        //     lead.isRejectedBySystem = true;
+    
+        //     await lead.save();
+    
+        //     await postLogs(
+        //         id,
+        //         "LEAD REJECTED BY SYSTEM",
+        //         `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+        //             lead.lName && ` ${lead.lName}`
+        //         }`,
+        //         "Lead rejected by System",
+        //         "Lead rejected because PAN and aadhaar was not linked!!"
+        //     );
+    
+        //     return res.json({
+        //         success: false,
+        //         message: "Lead rejected because PAN and aadhaar was not linked!!",
+        //     });
+        // }
+    
+        // Now respond with status 200 with JSON success true
         return res.json({
-            success: false,
-            message: "Lead rejected because PAN and aadhaar was not linked!!",
+            data: response.data.result,
+        });
+    }else{
+        console.log('data exist')
+        return  res.json({
+            data: panDetails.data,
         });
     }
 
-    // Now respond with status 200 with JSON success true
-    return res.json({
-        data: response.data.result,
-    });
 });
 
 // @desc Save the pan details once verified.
