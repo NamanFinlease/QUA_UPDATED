@@ -4,6 +4,7 @@ import Collection from "../models/Collection.js";
 import Payment from "../models/Payment.js";
 import LoanApplication from "../models/User/model.loanApplication.js";
 import { calculateReceivedPayment } from "./calculateReceivedPayment.js";
+import sendNocMail from "./sendNOC.JS";
 
 export const verifyPaymentCalculation = async (loanNo, transactionId,closingType, accountRemarks = "", accountEmpId = null, session) => {
     try {
@@ -152,9 +153,127 @@ export const verifyPaymentCalculation = async (loanNo, transactionId,closingType
             }, { new: true, session })
         }
 
-        console.log('return updated payment',updatedPayment)
+        console.log('return updated payment',updatedPayment , "The closed are",closed)
 
-        return updatedPayment
+
+        // customerFullName: "John Doe",
+        // disbursalAmount: "50000",
+        // laonNo: "LN123456", 
+        // utrNo: "UTR789012",
+        // closedDate: "2025-03-16",
+        // closingAmount: "0",
+        // closingDate: "2025-03-16",
+        // disbursalDate: "2025-03-01"
+        // to : customer personal mail
+        // Send Noc mail 
+
+//         const pipeline = [
+//             {
+//                 $match: { loanNo: loanNo } // Match disbursal with loanNo
+//             },
+//             {
+//                 $lookup: {
+//                     from: "leads", // Name of the leads collection
+//                     localField: "leadNo",
+//                     foreignField: "leadNo",
+//                     as: "leadDetails"
+//                 }
+//             },
+//             {
+//                 $unwind: "$leadDetails" // Convert array to object
+//             },
+//             {
+//                 $project: {
+//                     _id: 0,
+//                     fullName: "$leadDetails.fullName",
+//                     personalEmail: "$leadDetails.personalEmail",
+//                     disbursedAt: 1, // Include disbursalAt from disbursal collection
+//                     amount: 1 // Include amount from disbursal collection
+//                 }
+//             }
+//         ];
+        
+        
+        
+        
+//         const result = await Disbursal.aggregate(pipeline);
+
+
+
+//         // Example usage:
+//         const mailData = {
+//     mail_template_key: process.env.mail_template_key,
+//     from: { address: "info@qualoan.com", name: "noreply" },
+//     to: [{ email_address: { address: result[0].personalEmail, name: result[0].fullName } }],
+//     cc: [
+//         { email_address: { address: "badal@only1loan.com", name: "Badal" } }
+//     ],
+//     merge_info: {
+//         customerFullName: result[0].fullName,
+//         disbursalAmount: result[0].amount,
+//         laonNo: loanNo,
+//         utrNo: transactionId,
+//         closedDate: closed.updatedAt,
+//         closingAmount: updatedPayment.totalReceivedAmount,
+//         closingDate: closed.updatedAt,
+//         disbursalDate: result[0].disbursedAt
+//     }
+// };
+//         sendMail(mailData);
+
+//         return updatedPayment
+
+
+
+            // Fetch user details to send NOC mail
+            const pipeline = [
+                { $match: { loanNo } },
+                {
+                    $lookup: {
+                        from: "leads",
+                        localField: "leadNo",
+                        foreignField: "leadNo",
+                        as: "leadDetails"
+                    }
+                },
+                { $unwind: "$leadDetails" },
+                {
+                    $project: {
+                        _id: 0,
+                        fullName: "$leadDetails.fullName",
+                        personalEmail: "$leadDetails.personalEmail",
+                        disbursedAt: 1,
+                        amount: 1
+                    }
+                }
+            ];
+
+            const result = await Disbursal.aggregate(pipeline);
+
+            if (result.length > 0) {
+                const mailData = {
+                    mail_template_key: process.env.MAIL_TEMPLATE_KEY,
+                    from: { address: "info@qualoan.com", name: "noreply" },
+                    to: [{ email_address: { address: result[0]?.personalEmail, name: result[0]?.fullName } }],
+                    cc: [{ email_address: { address: "badal@only1loan.com", name: "Badal" } }],
+                    merge_info: {
+                        customerFullName: result[0]?.fullName,
+                        disbursalAmount: result[0]?.amount,
+                        laonNo: loanNo,
+                        utrNo: transactionId,
+                        closedDate: closed?.updatedAt,
+                        closingAmount: updatedPayment?.totalReceivedAmount,
+                        closingDate: closed?.updatedAt,
+                        disbursalDate: result[0]?.disbursedAt
+                    }
+                };
+
+                sendNocMail(mailData);
+            }
+        
+
+        return updatedPayment;
+
     } catch (error) {
         console.log('errororroror', error)
 
@@ -162,3 +281,13 @@ export const verifyPaymentCalculation = async (loanNo, transactionId,closingType
 
     }
 }
+
+
+
+
+
+
+
+
+
+
