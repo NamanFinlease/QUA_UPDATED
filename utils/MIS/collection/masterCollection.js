@@ -1,17 +1,10 @@
 import Disbursal from "../../../models/Disbursal.js";
-import CamDetails from "../../../models/CAM.js";
-import Bank from "../../../models/ApplicantBankDetails.js";
-import { formatFullName } from "../../nameFormatter.js";
-import AadhaarDetails from "../../../models/AadhaarDetails.js";
 import moment from "moment-timezone";
 
 
 export const exportMasterCollectionData = async () => {
     try {
-        const formatDate = (date) =>
-            date
-                ? moment(date).tz("Asia/Kolkata").format("DD MMM YYYY")
-                : "N/A";
+       
 
         console.log("Start Time:", moment().format("DD/MM/YYYY HH:mm:ss"));
 
@@ -28,7 +21,8 @@ export const exportMasterCollectionData = async () => {
                         as: "close"
                     }
                 },
-                { $unwind: "$close",preserveNullAndEmptyArrays: true },
+                { $unwind: { path: "$close", preserveNullAndEmptyArrays: true } },
+
 
                 {
                     $lookup: {
