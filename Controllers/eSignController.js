@@ -205,13 +205,21 @@ export const sendEsignedLetter = async (lead, pdfBase64) => {
     const fullName = formatFullName(lead.fName, lead.mName, lead.lName);
     const emailPayload = {
         from: {
-            address: "credit@qualoan.com", // Sender's email
+            address: "some@email.com", // Sender's email
         },
         to: [
             {
                 email_address: {
                     address: lead.personalEmail,
                     name: fullName,
+                },
+            },
+        ],
+        cc: [
+            {
+                email_address: {
+                    address: "credit@qualoan.com",
+                    name: "QUA Loan",
                 },
             },
         ],
