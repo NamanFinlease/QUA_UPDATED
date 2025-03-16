@@ -8,7 +8,7 @@ import Sanction from "../models/Sanction.js";
 import Disbursal from "../models/Disbursal.js";
 import { postLogs } from "./logs.js";
 import LeadStatus from "../models/LeadStatus.js";
-import formatFullName from "../utils/nameFormatter.js";
+import { formatFullName } from "../utils/nameFormatter.js";
 
 export const initiate = async (formData) => {
     // Step-1: Initiate E-sign
