@@ -499,6 +499,39 @@ export const exportMasterCollectionData = async () => {
                         preserveNullAndEmptyArrays: true
                     }
                 },
+                {
+                    $lookup: {
+                        from: "disbursals",
+                        let: { pan: "$pan" },
+                        pipeline: [
+                            { $match: { isDisbursed: true } },
+                            { $match: { $expr: { $eq: ["$pan", "$$pan"] } } },
+                            { $sort: { disbursedAt: 1 } },
+                            { $project: { _id: 0, disbursedAt: 1 } }
+                        ],
+                        as: "disbursedDates"
+                    }
+                },
+                {
+                    $addFields: {
+                        status: {
+                            $let: {
+                                vars: {
+                                    index: {
+                                        $indexOfArray: ["$disbursedDates.disbursedAt", "$disbursedAt"]
+                                    }
+                                },
+                                in: {
+                                    $cond: {
+                                        if: { $eq: ["$$index", 0] },
+                                        then: "FRESH",
+                                        else: { $concat: ["REPEAT-", { $toString: "$$index" }] }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
 
                 {
                     $set: {
@@ -561,6 +594,7 @@ export const exportMasterCollectionData = async () => {
                             }
                         },
 
+                        Status: "$status",
                         PAN: "$lead.pan",
                         Mobile: "$lead.mobile",
                         AlternateMobile: "$lead.alternateMobile",
