@@ -325,6 +325,11 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         console.log('loan number-->', loanNo)
         console.log('received amount from paytring-->', receivedAmount)
 
+        if(data.order.order_status === "failed"){
+            res.status(400)
+            throw new Error("Payment failed")
+        }
+
         let isPartialPaid;
         const collectionData = await Collection.findOne({ loanNo : loanNo })
 
