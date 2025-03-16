@@ -46,27 +46,27 @@ export const getPanDetails = asyncHandler(async (req, res) => {
             throw new Error("Error with Digitap!");
         }
     
-        // if (!response.data.result.aadhaar_linked) {
-        //     lead.isRejected = true;
-        //     lead.isRejectedBySystem = true;
+        if (!response.data.result.aadhaar_linked) {
+            lead.isRejected = true;
+            lead.isRejectedBySystem = true;
     
-        //     await lead.save();
+            await lead.save();
     
-        //     await postLogs(
-        //         id,
-        //         "LEAD REJECTED BY SYSTEM",
-        //         `${lead.fName}${lead.mName && ` ${lead.mName}`}${
-        //             lead.lName && ` ${lead.lName}`
-        //         }`,
-        //         "Lead rejected by System",
-        //         "Lead rejected because PAN and aadhaar was not linked!!"
-        //     );
+            await postLogs(
+                id,
+                "LEAD REJECTED BY SYSTEM",
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                    lead.lName && ` ${lead.lName}`
+                }`,
+                "Lead rejected by System",
+                "Lead rejected because PAN and aadhaar was not linked!!"
+            );
     
-        //     return res.json({
-        //         success: false,
-        //         message: "Lead rejected because PAN and aadhaar was not linked!!",
-        //     });
-        // }
+            return res.json({
+                success: false,
+                message: "Lead rejected because PAN and aadhaar was not linked!!",
+            });
+        }
     
         // Now respond with status 200 with JSON success true
         return res.json({
