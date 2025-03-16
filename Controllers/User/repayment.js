@@ -325,10 +325,8 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         console.log('loan number-->', loanNo)
         console.log('received amount from paytring-->', receivedAmount)
 
-        if(data.order.order_status === "failed"){
-            res.status(400)
-            throw new Error("Payment failed")
-        }
+       
+       
 
         let isPartialPaid;
         const collectionData = await Collection.findOne({ loanNo : loanNo })
@@ -407,6 +405,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             );
         }
         console.log('updatedPayment if transactionId is not null --->', updatedPayment)
+      
 
         if (order_status === "success") {
 
@@ -442,6 +441,16 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
                 session
             );
 
+        }
+
+        if(order_status === "failed"){
+            await LogHistory.create({
+                logDate: new Date(),
+                status: "Payment verification failed By Payment Gateway",
+                leadRemark: `Order ID: ${JSON.stringify(callbackResponse)}`,
+            });
+            res.status(400)
+            throw new Error("Payment failed")
         }
 
         // return res.status(200).json({

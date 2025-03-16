@@ -18,6 +18,7 @@ import verifyRouter from "./routes/VerifyRouter.js";
 import sanctionRouter from "./routes/SanctionRouter.js";
 import disbursalRouter from "./routes/DisbursalRouter.js";
 import webhookRouter from "./routes/WebhookRouter.js";
+import reportsRouter from "./routes/reportsRouter.js";
 import userRoute from "./routes/User/route.user.js"
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { requireSessionToken } from "./middleware/authMiddleware.js";
@@ -41,7 +42,7 @@ var corsOption = {
         "http://localhost:5174",
         "http://192.168.1.30:5173",
         "http://192.168.1.30:5174",
-        "http://192.168.11.29:5173",
+        "http://192.168.11.17:5173",
         "http://192.168.11.29:5174",
         "https://www.crm.qualoan.com",
         "https://crm.qualoan.com",
@@ -111,6 +112,7 @@ app.use("/api/verify", verifyRouter); // Use the verify routes sevice to verify 
 app.use("/api", webhookRouter); // Use the webhook routes
 app.use("/api/collections", collectionRouter); // Use the collection routes
 app.use("/api/accounts", accountRouter); // Use the account routes
+app.use("/api/reports", reportsRouter); // Use the account routes
 
 // Error handling middleware
 app.use(notFound);
