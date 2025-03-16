@@ -218,6 +218,7 @@ export const exportMasterCollectionData = async () => {
                 },
                 {
                     $project: {
+                        _id:0,
                         "Repayment Date": {
                             $dateToString: {
                                 format: "%d %b %Y",
