@@ -219,12 +219,12 @@ export const sendEsignedLetter = async (lead, pdfBase64) => {
         cc: [
             {
                 email_address: {
-                    address: "credit@qualoan.com",
+                    address: "credithead@qualoan.com",
                     name: "QUA Loan",
                 },
             },
         ],
-        subject: "Sanction Letter Document",
+        subject: `Sanction Letter Document PAN - ${lead.pan}`,
         htmlbody: "<p>Please find the attached Sanction Letter document.</p>",
         attachments: [
             {
