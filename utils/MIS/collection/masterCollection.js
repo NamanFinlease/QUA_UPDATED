@@ -393,7 +393,7 @@ export const exportMasterCollectionData = async () => {
                         as: "sanction"
                     }
                 },
-                { $unwind:{ path:"$sanction", preserveNullAndEmptyArrays: true} },
+                { $unwind: { path: "$sanction", preserveNullAndEmptyArrays: true } },
 
                 {
                     $lookup: {
@@ -403,7 +403,7 @@ export const exportMasterCollectionData = async () => {
                         as: "approvedBy"
                     }
                 },
-                { $unwind: {path:"$approvedBy", preserveNullAndEmptyArrays: true} },
+                { $unwind: { path: "$approvedBy", preserveNullAndEmptyArrays: true } },
 
                 {
                     $lookup: {
@@ -610,9 +610,9 @@ export const exportMasterCollectionData = async () => {
                         ROI: "$cam.roi",
                         "Repayment Amount": "$cam.repaymentAmount",
                         "Bank Name": "$bank.bankName",
-                        "IFSC": "$cam.ifscCode",
-                        "Bank Name": "$cam.bankAccNo",
-                        "Beneficiary Name": "$cam.beneficiaryName",
+                        "IFSC": "$bank.ifscCode",
+                        "Beneficiary Account": "$bank.bankAccNo",
+                        "Beneficiary Name": "$bank.beneficiaryName",
                         "Screened By": {
                             $trim: {
                                 input: {
@@ -635,18 +635,21 @@ export const exportMasterCollectionData = async () => {
                                 }
                             }
                         },
-                        "DOR": {
-                            $dateToString: {
-                                format: "%d %b %Y",
-                                date: "$cam.repaymentDate"
-                            }
-                        },
                         "DOD": {
                             $dateToString: {
                                 format: "%d %b %Y",
-                                date: "$disbursedAt"
+                                date: "$disbursedAt",
+                                timezone: "Asia/Kolkata"
                             }
                         },
+                        "DOR": {
+                            $dateToString: {
+                                format: "%d %b %Y",
+                                date: "$cam.repaymentDate",
+                                timezone: "Asia/Kolkata"
+                            }
+                        },
+                        "Collection Status": "$Collection Status",
                         "Payment Date": {
                             $dateToString: {
                                 format: "%d %b %Y",
@@ -686,7 +689,6 @@ export const exportMasterCollectionData = async () => {
                                 ""
                             ]
                         },
-                        Status: "$status"
                     }
                 }
             ])
