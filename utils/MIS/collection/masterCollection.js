@@ -387,6 +387,15 @@ export const exportMasterCollectionData = async () => {
 
                 {
                     $lookup: {
+                        from: "collections",
+                        localField: "_id",
+                        foreignField: "disbursal",
+                        as: "collection"
+                    }
+                },
+                { $unwind: { path: "$collection", preserveNullAndEmptyArrays: true } },
+                {
+                    $lookup: {
                         from: "sanctions",
                         localField: "sanction",
                         foreignField: "_id",
@@ -650,6 +659,8 @@ export const exportMasterCollectionData = async () => {
                             }
                         },
                         "Collection Status": "$Collection Status",
+                        "INT": "$collection.interest",
+                        "P-INT": "$collection.penalty",
                         "Payment Date": {
                             $dateToString: {
                                 format: "%d %b %Y",
