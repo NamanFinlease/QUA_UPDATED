@@ -8,6 +8,7 @@ import Sanction from "../models/Sanction.js";
 import Disbursal from "../models/Disbursal.js";
 import { postLogs } from "./logs.js";
 import LeadStatus from "../models/LeadStatus.js";
+import { formatFullName } from "../utils/nameFormatter.js";
 
 export const initiate = async (formData) => {
     // Step-1: Initiate E-sign
@@ -180,52 +181,15 @@ export const getDoc = async (referenceId, data, time) => {
             subStage: "SANCTION LETTER E-SIGNED",
         });
 
-        const options = {
-            method: "POST",
-            url: "https://api.zeptomail.in/v1.1/email",
-            headers: {
-                accept: "application/json",
-                authorization: `${process.env.ZOHO_APIKEY}`,
-                "cache-control": "no-cache",
-                "content-type": "application/json",
-            },
-            data: JSON.stringify({
-                from: { address: "credit@qualoan.com" },
-                to: [
-                    {
-                        email_address: {
-                            address: lead.personalEmail,
-                            name: fullname,
-                        },
-                    },
-                ],
-                subject: "SANCTION LETTER E-SIGNED",
-                htmlbody: `<p>
-                        Please find yoru esigned sanction letter bellow.
-                    </p>`,
-                attachments: [
-                    {
-                        name: "document.pdf", // Filename (e.g., "document.pdf")
-                        content: pdfBase64, // Base64-encoded content
-                        mime_type: "application/pdf", // MIME type for PDF
-                    },
-                ],
-                // htmlbody: htmlToSend,
-            }),
-        };
+        const res = await sendEsignedLetter(lead, pdfBase64);
 
-        const response = await axios(options);
-        if (response.data.message === "OK") {
+        if (!res.status) {
             return {
-                success: true,
+                success: false,
                 message:
-                    "File uploaded and sent to customer as well as management successfully.",
+                    "Failed to send the esigned sanction letter to the customer.",
             };
         }
-        return {
-            success: false,
-            message: "Error. Failed to send email.",
-        };
     } catch (error) {
         console.log("errorr", error);
         return {
@@ -233,4 +197,65 @@ export const getDoc = async (referenceId, data, time) => {
             message: error,
         };
     }
+};
+
+// Send Esigned letter to the customer and management
+export const sendEsignedLetter = async (lead, pdfBase64) => {
+    // Step 3: Configure ZeptoMail API request
+    const fullName = formatFullName(lead.fName, lead.mName, lead.lName);
+    const emailPayload = {
+        from: {
+            address: "noreply@qualoan.com", // Sender's email
+            name: "noreply",
+        },
+        to: [
+            {
+                email_address: {
+                    address: lead.personalEmail,
+                    name: fullName,
+                },
+            },
+        ],
+        cc: [
+            {
+                email_address: {
+                    address: "credit@qualoan.com",
+                    name: "QUA Loan",
+                },
+            },
+        ],
+        subject: "Sanction Letter Document",
+        htmlbody: "<p>Please find the attached Sanction Letter document.</p>",
+        attachments: [
+            {
+                name: "sanctionLetter.pdf", // Attachment file name
+                content: pdfBase64, // Base64-encoded PDF content
+                mime_type: "application/pdf",
+            },
+        ],
+    };
+
+    // Step 4: Send email via ZeptoMail API
+    const response = await axios.post(
+        "https://api.zeptomail.in/v1.1/email",
+        emailPayload,
+        {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `${process.env.ZOHO_APIKEY}`,
+            },
+        }
+    );
+
+    if (response.data.message === "OK") {
+        return {
+            success: true,
+            message: "Sanction letter sent successfully",
+        };
+    }
+
+    return {
+        success: false,
+        message: "Failed to send email",
+    };
 };
