@@ -3,10 +3,10 @@ import CamDetails from "../models/CAM.js";
 import Closed from "../models/Closed.js";
 import Collection from "../models/Collection.js";
 import Disbursal from "../models/Disbursal.js";
-import mongoose, { mongo } from "mongoose"
+import mongoose, { mongo } from "mongoose";
 import Payment from "../models/Payment.js";
 import { postLogs } from "./logs.js";
-import { calculateReceivedPayment } from "../utils/calculateReceivedPayment.js"
+import { calculateReceivedPayment } from "../utils/calculateReceivedPayment.js";
 import Documents from "../models/Documents.js";
 import { uploadDocs } from "../utils/docsUploadAndFetch.js";
 import LeadStatus from "../models/LeadStatus.js";
@@ -30,7 +30,6 @@ export const createActiveLead = async (pan, loanNo, leadNo) => {
             return { success: false };
         }
         return { success: true };
-
 
         // console.log('existing',existingActiveLead)
         // if (!existingActiveLead) {
@@ -65,7 +64,10 @@ export const createActiveLead = async (pan, loanNo, leadNo) => {
 // @route GET /api/collections/active
 // @access Private
 export const activeLeads = asyncHandler(async (req, res) => {
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "admin"
+    ) {
         // const page = parseInt(req.query.page) || 1; // current page
         // const limit = parseInt(req.query.limit) || 10; // items per page
         // const skip = (page - 1) * limit;
@@ -213,9 +215,6 @@ export const activeLeads = asyncHandler(async (req, res) => {
         //     },
         // ]);
 
-
-
-
         // const totalActiveLeads = await Closed.countDocuments({
         //     "data.isActive": true,
         // });
@@ -226,11 +225,11 @@ export const activeLeads = asyncHandler(async (req, res) => {
                     from: "camdetails",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "camDetails"
-                }
+                    as: "camDetails",
+                },
             },
             {
-                $unwind: "$camDetails"
+                $unwind: "$camDetails",
             },
             {
                 $match: {
@@ -241,75 +240,74 @@ export const activeLeads = asyncHandler(async (req, res) => {
                                     {
                                         $subtract: [
                                             "$$NOW",
-                                            "$camDetails.repaymentDate"
-
-                                        ]
+                                            "$camDetails.repaymentDate",
+                                        ],
                                     },
-                                    86400000
-                                ]
+                                    86400000,
+                                ],
                             },
-                            5
-                        ]
-                    }
-                }
+                            5,
+                        ],
+                    },
+                },
             },
             {
                 $match: {
                     collectionExecutiveId: {
-                        $exists: false
-                    }
-                }
+                        $exists: false,
+                    },
+                },
             },
             {
                 $lookup: {
                     from: "closes",
                     localField: "close",
                     foreignField: "_id",
-                    as: "closedDetails"
-                }
+                    as: "closedDetails",
+                },
             },
             {
-                $unwind: "$closedDetails"
+                $unwind: "$closedDetails",
             },
             {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true
-                }
+                    "closedDetails.isDisbursed": true,
+                },
             },
             {
                 $lookup: {
                     from: "leads",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "leadDetails"
-                }
+                    as: "leadDetails",
+                },
             },
             {
-                $unwind: "$leadDetails"
+                $unwind: "$leadDetails",
             },
             {
                 $lookup: {
                     from: "disbursals",
                     localField: "disbursal",
                     foreignField: "_id",
-                    as: "disbursalDetails"
-                }
+                    as: "disbursalDetails",
+                },
             },
             {
-                $unwind: "$disbursalDetails"
+                $unwind: "$disbursalDetails",
             },
             {
                 $lookup: {
                     from: "employees",
                     localField: "disbursalDetails.disbursedBy",
                     foreignField: "_id",
-                    as: "employeeDetails"
-                }
+                    as: "employeeDetails",
+                },
             },
             {
-                $unwind: "$employeeDetails"
+                $unwind: "$employeeDetails",
             },
             {
                 $project: {
@@ -318,11 +316,10 @@ export const activeLeads = asyncHandler(async (req, res) => {
                         $concat: [
                             "$employeeDetails.fName",
                             " ",
-                            "$employeeDetails.lName"
-                        ]
+                            "$employeeDetails.lName",
+                        ],
                     },
-                    sanctionAmount:
-                        "$camDetails.loanRecommended",
+                    sanctionAmount: "$camDetails.loanRecommended",
                     fName: "$leadDetails.fName",
                     mName: "$leadDetails.mName",
                     lName: "$leadDetails.lName",
@@ -338,13 +335,13 @@ export const activeLeads = asyncHandler(async (req, res) => {
                     leadNo: "$leadDetails.leadNo",
                     loanNo: 1,
                     repaymentDate: "$camDetails.repaymentDate",
-                    disbursalDate: "$camDetails.disbursalDate"
-                }
-            }
-        ]
+                    disbursalDate: "$camDetails.disbursalDate",
+                },
+            },
+        ];
 
-        const activeLeads = await Collection.aggregate(pipeline)
-        const totalActiveLeads = Number(activeLeads.length)
+        const activeLeads = await Collection.aggregate(pipeline);
+        const totalActiveLeads = Number(activeLeads.length);
         res.json({
             totalActiveLeads,
             // totalPages: Math.ceil(totalActiveLeads / limit),
@@ -357,8 +354,11 @@ export const activeLeads = asyncHandler(async (req, res) => {
 // @route GET /api/collections/active
 // @access Private
 export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead") {
-        const { loanNo } = req.params
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead"
+    ) {
+        const { loanNo } = req.params;
         let collectionEmpId = req.employee._id.toString();
         let {
             bankName,
@@ -375,26 +375,35 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             isSettledAmount,
             isWriteOffAmount,
             paymentDate,
-        } = req.body
-
-       
+        } = req.body;
 
         let isPartialPaid;
-        const collectionData = await Collection.findOne({ loanNo }).session(session)
-
+        const collectionData = await Collection.findOne({ loanNo }).session(
+            session
+        );
 
         if (!collectionData) {
             await session.abortTransaction();
-            return res.status(404).json({ error: "Collection record not found" });
+            return res
+                .status(404)
+                .json({ error: "Collection record not found" });
         }
 
-        const docs = await Documents.findOne({ pan: collectionData.pan }).session(session);
+        const docs = await Documents.findOne({
+            pan: collectionData.pan,
+        }).session(session);
 
         if (receivedAmount > collectionData.outstandingAmount) {
             excessAmount = receivedAmount - collectionData.outstandingAmount;
-        } else if (receivedAmount >= Math.floor(collectionData.outstandingAmount) && receivedAmount < collectionData.outstandingAmount) {
+        } else if (
+            receivedAmount >= Math.floor(collectionData.outstandingAmount) &&
+            receivedAmount < collectionData.outstandingAmount
+        ) {
             discount = collectionData.outstandingAmount - receivedAmount;
-        } else if ((receivedAmount < Math.floor(collectionData.outstandingAmount) || closingType === "partPayment")) {
+        } else if (
+            receivedAmount < Math.floor(collectionData.outstandingAmount) ||
+            closingType === "partPayment"
+        ) {
             isPartialPaid = true;
             closingType = "partPayment";
         }
@@ -403,20 +412,28 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             const result = await uploadDocs(docs, req.files, remarks);
             if (!result) {
                 await session.abortTransaction();
-                return res.status(400).json({ error: "Couldn't store documents." });
+                return res
+                    .status(400)
+                    .json({ error: "Couldn't store documents." });
             }
         }
 
-        const existingPayment = await Payment.findOne({
-            loanNo,
-            "paymentHistory.transactionId": transactionId,
-        },
+        const existingPayment = await Payment.findOne(
+            {
+                loanNo,
+                "paymentHistory.transactionId": transactionId,
+            },
             { "paymentHistory.$": 1, totalReceivedAmount: 1 }
         ).session(session);
 
-        if (existingPayment && existingPayment.paymentHistory[0].isPaymentVerified) {
+        if (
+            existingPayment &&
+            existingPayment.paymentHistory[0].isPaymentVerified
+        ) {
             await session.abortTransaction();
-            return res.status(403).json({ error: "Payment is already updated!" });
+            return res
+                .status(403)
+                .json({ error: "Payment is already updated!" });
         }
 
         let updatedPayment;
@@ -441,14 +458,14 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
                         "paymentHistory.$.collectionRemarks": collectionRemarks,
                         "paymentHistory.$.isPartialPaid": isPartialPaid,
                         "paymentHistory.$.paymentUpdateRequest": true,
-                        "paymentHistory.$.paymentUpdateRequestBy": collectionEmpId,
-                        "paymentHistory.$.bankName": bankName
+                        "paymentHistory.$.paymentUpdateRequestBy":
+                            collectionEmpId,
+                        "paymentHistory.$.bankName": bankName,
                     },
                 },
                 { new: true, runValidators: true, session }
             );
         } else {
-
             // Update Payment Collection --------------
             updatedPayment = await Payment.findOneAndUpdate(
                 { loanNo },
@@ -476,36 +493,48 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
 
             if (!updatedPayment) {
                 throw Error("Payment record not found");
-                return res.status(404).json({ error: "Payment record not found" });
+                return res
+                    .status(404)
+                    .json({ error: "Payment record not found" });
             }
 
             // update logs and leadStatus
-            const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
-            const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
-            const employee = await Employee.findById(collectionEmpId, null, { session })
-            await LeadStatus.findOneAndUpdate({
-                leadNo: lead.leadNo
-            },
+            const collectionData = await Collection.findOne(
+                { loanNo: loanNo },
+                null,
+                { session }
+            );
+            const lead = await Lead.findOne(
+                { leadNo: collectionData.leadNo },
+                null,
+                { session }
+            );
+            const employee = await Employee.findById(collectionEmpId, null, {
+                session,
+            });
+            await LeadStatus.findOneAndUpdate(
+                {
+                    leadNo: lead.leadNo,
+                },
                 {
                     stage: "COLLECTION",
-                    subStage: "COLLECTION IN PROCESS"
+                    subStage: "COLLECTION IN PROCESS",
                 },
                 { session }
-            )
+            );
             await postLogs(
                 lead._id,
                 "UPDATE PAYMENT BY COLLECTION EXECUTIVE",
-                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                    lead.lName && ` ${lead.lName}`
                 }`,
                 `Payment Updated by ${employee.fName} ${employee.lName}`,
                 `${collectionRemarks}`,
                 session
             );
-
         }
 
-        return res.json({ message: "Payment is updated!" })
-
+        return res.json({ message: "Payment is updated!" });
     }
 });
 
@@ -514,70 +543,70 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
 // @access Private
 export const repaymentDetails = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    console.log('id', id)
+    console.log("id", id);
     // const activeRecord = (await Closed.aggregate(pipeline))[0];
     const repaymentDetails = await Collection.aggregate([
         {
             $match: {
-                loanNo: id
-            }
+                loanNo: id,
+            },
         },
         {
             $lookup: {
                 from: "camdetails",
                 localField: "camDetails",
                 foreignField: "_id",
-                as: "camData"
-            }
+                as: "camData",
+            },
         },
         {
             $lookup: {
                 from: "disbursals",
                 localField: "disbursal",
                 foreignField: "_id",
-                as: "disbursalData"
-            }
+                as: "disbursalData",
+            },
         },
         {
             $lookup: {
                 from: "sanctions",
                 localField: "disbursalData.sanction",
                 foreignField: "_id",
-                as: "sanctionData"
-            }
+                as: "sanctionData",
+            },
         },
         {
             $lookup: {
                 from: "payments",
                 localField: "payment",
                 foreignField: "_id",
-                as: "paymentData"
-            }
+                as: "paymentData",
+            },
         },
         {
             $unwind: {
-                path: '$camData',
-                preserveNullAndEmptyArrays: true
-            }
+                path: "$camData",
+                preserveNullAndEmptyArrays: true,
+            },
         },
         {
             $unwind: {
-                path: '$disbursalData',
-                preserveNullAndEmptyArrays: true
-            }
+                path: "$disbursalData",
+                preserveNullAndEmptyArrays: true,
+            },
         },
 
         {
             $unwind: {
                 path: "$sanctionData",
-                preserveNullAndEmptyArrays: true
-            }
+                preserveNullAndEmptyArrays: true,
+            },
         },
         {
             $unwind: {
                 path: "$paymentData",
-                preserveNullAndEmptyArrays: true
-            }
+                preserveNullAndEmptyArrays: true,
+            },
         },
         {
             $project: {
@@ -598,12 +627,10 @@ export const repaymentDetails = asyncHandler(async (req, res) => {
                 repaymentDate: "$camData.repaymentDate",
                 roi: "$camData.roi",
                 sanctionDate: "$sanctionData.sanctionDate",
-                paymentHistory: "$paymentData.paymentHistory"
-            }
-        }
-
-
-    ])
+                paymentHistory: "$paymentData.paymentHistory",
+            },
+        },
+    ]);
 
     if (!repaymentDetails) {
         res.status(404);
@@ -613,10 +640,7 @@ export const repaymentDetails = asyncHandler(async (req, res) => {
         });
     }
 
-    return res.json({ status: true, repaymentDetails: repaymentDetails[0] })
-
-
-
+    return res.json({ status: true, repaymentDetails: repaymentDetails[0] });
 });
 // @desc Get a specific active leads
 // @route GET /api/collections/active/:loanNo
@@ -634,10 +658,26 @@ export const getActiveLead = asyncHandler(async (req, res) => {
                 from: "disbursals",
                 localField: "disbursal",
                 foreignField: "_id",
-                as: "disbursal"
-            }
+                as: "disbursal",
+            },
         },
         { $unwind: { path: "$disbursal", preserveNullAndEmptyArrays: true } },
+
+        // Lookup ApprovedBy inside Sanction
+        {
+            $lookup: {
+                from: "employees",
+                localField: "disbursal.disbursedBy",
+                foreignField: "_id",
+                as: "disbursal.disbursedBy",
+            },
+        },
+        {
+            $unwind: {
+                path: "$disbursal.disbursedBy",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Lookup Sanction inside Disbursal
         {
@@ -645,21 +685,31 @@ export const getActiveLead = asyncHandler(async (req, res) => {
                 from: "sanctions",
                 localField: "disbursal.sanction",
                 foreignField: "_id",
-                as: "disbursal.sanction"
-            }
+                as: "disbursal.sanction",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction", preserveNullAndEmptyArrays: true } },
+        {
+            $unwind: {
+                path: "$disbursal.sanction",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Lookup ApprovedBy inside Sanction
         {
             $lookup: {
-                from: "users",
+                from: "employees",
                 localField: "disbursal.sanction.approvedBy",
                 foreignField: "_id",
-                as: "disbursal.sanction.approvedBy"
-            }
+                as: "disbursal.sanction.approvedBy",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction.approvedBy", preserveNullAndEmptyArrays: true } },
+        {
+            $unwind: {
+                path: "$disbursal.sanction.approvedBy",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Lookup Application inside Sanction
         {
@@ -667,10 +717,15 @@ export const getActiveLead = asyncHandler(async (req, res) => {
                 from: "applications",
                 localField: "disbursal.sanction.application",
                 foreignField: "_id",
-                as: "disbursal.sanction.application"
-            }
+                as: "disbursal.sanction.application",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction.application", preserveNullAndEmptyArrays: true } },
+        {
+            $unwind: {
+                path: "$disbursal.sanction.application",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Lookup Lead inside Application
         {
@@ -678,55 +733,70 @@ export const getActiveLead = asyncHandler(async (req, res) => {
                 from: "leads",
                 localField: "disbursal.sanction.application.lead",
                 foreignField: "_id",
-                as: "disbursal.sanction.application.lead"
-            }
+                as: "disbursal.sanction.application.lead",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction.application.lead", preserveNullAndEmptyArrays: true } },
-          // Lookup Documents inside Lead
+        {
+            $unwind: {
+                path: "$disbursal.sanction.application.lead",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        // Lookup Documents inside Lead
 
-  // Lookup Documents inside Lead
+        // Lookup Documents inside Lead
         {
             $lookup: {
                 from: "documents",
                 localField: "disbursal.sanction.application.lead.documents",
                 foreignField: "_id",
-                as: "disbursal.sanction.application.lead.documents"
-            }
+                as: "disbursal.sanction.application.lead.documents",
+            },
         },
-    
 
-    // Transform documents array into a single object
-    {
-        $set: {
-            "disbursal.sanction.application.lead.documents": {
-                $arrayElemAt: ["$disbursal.sanction.application.lead.documents", 0]
-            }
-        }
-    },
-
-        
+        // Transform documents array into a single object
+        {
+            $set: {
+                "disbursal.sanction.application.lead.documents": {
+                    $arrayElemAt: [
+                        "$disbursal.sanction.application.lead.documents",
+                        0,
+                    ],
+                },
+            },
+        },
 
         // Lookup CreditManagerId inside Application
         {
             $lookup: {
-                from: "users",
+                from: "employees",
                 localField: "disbursal.sanction.application.creditManagerId",
                 foreignField: "_id",
-                as: "disbursal.sanction.application.creditManagerId"
-            }
+                as: "disbursal.sanction.application.creditManagerId",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction.application.creditManagerId", preserveNullAndEmptyArrays: true } },
+        {
+            $unwind: {
+                path: "$disbursal.sanction.application.creditManagerId",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Lookup RecommendedBy inside Application
         {
             $lookup: {
-                from: "users",
+                from: "employees",
                 localField: "disbursal.sanction.application.recommendedBy",
                 foreignField: "_id",
-                as: "disbursal.sanction.application.recommendedBy"
-            }
+                as: "disbursal.sanction.application.recommendedBy",
+            },
         },
-        { $unwind: { path: "$disbursal.sanction.application.recommendedBy", preserveNullAndEmptyArrays: true } },
+        {
+            $unwind: {
+                path: "$disbursal.sanction.application.recommendedBy",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
 
         // Project only required fields
         {
@@ -735,9 +805,9 @@ export const getActiveLead = asyncHandler(async (req, res) => {
                 loanNo: 1,
                 isClosed: 1,
                 isActive: 1,
-                disbursal: 1// Keep full disbursal structure
-            }
-        }
+                disbursal: 1, // Keep full disbursal structure
+            },
+        },
     ]);
 
     if (!leadInfo) {
@@ -748,27 +818,21 @@ export const getActiveLead = asyncHandler(async (req, res) => {
         });
     }
 
-
     // Fetch the CAM data and add to disbursalObj
     const cam = await CamDetails.findOne({
-        leadId: leadInfo[0]?.disbursal?.sanction?.application?.lead
-            ._id,
+        leadId: leadInfo[0]?.disbursal?.sanction?.application?.lead._id,
     });
 
     // const activeLeadObj = activeRecord.toObject();
 
     // // Extract the matched data object from the array
     // const matchedData = activeLeadObj; // Since $elemMatch returns a single matching element
-    leadInfo[0].disbursal.sanction.application.cam = cam
-        
+    leadInfo[0].disbursal.sanction.application.cam = cam;
 
     return res.json({
         // pan: activeLeadObj.pan, // Include the parent fields
         data: leadInfo[0], // Send the matched object as a single object
     });
-
-
-
 });
 
 // @desc Update an active lead after collection/recovery
@@ -785,7 +849,7 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
-                    loanNo: 1
+                    loanNo: 1,
                 },
             },
         ];
@@ -830,13 +894,13 @@ export const updateActiveLead = asyncHandler(async (req, res) => {
             if (updates.data.partialPaid) {
                 // If partialPaid is present in the updates, push the object into the array
                 updateOperation.$push = {
-                    "partialPaid": updates.partialPaid,
-                    "requestedStatus": updates.requestedStatus,
+                    partialPaid: updates.partialPaid,
+                    requestedStatus: updates.requestedStatus,
                 };
             } else {
                 updateOperation.$set = {
                     ...populatedRecord,
-                    ...updates
+                    ...updates,
                 };
             }
 
@@ -872,7 +936,6 @@ export const closedLeads = asyncHandler(async (req, res) => {
     // const page = parseInt(req.query.page) || 1; // current page
     // const limit = parseInt(req.query.limit) || 10; // items per page
     // const skip = (page - 1) * limit;
-
 
     const closedLeads = await Close.find({
         isActive: false,
@@ -911,12 +974,11 @@ export const closedLeads = asyncHandler(async (req, res) => {
     // }
 });
 
-
 // need to changes in this controller according to UI
 export const getPaymentCalculation = asyncHandler(async (req, res) => {
     const { id } = req.params;
     if (!id) {
-        return res.status(400).json({ message: "Collection ID not provided" })
+        return res.status(400).json({ message: "Collection ID not provided" });
     }
 
     const pipeline = [
@@ -948,57 +1010,60 @@ export const getPaymentCalculation = asyncHandler(async (req, res) => {
                 paymentDetails: 1, // Keep the array of matching payments for reference
             },
         },
-    ]
-    const collection = await Collection.aggregate(pipeline)
+    ];
+    const collection = await Collection.aggregate(pipeline);
 
     if (!collection) {
-        res.status(404).json({ message: "Collection not found" })
+        res.status(404).json({ message: "Collection not found" });
     }
 
-    return res.status(200).json({ collection })
-})
+    return res.status(200).json({ collection });
+});
 
 export const getRecoveryList = asyncHandler(async (req, res) => {
-
-    const { collectionId } = req.params
+    const { collectionId } = req.params;
     if (!collectionId) {
-        return res.status(400).json({ message: "collection id not defined" })
+        return res.status(400).json({ message: "collection id not defined" });
     }
-    const collectionDetails = await Collection.findById(collectionId)
+    const collectionDetails = await Collection.findById(collectionId);
 
     const pipeline = [
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(collectionDetails.payment)
-            }
+                _id: new mongoose.Types.ObjectId(collectionDetails.payment),
+            },
         },
         {
             $project: {
                 _id: 1,
                 paymentHistory: 1,
-            }
-        }
-    ]
+            },
+        },
+    ];
 
-    const recoveryList = await Payment.aggregate(pipeline)
+    const recoveryList = await Payment.aggregate(pipeline);
 
-    return res.status(200).json({ message: "Recovery List get sucessfully", recoveryList })
-
-
-})
+    return res
+        .status(200)
+        .json({ message: "Recovery List get sucessfully", recoveryList });
+});
 
 // get list for closed bucket
 export const getClosedList = asyncHandler(async (req, res) => {
-
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead" || req.activeRole === "admin") {
-
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead" ||
+        req.activeRole === "accountExecutive" ||
+        req.activeRole === "accountHead" ||
+        req.activeRole === "admin"
+    ) {
         const pipeline = [
             {
                 $match: {
                     isActive: false,
                     isClosed: true,
                     // isDisbursed: true
-                }
+                },
             },
 
             {
@@ -1006,15 +1071,15 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     from: "disbursals",
                     localField: "disbursal",
                     foreignField: "_id",
-                    as: "disbursalDetails"
-                }
+                    as: "disbursalDetails",
+                },
             },
 
             { $unwind: "$disbursalDetails" },
             {
                 $match: {
-                    "disbursalDetails.isDisbursed": true
-                }
+                    "disbursalDetails.isDisbursed": true,
+                },
             },
 
             {
@@ -1022,8 +1087,8 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     from: "sanctions",
                     localField: "disbursalDetails.sanction",
                     foreignField: "_id",
-                    as: "sanctionData"
-                }
+                    as: "sanctionData",
+                },
             },
 
             { $unwind: "$sanctionData" },
@@ -1032,8 +1097,8 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     from: "applications",
                     localField: "sanctionData.application",
                     foreignField: "_id",
-                    as: "applicationData"
-                }
+                    as: "applicationData",
+                },
             },
 
             { $unwind: "$applicationData" },
@@ -1043,8 +1108,8 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     from: "leads",
                     localField: "applicationData.lead",
                     foreignField: "_id",
-                    as: "leadData"
-                }
+                    as: "leadData",
+                },
             },
 
             { $unwind: "$leadData" },
@@ -1053,34 +1118,33 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     from: "camdetails",
                     localField: "leadData._id",
                     foreignField: "leadId",
-                    as: "camData"
-                }
+                    as: "camData",
+                },
             },
 
             { $unwind: "$camData" },
             {
                 $match: {
-                    "camData.repaymentAmount": { $gt: 0 }
-                }
+                    "camData.repaymentAmount": { $gt: 0 },
+                },
             },
             {
                 $lookup: {
                     from: "payments",
                     localField: "disbursalDetails.loanNo",
                     foreignField: "loanNo",
-                    as: "paymentData"
-                }
+                    as: "paymentData",
+                },
             },
             {
-                $unwind: "$paymentData"
+                $unwind: "$paymentData",
             },
             {
                 $project: {
                     _id: 0,
                     pan: 1,
                     loanNo: 1,
-                    sanctionAmount:
-                        "$sanctionData.loanRecommended",
+                    sanctionAmount: "$sanctionData.loanRecommended",
                     requestedStatus: 1,
                     isSettled: 1,
                     isWriteOff: 1,
@@ -1095,44 +1159,52 @@ export const getClosedList = asyncHandler(async (req, res) => {
                     email: "$leadData.personalEmail",
                     state: "$leadData.state",
                     city: "$leadData.city",
-                    totalReceivedAmount:
-                        "$paymentData.totalReceivedAmount"
-                }
+                    totalReceivedAmount: "$paymentData.totalReceivedAmount",
+                },
             },
-        ]
+        ];
 
-        const closedList = await Close.aggregate(pipeline)
+        const closedList = await Close.aggregate(pipeline);
 
-        return res.status(200).json({ message: "Closed List get sucessfully", closedList })
+        return res
+            .status(200)
+            .json({ message: "Closed List get sucessfully", closedList });
     }
-    return res.status(400).json({ message: "You are not authorized to access this resource" })
-})
-
+    return res
+        .status(400)
+        .json({ message: "You are not authorized to access this resource" });
+});
 
 // collection executive allocate collectionlead
 export const allocate = asyncHandler(async (req, res) => {
-    const { collectionId } = req.params
+    const { collectionId } = req.params;
 
-    let collectionExecutiveId
+    let collectionExecutiveId;
     if (req.activeRole === "collectionExecutive") {
         collectionExecutiveId = req.employee._id.toString(); // Current user is a screener
     }
 
-    const collection = await Collection.findByIdAndUpdate(collectionId, { collectionExecutiveId: collectionExecutiveId }, { new: true })
+    const collection = await Collection.findByIdAndUpdate(
+        collectionId,
+        { collectionExecutiveId: collectionExecutiveId },
+        { new: true }
+    );
     if (!collection) {
-        return res.status(400).json({ message: "collection not found" })
+        return res.status(400).json({ message: "collection not found" });
     }
 
     const employee = await Employee.findById(collectionExecutiveId);
 
-    const lead = await Lead.findOne({ leadNo: collection.leadNo })
-    await LeadStatus.findOneAndUpdate({
-        leadNo: lead.leadNo
-    },
+    const lead = await Lead.findOne({ leadNo: collection.leadNo });
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: lead.leadNo,
+        },
         {
             stage: "COLLECTION",
-            subStage: "LEAD ALLOCATED BY COLLECTION EXECUTIVE"
-        })
+            subStage: "LEAD ALLOCATED BY COLLECTION EXECUTIVE",
+        }
+    );
     const logs = await postLogs(
         lead._id,
         "LEAD ALLOCATED BY COLLECTION EXECUTIVE",
@@ -1140,24 +1212,29 @@ export const allocate = asyncHandler(async (req, res) => {
         `Lead allocated to ${employee.fName} ${employee.lName}`
     );
 
-    return res.status(200).json({ message: "Collection allocated sucessfully", collection })
-})
+    return res
+        .status(200)
+        .json({ message: "Collection allocated sucessfully", collection });
+});
 
-// list of  allocated collectionLead by a  collection executive  
+// list of  allocated collectionLead by a  collection executive
 export const getAllocatedList = asyncHandler(async (req, res) => {
-
     let collectionExecutiveId = req.employee._id.toString();
 
     let query;
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead") {
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead"
+    ) {
         query = {
-            collectionExecutiveId: new mongoose.Types.ObjectId(collectionExecutiveId)
-        }
+            collectionExecutiveId: new mongoose.Types.ObjectId(
+                collectionExecutiveId
+            ),
+        };
     } else if (req.activeRole === "admin") {
-        query = {}
+        query = {};
     }
-    console.log('collectionExecutive')
-
+    console.log("collectionExecutive");
 
     const pipeline = [
         ...(Object.keys(query).length ? [{ $match: query }] : []),
@@ -1166,67 +1243,67 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
                 from: "closes",
                 localField: "close",
                 foreignField: "_id",
-                as: "closedDetails"
-            }
+                as: "closedDetails",
+            },
         },
         {
-            $unwind: "$closedDetails"
+            $unwind: "$closedDetails",
         },
         {
-            "$match": {
-              "closedDetails.isActive": true,
-              "closedDetails.isClosed": false,
-              "closedDetails.isDisbursed": true
-            }
-          },
+            $match: {
+                "closedDetails.isActive": true,
+                "closedDetails.isClosed": false,
+                "closedDetails.isDisbursed": true,
+            },
+        },
         {
             $lookup: {
                 from: "leads",
                 localField: "leadNo",
                 foreignField: "leadNo",
-                as: "leadDetails"
-            }
+                as: "leadDetails",
+            },
         },
         {
-            $unwind: "$leadDetails"
+            $unwind: "$leadDetails",
         },
         {
             $lookup: {
                 from: "disbursals",
                 localField: "disbursal",
                 foreignField: "_id",
-                as: "disbursalDetails"
-            }
+                as: "disbursalDetails",
+            },
         },
         {
-            $unwind: "$disbursalDetails"
+            $unwind: "$disbursalDetails",
         },
         {
             $lookup: {
                 from: "employees",
                 localField: "disbursalDetails.disbursedBy",
                 foreignField: "_id",
-                as: "employeeDetails"
-            }
+                as: "employeeDetails",
+            },
         },
         {
-            $unwind: "$employeeDetails"
+            $unwind: "$employeeDetails",
         },
         {
             $lookup: {
                 from: "camdetails",
                 localField: "leadNo",
                 foreignField: "leadNo",
-                as: "camDetails"
-            }
+                as: "camDetails",
+            },
         },
         {
-            $unwind: "$camDetails"
+            $unwind: "$camDetails",
         },
         {
             $match: {
-                "camDetails.repaymentAmount": { $gt: 0 }
-            }
+                "camDetails.repaymentAmount": { $gt: 0 },
+            },
         },
         {
             $project: {
@@ -1235,11 +1312,10 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
                     $concat: [
                         "$employeeDetails.fName",
                         " ",
-                        "$employeeDetails.lName"
-                    ]
+                        "$employeeDetails.lName",
+                    ],
                 },
-                sanctionAmount:
-                    "$camDetails.loanRecommended",
+                sanctionAmount: "$camDetails.loanRecommended",
                 fName: "$leadDetails.fName",
                 mName: "$leadDetails.mName",
                 lName: "$leadDetails.lName",
@@ -1253,31 +1329,36 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
                 city: "$leadDetails.city",
                 salary: "$leadDetails.salary",
                 leadNo: "$leadDetails.leadNo",
-                loanNo: 1
-            }
-        }
-    ]
-    const collectionList = await Collection.aggregate(pipeline)
-    return res.status(200).json({ message: "Collection List get sucessfully", collectionList })
+                loanNo: 1,
+            },
+        },
+    ];
+    const collectionList = await Collection.aggregate(pipeline);
+    return res
+        .status(200)
+        .json({ message: "Collection List get sucessfully", collectionList });
 
-    return res.status(400).json({ message: "You are not authorized to access this resource" })
-
-})
+    return res
+        .status(400)
+        .json({ message: "You are not authorized to access this resource" });
+});
 
 export const preActiveLeads = asyncHandler(async (req, res) => {
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "admin") {
-
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "admin"
+    ) {
         const pipeline = [
             {
                 $lookup: {
                     from: "camdetails",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "camDetails"
-                }
+                    as: "camDetails",
+                },
             },
             {
-                $unwind: "$camDetails"
+                $unwind: "$camDetails",
             },
             {
                 $match: {
@@ -1290,14 +1371,14 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             {
                                                 $subtract: [
                                                     "$$NOW",
-                                                    "$camDetails.repaymentDate"
-                                                ]
+                                                    "$camDetails.repaymentDate",
+                                                ],
                                             },
-                                            86400000
-                                        ]
+                                            86400000,
+                                        ],
                                     },
-                                    -5
-                                ]
+                                    -5,
+                                ],
                             },
                             {
                                 $lte: [
@@ -1306,82 +1387,82 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             {
                                                 $subtract: [
                                                     "$$NOW",
-                                                    "$camDetails.repaymentDate"
-                                                ]
+                                                    "$camDetails.repaymentDate",
+                                                ],
                                             },
-                                            86400000
-                                        ]
+                                            86400000,
+                                        ],
                                     },
-                                    5
-                                ]
-                            }
-                        ]
-                    }
-                }
+                                    5,
+                                ],
+                            },
+                        ],
+                    },
+                },
             },
             {
                 $match: {
                     collectionExecutiveId: {
-                        $exists: false
+                        $exists: false,
                     },
                     preCollectionExecutiveId: {
-                        $exists: false
-                    }
-                }
+                        $exists: false,
+                    },
+                },
             },
             {
                 $lookup: {
                     from: "closes",
                     localField: "close",
                     foreignField: "_id",
-                    as: "closedDetails"
-                }
+                    as: "closedDetails",
+                },
             },
             {
-                $unwind: "$closedDetails"
+                $unwind: "$closedDetails",
             },
             {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true
-                }
+                    "closedDetails.isDisbursed": true,
+                },
             },
             {
                 $lookup: {
                     from: "leads",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "leadDetails"
-                }
+                    as: "leadDetails",
+                },
             },
             {
-                $unwind: "$leadDetails"
+                $unwind: "$leadDetails",
             },
             {
                 $lookup: {
                     from: "disbursals",
                     localField: "disbursal",
                     foreignField: "_id",
-                    as: "disbursalDetails"
-                }
+                    as: "disbursalDetails",
+                },
             },
             {
-                $unwind: "$disbursalDetails"
+                $unwind: "$disbursalDetails",
             },
             {
                 $lookup: {
                     from: "employees",
                     localField: "disbursalDetails.disbursedBy",
                     foreignField: "_id",
-                    as: "employeeDetails"
-                }
+                    as: "employeeDetails",
+                },
             },
             {
-                $unwind: "$employeeDetails"
+                $unwind: "$employeeDetails",
             },
             {
-                $sort: { "camDetails.repaymentDate": -1 }
+                $sort: { "camDetails.repaymentDate": -1 },
             },
             {
                 $project: {
@@ -1390,8 +1471,8 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                         $concat: [
                             "$employeeDetails.fName",
                             " ",
-                            "$employeeDetails.lName"
-                        ]
+                            "$employeeDetails.lName",
+                        ],
                     },
                     sanctionAmount: "$camDetails.loanRecommended",
                     fName: "$leadDetails.fName",
@@ -1409,13 +1490,13 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                     leadNo: "$leadDetails.leadNo",
                     loanNo: 1,
                     repaymentDate: "$camDetails.repaymentDate",
-                    disbursalDate: "$camDetails.disbursalDate"
-                }
+                    disbursalDate: "$camDetails.disbursalDate",
+                },
             },
-        ]
+        ];
 
-        const activeLeads = await Collection.aggregate(pipeline)
-        const totalActiveLeads = Number(activeLeads.length)
+        const activeLeads = await Collection.aggregate(pipeline);
+        const totalActiveLeads = Number(activeLeads.length);
         res.json({
             totalActiveLeads,
             // totalPages: Math.ceil(totalActiveLeads / limit),
@@ -1426,28 +1507,35 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
 });
 
 export const preAllocate = asyncHandler(async (req, res) => {
-    const { collectionId } = req.params
+    const { collectionId } = req.params;
 
-    let collectionExecutiveId
+    let collectionExecutiveId;
     if (req.activeRole === "collectionExecutive") {
         collectionExecutiveId = req.employee._id.toString(); // Current user is a screener
     }
 
-    const collection = await Collection.findByIdAndUpdate(collectionId, { preCollectionExecutiveId: collectionExecutiveId }, { new: true })
+    const collection = await Collection.findByIdAndUpdate(
+        collectionId,
+        { preCollectionExecutiveId: collectionExecutiveId },
+        { new: true }
+    );
     if (!collection) {
-        return res.status(400).json({ message: "collection not found" })
+        return res.status(400).json({ message: "collection not found" });
     }
 
     const employee = await Employee.findById(collectionExecutiveId);
 
-    const lead = await Lead.findOne({ leadNo: collection.leadNo })
-    await LeadStatus.findOneAndUpdate({
-        leadNo: lead.leadNo
-    },
+    const lead = await Lead.findOne({ leadNo: collection.leadNo });
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: lead.leadNo,
+        },
         {
             stage: "COLLECTION",
-            subStage: "LEAD ALLOCATED TO COLLECTION EXECUTIVE IN PRE-COLLECTION"
-        })
+            subStage:
+                "LEAD ALLOCATED TO COLLECTION EXECUTIVE IN PRE-COLLECTION",
+        }
+    );
     const logs = await postLogs(
         lead._id,
         "LEAD ALLOCATED TO COLLECTION EXECUTIVE IN PRE-COLLECTION",
@@ -1455,86 +1543,94 @@ export const preAllocate = asyncHandler(async (req, res) => {
         `Lead allocated to ${employee.fName} ${employee.lName}`
     );
 
-    return res.status(200).json({ message: "Collection allocated sucessfully", collection })
-})
+    return res
+        .status(200)
+        .json({ message: "Collection allocated sucessfully", collection });
+});
 
 export const getPreAllocatedList = asyncHandler(async (req, res) => {
-    console.log('collectionExecutive')
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "admin") {
+    console.log("collectionExecutive");
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead" ||
+        req.activeRole === "admin"
+    ) {
         let preCollectionExecutiveId = req.employee._id.toString();
 
         const pipeline = [
             {
                 $match: {
-                    preCollectionExecutiveId: new mongoose.Types.ObjectId(preCollectionExecutiveId)
-                }
+                    preCollectionExecutiveId: new mongoose.Types.ObjectId(
+                        preCollectionExecutiveId
+                    ),
+                },
             },
             {
                 $lookup: {
                     from: "closes",
                     localField: "close",
                     foreignField: "_id",
-                    as: "closedDetails"
-                }
+                    as: "closedDetails",
+                },
             },
             {
-                $unwind: "$closedDetails"
+                $unwind: "$closedDetails",
             },
             {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true
-                }
+                    "closedDetails.isDisbursed": true,
+                },
             },
             {
                 $lookup: {
                     from: "leads",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "leadDetails"
-                }
+                    as: "leadDetails",
+                },
             },
             {
-                $unwind: "$leadDetails"
+                $unwind: "$leadDetails",
             },
             {
                 $lookup: {
                     from: "disbursals",
                     localField: "disbursal",
                     foreignField: "_id",
-                    as: "disbursalDetails"
-                }
+                    as: "disbursalDetails",
+                },
             },
             {
-                $unwind: "$disbursalDetails"
+                $unwind: "$disbursalDetails",
             },
             {
                 $lookup: {
                     from: "employees",
                     localField: "disbursalDetails.disbursedBy",
                     foreignField: "_id",
-                    as: "employeeDetails"
-                }
+                    as: "employeeDetails",
+                },
             },
             {
-                $unwind: "$employeeDetails"
+                $unwind: "$employeeDetails",
             },
             {
                 $lookup: {
                     from: "camdetails",
                     localField: "leadNo",
                     foreignField: "leadNo",
-                    as: "camDetails"
-                }
+                    as: "camDetails",
+                },
             },
             {
-                $unwind: "$camDetails"
+                $unwind: "$camDetails",
             },
             {
                 $match: {
-                    "camDetails.repaymentAmount": { $gt: 0 }
-                }
+                    "camDetails.repaymentAmount": { $gt: 0 },
+                },
             },
             {
                 $project: {
@@ -1543,11 +1639,10 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
                         $concat: [
                             "$employeeDetails.fName",
                             " ",
-                            "$employeeDetails.lName"
-                        ]
+                            "$employeeDetails.lName",
+                        ],
                     },
-                    sanctionAmount:
-                        "$camDetails.loanRecommended",
+                    sanctionAmount: "$camDetails.loanRecommended",
                     fName: "$leadDetails.fName",
                     mName: "$leadDetails.mName",
                     lName: "$leadDetails.lName",
@@ -1561,12 +1656,17 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
                     city: "$leadDetails.city",
                     salary: "$leadDetails.salary",
                     leadNo: "$leadDetails.leadNo",
-                    loanNo: 1
-                }
-            }
-        ]
-        const collectionList = await Collection.aggregate(pipeline)
-        return res.status(200).json({ message: "Collection List get sucessfully", collectionList })
+                    loanNo: 1,
+                },
+            },
+        ];
+        const collectionList = await Collection.aggregate(pipeline);
+        return res.status(200).json({
+            message: "Collection List get sucessfully",
+            collectionList,
+        });
     }
-    return res.status(400).json({ message: "You are not authorized to access this resource" })
-})
+    return res
+        .status(400)
+        .json({ message: "You are not authorized to access this resource" });
+});
