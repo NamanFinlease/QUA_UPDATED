@@ -276,7 +276,7 @@ export const verifyPaymentCalculation = async (
                 cc: [
                     {
                         email_address: {
-                            address: "collectionhead@only1loan.com",
+                            address: "collectionhead@qualoan.com",
                             name: "Badal",
                         },
                     },
