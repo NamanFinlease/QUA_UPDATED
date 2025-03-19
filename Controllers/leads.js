@@ -132,94 +132,95 @@ import { sessionAsyncHandler } from "../middleware/sessionAsyncHandler.js";
 // @desc Create loan leads
 // @route POST /api/leads
 // @access Public
-export const createLead = asyncHandler(async (req, res) => {
-    const {
-        fName,
-        mName,
-        lName,
-        gender,
-        dob,
-        aadhaar,
-        pan,
-        mobile,
-        alternateMobile,
-        personalEmail,
-        officeEmail,
-        loanAmount,
-        salary,
-        pinCode,
-        state,
-        city,
-        source,
-    } = req.body;
+// export const createLead = asyncHandler(async (req, res) => {
+//     const {
+//         fName,
+//         mName,
+//         lName,
+//         gender,
+//         dob,
+//         aadhaar,
+//         pan,
+//         mobile,
+//         alternateMobile,
+//         personalEmail,
+//         officeEmail,
+//         loanAmount,
+//         salary,
+//         pinCode,
+//         state,
+//         city,
+//         source,
+//     } = req.body;
 
-    const response = await checkExisitingActiveLead(pan);
+//     const response = await checkExisitingActiveLead(pan);
 
-    const name = fName.split(" ");
+//     const name = fName.split(" ");
 
-    let docs;
-    const exisitingDoc = await Documents.findOne({ pan: pan });
-    if (exisitingDoc) {
-        docs = exisitingDoc;
-    } else {
-        docs = await Documents.create({
-            pan: pan,
-        });
-    }
-    const leadNo = await nextSequence("leadNo", "QUALED", 10);
-    const breCounter = await checkSequence("breCounter");
+//     let docs;
+//     const exisitingDoc = await Documents.findOne({ pan: pan });
+//     if (exisitingDoc) {
+//         docs = exisitingDoc;
+//     } else {
+//         docs = await Documents.create({
+//             pan: pan,
+//         });
+//     }
+//     const leadNo = await nextSequence("leadNo", "QUALED", 10);
+//     const breCounter = await checkSequence("breCounter");
 
-    let leadBreCounter;
-    if (breCounter.sequenceValue < 5) {
-        leadBreCounter = await nextSequence("breCounter");
-    } else {
-        leadBreCounter = await resetSequence("breCounter");
-    }
+//     let leadBreCounter;
+//     if (breCounter.sequenceValue < 5) {
+//         leadBreCounter = await nextSequence("breCounter");
+//     } else {
+//         leadBreCounter = await resetSequence("breCounter");
+//     }
 
-    const leadStatus = await LeadStatus.create({
-        pan: pan,
-        leadNo,
-        isInProcess: true,
-    });
+//     const leadStatus = await LeadStatus.create({
+//         pan: pan,
+//         leadNo,
+//         isInProcess: true,
+//     });
 
-    const newLead = await Lead.create({
-        fName: name[0],
-        mName: mName ? mName : name.length === 2 ? name[1] : "",
-        lName: lName ?? "",
-        gender,
-        dob: new Date(dob),
-        leadNo,
-        breCounter: leadBreCounter,
-        aadhaar,
-        pan,
-        documents: docs._id.toString(),
-        mobile: String(mobile),
-        alternateMobile: alternateMobile ? String(alternateMobile) : "",
-        personalEmail,
-        officeEmail,
-        loanAmount,
-        salary,
-        pinCode,
-        state,
-        city,
-        source,
-        leadStatus: leadStatus._id,
-    });
-    if (!newLead) {
-        res.status(400);
-        throw new Error("Lead not created!!!");
-    }
+//     const newLead = await Lead.create({
+//         fName: name[0],
+//         mName: mName ? mName : name.length === 2 ? name[1] : "",
+//         lName: lName ?? "",
+//         gender,
+//         dob: new Date(dob),
+//         leadNo,
+//         breCounter: leadBreCounter,
+//         aadhaar,
+//         pan,
+//         documents: docs._id.toString(),
+//         mobile: String(mobile),
+//         alternateMobile: alternateMobile ? String(alternateMobile) : "",
+//         personalEmail,
+//         officeEmail,
+//         loanAmount,
+//         salary,
+//         pinCode,
+//         state,
+//         city,
+//         source,
+//         leadStatus: leadStatus._id,
+//     });
+//     if (!newLead) {
+//         res.status(400);
+//         throw new Error("Lead not created!!!");
+//     }
 
-    // viewLeadsLog(req, res, status || '', borrower || '', leadRemarks = '');
-    const logs = await postLogs(
-        newLead._id,
-        "NEW LEAD",
-        `${newLead.fName}${newLead.mName && ` ${newLead.mName}`}${newLead.lName && ` ${newLead.lName}`
-        }`,
-        "New lead created"
-    );
-    return res.json({ newLead, logs });
-});
+//     // viewLeadsLog(req, res, status || '', borrower || '', leadRemarks = '');
+//     const logs = await postLogs(
+//         newLead._id,
+//         "NEW LEAD",
+//         `${newLead.fName}${newLead.mName && ` ${newLead.mName}`}${
+//             newLead.lName && ` ${newLead.lName}`
+//         }`,
+//         "New lead created"
+//     );
+//     return res.json({ newLead, logs });
+// });
 
 // @desc   Get all LandingPageLeads entries (Paginated)
 // @route  GET /api/leads/getAllLandingPageLeads
@@ -365,13 +366,15 @@ export const allocateLead = asyncHandler(async (req, res) => {
     }
     const employee = await Employee.findOne({ _id: screenerId });
 
-    await LeadStatus.findOneAndUpdate({
-        leadNo: lead.leadNo
-    },
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: lead.leadNo,
+        },
         {
             stage: "APPLICATION",
-            subStage: "LEAD IN PROCESS"
-        })
+            subStage: "LEAD IN PROCESS",
+        }
+    );
     const logs = await postLogs(
         lead._id,
         "LEAD IN PROCESS",
@@ -474,18 +477,20 @@ export const updateLead = asyncHandler(async (req, res) => {
         _id: req.employee._id.toString(),
     });
 
-    await LeadStatus.findOneAndUpdate({
-        leadNo: lead.leadNo
-    },
+    await LeadStatus.findOneAndUpdate(
+        {
+            leadNo: lead.leadNo,
+        },
         {
             stage: "APPLICATION",
-            subStage: "LEAD UPDATED"
+            subStage: "LEAD UPDATED",
         }
-    )
+    );
     const logs = await postLogs(
         lead._id,
         "LEAD UPDATED",
-        `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+        `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+            lead.lName && ` ${lead.lName}`
         }`,
         `Lead details updated by ${employee.fName} ${employee.lName}`
     );
@@ -498,145 +503,154 @@ export const updateLead = asyncHandler(async (req, res) => {
 // @route Patch /api/lead/recommend/:id
 // @access Private
 export const recommendLead = sessionAsyncHandler(async (req, res, session) => {
-    if (req.activeRole !== "screener"){
-        res.status(401)
-        throw new Error("You are not authorized for this action")
-
+    if (req.activeRole !== "screener") {
+        res.status(401);
+        throw new Error("You are not authorized for this action");
     }
     const { id } = req.params;
     const { remarks } = req.body;
 
-    
     // if(!remarks){
-        //     res.status(400)
-        //     throw new Error("Please add a remark!")
-        // }
-        if (req.activeRole === "screener") {
-            // Find the lead by its ID
-            const lead = await Lead.findById(id)
+    //     res.status(400)
+    //     throw new Error("Please add a remark!")
+    // }
+    if (req.activeRole === "screener") {
+        // Find the lead by its ID
+        const lead = await Lead.findById(id)
             .populate({
                 path: "screenerId",
                 select: "fName mName lName",
             })
             .populate("documents")
             .session(session);
-            
-            if (!lead) {
-                throw new Error("Lead not found"); // This error will be caught by the error handler
-            }
-            
-            if (lead.isRejected) {
-                throw new Error("Lead already rejected"); // This error will be caught by the error handler
-            }
-            if (lead.isRecommended) {
-                throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
-            }
-            
-            const status = await LeadStatus.findById({
-                _id: lead.leadStatus.toString(),
-            }).session(session);
-            
-            if (!status) {
-                res.status(404);
-                throw new Error("Status not found");
-            }
-            
-            const result = await checkApproval(
-                lead,
-                {},
-                req.employee._id.toString(),
-                ""
-            );
-            
-            console.log("check approval result --->", result)
-            if (!result.approved) {
-                res.status(400);
-                throw new Error(`${result.message}`);
-            }
-            const screenerName = `${lead.screenerId.fName}${lead.screenerId.mName && ` ${lead.screenerId.mName}`
-                } ${lead.screenerId.lName}`;
-    
-            const {
-                pan,
-                aadhaar,
-                fName,
-                mName,
-                lName,
-                gender,
-                dob,
-                mobile,
-                alternateMobile,
-                personalEmail,
-                officeEmail,
-                leadNo
-            } = lead;
-            console.log("---> lead", lead)
-            const details = {
-                pan,
-                aadhaar,
-                fName,
-                mName,
-                lName,
-                gender,
-                dob,
-                mobile,
-                alternateMobile,
-                personalEmail,
-                officeEmail,
-                screenedBy: screenerName,
-                extraDetails: lead.extraDetails,
-                leadNo
-            };
-            
-            // need to add logic from lead 
-            const applicant = await applicantDetails(details, session);
-            
-            await postCamDetails(id, lead.cibilScore, lead.loanAmount, leadNo, pan, session);
-            
-            const newApplication = new Application({
-                leadNo: lead.leadNo,
-                pan: pan,
-                lead: id,
-                applicant: applicant._id,
-            });
-            const response = await newApplication.save({ session });
-            
-            if (!response) {
-                res.status(400);
-                throw new Error("Could not recommend this lead!!");
-            }
-            
-            // Change lead status to Application (showing the lead is in the application stage)
-            status.stage = "APPLICATION";
-            status.subStage = "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
-            await status.save({ session });
-            
-            // Approve the lead by updating its status
-            lead.isRecommended = true;
-            lead.recommendedBy = req.employee._id;
-            await lead.save({ session });
-            await LeadStatus.findOneAndUpdate({
-                leadNo: lead.leadNo
-            },
-                {
-                    stage: "APPLICATION",
-                    subStage: "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER"
-                },
-                { session })
-            const logs = await postLogs(
-                lead._id,
-                "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER",
-                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
-                }`,
-                `Lead approved by ${lead.screenerId.fName} ${lead.screenerId.lName}`,
-                remarks,
-                session
-            );
 
-        if (!lead.userId) {
-            console.log("userId hi nhi aa rhi h ---->")
+        if (!lead) {
+            throw new Error("Lead not found"); // This error will be caught by the error handler
         }
 
+        if (lead.isRejected) {
+            throw new Error("Lead already rejected"); // This error will be caught by the error handler
+        }
+        if (lead.isRecommended) {
+            throw new Error("Lead already forwarded to Credit Manager"); // This error will be caught by the error handler
+        }
+
+        const status = await LeadStatus.findById({
+            _id: lead.leadStatus.toString(),
+        }).session(session);
+
+        if (!status) {
+            res.status(404);
+            throw new Error("Status not found");
+        }
+
+        const result = await checkApproval(
+            lead,
+            {},
+            req.employee._id.toString(),
+            ""
+        );
+
+        console.log("check approval result --->", result);
+        if (!result.approved) {
+            res.status(400);
+            throw new Error(`${result.message}`);
+        }
+        const screenerName = `${lead.screenerId.fName}${
+            lead.screenerId.mName && ` ${lead.screenerId.mName}`
+        } ${lead.screenerId.lName}`;
+
+        const {
+            pan,
+            aadhaar,
+            fName,
+            mName,
+            lName,
+            gender,
+            dob,
+            mobile,
+            alternateMobile,
+            personalEmail,
+            officeEmail,
+            leadNo,
+        } = lead;
+        console.log("---> lead", lead);
+        const details = {
+            pan,
+            aadhaar,
+            fName,
+            mName,
+            lName,
+            gender,
+            dob,
+            mobile,
+            alternateMobile,
+            personalEmail,
+            officeEmail,
+            screenedBy: screenerName,
+            extraDetails: lead.extraDetails,
+            leadNo,
+        };
+
+        // need to add logic from lead
+        const applicant = await applicantDetails(details, session);
+
+        await postCamDetails(
+            id,
+            lead.cibilScore,
+            lead.loanAmount,
+            leadNo,
+            pan,
+            session
+        );
+
+        const newApplication = new Application({
+            leadNo: lead.leadNo,
+            pan: pan,
+            lead: id,
+            applicant: applicant._id,
+        });
+        const response = await newApplication.save({ session });
+
+        if (!response) {
+            res.status(400);
+            throw new Error("Could not recommend this lead!!");
+        }
+
+        // Change lead status to Application (showing the lead is in the application stage)
+        status.stage = "APPLICATION";
+        status.subStage = "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER";
+        await status.save({ session });
+
+        // Approve the lead by updating its status
+        lead.isRecommended = true;
+        lead.recommendedBy = req.employee._id;
+        lead.remarks = remarks;
+        await lead.save({ session });
+        await LeadStatus.findOneAndUpdate(
+            {
+                leadNo: lead.leadNo,
+            },
+            {
+                stage: "APPLICATION",
+                subStage: "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER",
+            },
+            { session }
+        );
+        const logs = await postLogs(
+            lead._id,
+            "LEAD APPROVED. TRANSFERED TO CREDIT MANAGER",
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                lead.lName && ` ${lead.lName}`
+            }`,
+            `Lead approved by ${lead.screenerId.fName} ${lead.screenerId.lName}`,
+            remarks,
+            session
+        );
+
+        if (!lead.userId) {
+            console.log("userId hi nhi aa rhi h ---->");
+        }
 
         // Send the approved lead as a JSON response
         return res.json({ response, logs }); // This is a successful response
@@ -724,10 +738,9 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
 // @route GET /api/verify/equifax/:id
 // @access Private
 export const fetchCibil = asyncHandler(async (req, res) => {
-
-    if(req.activeRole !== "screener"){
-        res.status(401)
-        throw new Error("You are not authorized for this action.")
+    if (req.activeRole !== "screener") {
+        res.status(401);
+        throw new Error("You are not authorized for this action.");
     }
     const { id } = req.params;
     const lead = await Lead.findById(id);

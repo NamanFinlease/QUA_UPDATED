@@ -65,12 +65,10 @@ const calculateLoan = asyncHandler(async (req, res) => {
             previousLoanApplication?.applicationStatus === "LEAD_CREATED" ||
             previousLoanApplication?.applicationStatus === "APPROVED"
         ) {
-            return res
-                .status(400)
-                .json({
-                    message:
-                        "You cant edit this because Lead has been sent to Screener",
-                });
+            return res.status(400).json({
+                message:
+                    "You cant edit this because Lead has been sent to Screener",
+            });
         }
 
         if (previousLoanApplication?.applicationStatus === "PENDING") {
@@ -87,11 +85,9 @@ const calculateLoan = asyncHandler(async (req, res) => {
                 const diffInMs =
                     previousLoanApplication?.expiryDate - new Date();
                 const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-                return res
-                    .status(400)
-                    .json({
-                        message: `You can apply loan after ${diffInDays} days , because your previous loan application have been rejected`,
-                    });
+                return res.status(400).json({
+                    message: `You can apply loan after ${diffInDays} days , because your previous loan application have been rejected`,
+                });
             } else {
                 loanApplication = await LoanApplication.create({
                     userId: user._id,
@@ -118,12 +114,10 @@ const calculateLoan = asyncHandler(async (req, res) => {
         });
     }
 
-    return res
-        .status(200)
-        .json({
-            message: "Loan Application created successfully",
-            loanApplication: loanApplication.loanDetails,
-        });
+    return res.status(200).json({
+        message: "Loan Application created successfully",
+        loanApplication: loanApplication.loanDetails,
+    });
 });
 
 const addEmploymentInfo = asyncHandler(async (req, res) => {
@@ -171,12 +165,10 @@ const addEmploymentInfo = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Loan Application not found" });
     }
     if (loanDetails.applicationStatus === "LEAD_CREATED") {
-        return res
-            .status(400)
-            .json({
-                message:
-                    "You cant edit this because Lead has been sent to Screener",
-            });
+        return res.status(400).json({
+            message:
+                "You cant edit this because Lead has been sent to Screener",
+        });
     }
 
     let progressStatus;
@@ -212,15 +204,74 @@ const addEmploymentInfo = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Employment Info not added" });
     }
     await postUserLogs(userId, `User add employment info`);
-    return res
-        .status(200)
-        .json({
-            message: "Employment Info added successfully",
-            EmploymentInfo: addEmploymentInfo.employeeDetails,
-        });
+    return res.status(200).json({
+        message: "Employment Info added successfully",
+        EmploymentInfo: addEmploymentInfo.employeeDetails,
+    });
 });
 
 const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
+    const blockedMobile = [
+        "8793773947",
+        "9052343658",
+        "7509239282",
+        "9045172143",
+        "9137798227",
+        "9998651170",
+        "7016730296",
+        "9723670911",
+        "7415542086",
+        "7051392206",
+        "8982291850",
+        "6005271206",
+        "6284330782",
+        "8506027844",
+        "8900259732",
+        "9123082148",
+        "9176669692",
+        "9390074841",
+        "9711226154",
+        "7982687343",
+        "9873775577",
+        "8699244550",
+        "9619885391",
+        "8368858297",
+        "8800816395",
+        "8250220952",
+        "7076537516",
+        "8179406588",
+    ];
+
+    const blockedPan = [
+        "BPSPD1900A",
+        "BNOPM8588F",
+        "BENPY5391E",
+        "BRIPJ6408B",
+        "BKQPS3398A",
+        "AWIPM9770H",
+        "ARQPP9736K",
+        "EVVPP0954C",
+        "BTUPV0572Q",
+        "EDPPP6568E",
+        "FFPKS6359C",
+        "BJVPB2350B",
+        "FFKPS6359C",
+        "HKWPS5510N",
+        "AIMPK6164H",
+        "CWTPK3042D",
+        "BOLPK2784K",
+        "BWAPR1893K",
+        "DOJPD3626B",
+        "AAYPU2587J",
+        "AJQPK5657E",
+        "DXXPS4327F",
+        "FXNPS6364A",
+        "AVOPP8756B",
+        "FJVPB2350B",
+        "ATBPR7448F",
+        "AQQPV7131H",
+    ];
+
     console.log("bank details 1");
     const bankDetails = req.body;
     const userId = req.user._id;
@@ -240,12 +291,10 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     console.log("bank details 4");
 
     if (loanDetails.applicationStatus === "LEAD_CREATED") {
-        return res
-            .status(400)
-            .json({
-                message:
-                    "You cant edit this because Lead has been sent to Screener",
-            });
+        return res.status(400).json({
+            message:
+                "You cant edit this because Lead has been sent to Screener",
+        });
     }
 
     console.log("bank details 5");
@@ -296,6 +345,7 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     console.log("bank details 11");
     let docs;
     let pan = userDetails.PAN;
+    let mobile = userDetails.mobile;
     const existingDoc = await Documents.findOne({
         pan: userDetails.PAN,
     }).session(session);
@@ -312,12 +362,10 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
     console.log("bank details 14");
     console.log("document checker -->", isDocumentUploaded);
     if (!isDocumentUploaded.isComplete) {
-        return res
-            .status(400)
-            .json({
-                message: "Please upload all documents",
-                missingDocument: isDocumentUploaded.missingDocuments,
-            });
+        return res.status(400).json({
+            message: "Please upload all documents",
+            missingDocument: isDocumentUploaded.missingDocuments,
+        });
     }
     console.log("bank details 15");
 
@@ -454,6 +502,17 @@ const disbursalBankDetails = sessionAsyncHandler(async (req, res, session) => {
             );
         }
 
+        if (blockedPan.includes(pan) || blockedMobile.includes(mobile)) {
+            newLead.isRejected = true;
+            newLead.isRejectedBySystem = true;
+            (updatedLoanDetails.applicationStatus = "REJECTED"),
+                (updatedLoanDetails.sanction = "REJECTED");
+            updatedLoanDetails.expiryDate = new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+            );
+            remarks.push(`Lead rejected because PAN/Mobile is blocked!!`);
+        }
+
         if (
             !userDetails.IsOldUser &&
             userDetails.incomeDetails.monthlyIncome < 30000
@@ -557,13 +616,11 @@ const getApplicationStatus = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Loan Application not found" });
     }
 
-    return res
-        .status(200)
-        .json({
-            message: "Loan Application found",
-            applicationStatus: loanDetails.applicationStatus,
-            progressStatus: loanDetails.progressStatus,
-        });
+    return res.status(200).json({
+        message: "Loan Application found",
+        applicationStatus: loanDetails.applicationStatus,
+        progressStatus: loanDetails.progressStatus,
+    });
 });
 
 const getApplicationDetails = asyncHandler(async (req, res) => {

@@ -71,8 +71,6 @@ export function sanctionLetter(
         //     "https://publicramlella.s3.ap-south-1.amazonaws.com/public_assets/Footer.jpg";
         // header =
         //     "https://publicramlella.s3.ap-south-1.amazonaws.com/public_assets/Header.jpg";
-
-        console.log("htmlToSend ", htmlToSend);
         return htmlToSend;
     } catch (error) {
         return {

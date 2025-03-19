@@ -215,6 +215,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
 
         try {
             const { id } = req.params;
+            const { remarks } = req.body;
 
             const { sanction, response, leadNo } = await getSanctionData(id);
 
@@ -249,6 +250,7 @@ export const sanctionApprove = asyncHandler(async (req, res) => {
                     loanNo: newLoanNo,
                     sanctionDate: response.sanctionDate,
                     isApproved: true,
+                    remarks: remarks,
                     approvedBy: req.employee._id.toString(),
                 },
                 { new: true }

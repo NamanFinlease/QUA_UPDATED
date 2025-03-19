@@ -472,6 +472,7 @@ export const approveDisbursal = sessionAsyncHandler(
                 amount,
                 channel,
                 disbursalDate,
+                utr,
                 remarks,
             } = req.body;
 
@@ -609,7 +610,8 @@ export const approveDisbursal = sessionAsyncHandler(
                     amount,
                     channel,
                     disbursedAt: disbursalDate,
-                    utr: remarks,
+                    utr: utr,
+                    remarks: remarks,
                     isDisbursed: true,
                     disbursedBy: req.employee._id.toString(),
                 },
@@ -912,9 +914,9 @@ export const newDisbursalReport = asyncHandler(async (req, res) => {
 // @access Private
 export const disbursedReport = asyncHandler(async (req, res) => {
     const data = await exportDisbursedData();
-    if(!data) {
-        res.status(400)
-        throw new Error("Error in generating report")
+    if (!data) {
+        res.status(400);
+        throw new Error("Error in generating report");
     }
     // console.log("Data: ", data);
     return res.json({ data });

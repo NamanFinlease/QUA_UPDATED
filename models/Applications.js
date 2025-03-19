@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 
 const applicationSchema = new mongoose.Schema(
     {
-        leadNo:{
-            type : String,
+        leadNo: {
+            type: String,
             required: true,
         },
-        pan:{
-            type: String
+        pan: {
+            type: String,
         },
         lead: {
             type: mongoose.Schema.Types.ObjectId,
@@ -18,8 +18,8 @@ const applicationSchema = new mongoose.Schema(
         leadNo: {
             type: String,
             // required: true,
-            unique:true,
-            sparse:true,
+            unique: true,
+            sparse: true,
         },
         pan: {
             type: String,
@@ -54,6 +54,9 @@ const applicationSchema = new mongoose.Schema(
         recommendedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Employee",
+        },
+        remarks: {
+            type: String,
         },
         // isApproved: {
         //     type: Boolean,

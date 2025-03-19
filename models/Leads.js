@@ -1,22 +1,21 @@
 import mongoose from "mongoose";
 
-
 const extraDetailsSchema = new mongoose.Schema({
     personalDetails: {
-        type: Object
+        type: Object,
     },
     employeDetails: {
-        type: Object
+        type: Object,
     },
     residenceDetails: {
-        type: Object
+        type: Object,
     },
     incomeDetails: {
-        type: Object
+        type: Object,
     },
-    disbursalBankDetails:{
-        type : Object
-    }
+    disbursalBankDetails: {
+        type: Object,
+    },
 });
 
 const leadSchema = new mongoose.Schema(
@@ -169,11 +168,18 @@ const leadSchema = new mongoose.Schema(
         source: {
             type: String,
             required: true,
-            enum: ["website", "bulk", "landingPage", "whatsapp", "app" , "marketing"],
+            enum: [
+                "website",
+                "bulk",
+                "landingPage",
+                "whatsapp",
+                "app",
+                "marketing",
+            ],
             default: "website",
         },
         extraDetails: {
-            type: extraDetailsSchema
+            type: extraDetailsSchema,
         },
         referenceId: {
             type: String, // e-sign reference id
@@ -181,23 +187,26 @@ const leadSchema = new mongoose.Schema(
         bsaRefId: {
             type: String, // BSA reference id
         },
-        remarks : {
-            type : String,
-            default : ""
+        remarks: {
+            type: String,
+            default: "",
         },
-        loanApplicationId : {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : "loanApplication"
+        loanApplicationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "loanApplication",
         },
-        mothersName:{
-            type : String
+        mothersName: {
+            type: String,
         },
-        fathersName:{
-            type : String
+        fathersName: {
+            type: String,
         },
-        workingSince:{
-            type : Date
-        }
+        workingSince: {
+            type: Date,
+        },
+        remarks: {
+            type: String,
+        },
     },
     { timestamps: true }
 );
