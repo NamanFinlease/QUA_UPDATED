@@ -1377,7 +1377,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             86400000,
                                         ],
                                     },
-                                    -20,
+                                    -5,
                                 ],
                             },
                             {
