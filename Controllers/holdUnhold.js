@@ -449,7 +449,31 @@ export const getHold = asyncHandler(async (req, res) => {
                 leads,
             },
         });
-    } else if (req.activeRole === "creditManager") {
+    } 
+    else if (req.activeRole === "sanctionHead" ){
+        query = {
+            
+            onHold: true,
+        };
+        leads = await Lead.find(query)
+        // .populate("documents")
+        // .skip(skip)
+        // .limit(limit)
+        .sort({ updatedAt: -1 });
+
+    // totalRecords = await Lead.countDocuments(query);
+    const totalRecords = await Lead.countDocuments(query); 
+
+    return res.json({
+        heldLeads: {
+            totalRecords,
+            totalPages: Math.ceil(totalRecords / limit),
+            currentPage: page,
+            leads,
+        },
+    });
+    }
+    else if (req.activeRole === "creditManager") {
         applications = await Application.find(query)
             .skip(skip)
             .limit(limit)

@@ -287,7 +287,7 @@ export const getRejected = asyncHandler(async (req, res) => {
     const leads = await Lead.find(query)
         .sort({ updatedAt: -1 })
         .skip(skip)
-        .limit(limit)
+        // .limit(limit)
         .populate({ path: "rejectedBy", select: "fName mName lName" });
 
     const totalLeads = leads.length;

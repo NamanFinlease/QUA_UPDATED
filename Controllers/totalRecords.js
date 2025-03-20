@@ -30,12 +30,13 @@ export const totalRecords = asyncHandler(async (req, res) => {
             !lead.recommendedBy
     );
 
+
     let heldLeads = leads.filter(
         (lead) => lead.screenerId && lead.onHold && !lead.isRejected
     );
 
     let rejectedLeads = leads.filter(
-        (lead) => lead.screenerId && !lead.onHold && lead.isRejected
+        (lead) =>  lead.isRejected
     );
 
     if (req.activeRole === "screener") {
