@@ -271,6 +271,7 @@ export const rejected = asyncHandler(async (req, res) => {
 
 // @desc Get rejected leads depends on if it's admin or an employee
 // @route GET /api/leads/reject
+// @route GET /api/application/rejected
 // @access Private
 export const getRejected = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1; // current page
@@ -328,6 +329,46 @@ export const getRejected = asyncHandler(async (req, res) => {
         ]);
 
     const totalDisbursals = disbursals.length;
+
+        if( req.activeRole === "sanctionHead"){
+
+            const applications = await Application.find({isRejected: true})
+        .sort({ updatedAt: -1 })
+        // .skip(skip)
+        // .limit(limit)
+        .populate("lead")
+        .populate({ path: "rejectedBy", select: "fName mName lName" });
+
+    const totalApplications = applications.length;
+            
+            return res.json({
+                rejectedLeads: {
+                    totalLeads,
+                    totalPages: Math.ceil(totalLeads / limit),
+                    currentPage: page,
+                    leads,
+                },
+                rejectedApplications: {
+                    totalApplications,
+                    totalPages: Math.ceil(totalApplications / limit),
+                    currentPage: page,
+                    applications,
+                },
+                rejectedSanctions: {
+                    totalSanctions,
+                    totalPages: Math.ceil(totalSanctions / limit),
+                    currentPage: page,
+                    sanctions,
+                },
+                rejectedDisbursals: {
+                    totalDisbursals,
+                    totalPages: Math.ceil(totalDisbursals / limit),
+                    currentPage: page,
+                    disbursals,
+                },
+            });
+
+        }
 
     return res.json({
         rejectedLeads: {

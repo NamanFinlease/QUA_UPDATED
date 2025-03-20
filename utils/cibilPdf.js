@@ -16,8 +16,8 @@ async function cibilPdf(lead, docs) {
         method: "POST",
         url: "https://ists.equifax.co.in/creditreportws/CreditReportWSInquiry/v1.0?wsdl=null",
 
-        data: `
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://services.equifax.com/eport/ws/schemas/1.0">
+        data: 
+        `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://services.equifax.com/eport/ws/schemas/1.0">
             <soapenv:Header/>
             <soapenv:Body>
                 <InquiryRequest xmlns="http://services.equifax.com/eport/ws/schemas/1.0">
@@ -56,7 +56,7 @@ async function cibilPdf(lead, docs) {
                         <ns:LastName>${lead.lName}</ns:LastName>
                         <ns:FamilyDetails>
                             <ns:AdditionalNameInfo seq="1">
-                                <ns:AdditionalName>SUMIT</ns:AdditionalName>
+                                <ns:AdditionalName>${ lead?.fatherName}</ns:AdditionalName>
                                 <ns:AdditionalNameType>K01</ns:AdditionalNameType>
                             </ns:AdditionalNameInfo>
                             <ns:NoOfDependents></ns:NoOfDependents>
