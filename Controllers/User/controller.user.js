@@ -28,7 +28,8 @@ const aadhaarOtp = asyncHandler(async (req, res) => {
 
     // check if aadhar is already registered then send OTP by SMS gateway
     const userDetails = await User.findOne({ aadarNumber: aadhaar })
-    console.log('userDetails in controller-->', userDetails)
+    // console.log('userDetails in controller-->', userDetails)
+
     if (userDetails) {
         if (userDetails && userDetails.mobile) {
             const mobile = userDetails.mobile
@@ -132,6 +133,7 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
             "personalDetails.dob": isoDate,
             "personalDetails.gender": details.gender,
             registrationStatus: "AADHAR_VERIFIED",
+            previousJourney: "MOBILE_VERIFIED"
         }
         );
 
@@ -171,25 +173,25 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
 
 const mobileGetOtp = asyncHandler(async (req, res) => {
     const { mobile } = req.params;
-    const details = req.body
-    console.log("details--->", details)
-    if (!details) {
-        console.log("1")
-        return res.status(400).json({ message: "Please provide details" })
+    // const details = req.body
+    // console.log("details--->", details)
+    // if (!details) {
+    //     console.log("1")
+    //     return res.status(400).json({ message: "Please provide details" })
 
-    }
-    if (!details.PAN || !details.fathersName) {
-        console.log("2")
-        return res.status(400).json({ message: "Please provide details" })
+    // }
+    // if (!details.PAN || !details.fathersName) {
+    //     console.log("2")
+    //     return res.status(400).json({ message: "Please provide details" })
 
-    }
+    // }
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
     // Validate the PAN number
-    if (!panRegex.test(details.PAN)) {
-        return res.status(400).json({ message: "Please provide valid PAN" })
-    }
-    const userId = req.user._id
+    // if (!panRegex.test(details.PAN)) {
+    //     return res.status(400).json({ message: "Please provide valid PAN" })
+    // }
+    // const userId = req.user._id
 
     if (!mobile) {
         return res.status(400).json({ message: "Mobile number is required" });
@@ -201,23 +203,70 @@ const mobileGetOtp = asyncHandler(async (req, res) => {
 
     }
 
-    const user = await User.findById(userId)
-    if (!user) {
-        return res.status(400).json({ message: "User not found" });
-    }
-    user.personalDetails.fathersName = details.fathersName
-    user.PAN = details.PAN
-    await user.save()
+    // const otp = generateRandomNumber();
+    // const result = await otpSent(mobile, otp);
+
+    // console.log('result aadhaar otp', result.data)
+
+    // if (result.data.ErrorMessage === "Success") {
+    //     // Update or create the OTP record for the mobile number
+    //     await OTP.findOneAndUpdate(
+    //         { mobile },
+    //         { otp, aadhaar: user?.aadhaar },
+    //         { upsert: true, new: true }
+    //     );
+
+    //     return res.status(200).json({ success: true, mobileNumber: mobile, message: "OTP sent successfully to your register mobile number" });
+    // }
+
+    const user = await User.findOne({ mobile })
+    // if (!user) {
+    //     return res.status(400).json({ message: "User not found" });
+    // } else {
+    //     // const userDetails = await User.findOne({ aadarNumber: aadhaar })
+    //     // console.log('userDetails in controller-->', userDetails)
+
+    //     if (user) {
+    //         if (user && user.mobile) {
+    //             const mobile = user.mobile
+    //             const otp = generateRandomNumber();
+    //             const result = await otpSent(mobile, otp);
+
+    //             console.log('result aadhaar otp', result.data)
+
+    //             if (result.data.ErrorMessage === "Success") {
+    //                 // Update or create the OTP record for the mobile number
+    //                 await OTP.findOneAndUpdate(
+    //                     { mobile },
+    //                     { otp, aadhaar: user?.aadhaar },
+    //                     { upsert: true, new: true }
+    //                 );
+
+    //                 return res.status(200).json({ success: true, mobileNumber: mobile, message: "OTP sent successfully to your register mobile number" });
+    //             }
+
+    //             return res
+    //                 .status(500)
+    //                 .json({ success: false, message: "Failed to send OTP" });
+
+    //         }
+    //     }
+    // }
+    // user.personalDetails.fathersName = details.fathersName
+    // user.PAN = details.PAN
+    // await user.save()
 
     const otp = generateRandomNumber();
     console.log("fdfdsgg---->", otp)
     const result = await otpSent(mobile, otp);
 
+    console.log('otp result', result)
+
     if (result.data.ErrorMessage === "Success") {
         // Update or create the OTP record for the mobile number
         await OTP.findOneAndUpdate(
             { mobile },
-            { otp, aadhar: user.aadarNumber },
+            { otp, aadhar: user?.aadarNumber },
             { upsert: true, new: true }
         );
 
@@ -271,8 +320,8 @@ const verifyOtp = asyncHandler(async (req, res) => {
     otpRecord.otp = "";
     await otpRecord.save(); // Save the updated OTP record
 
-    if (isAlreadyRegisterdUser) {
-        const userDetails = await User.findOne({ mobile: mobile })
+    const userDetails = await User.findOne({ mobile })
+    if (userDetails) {
         console.log(userDetails, "userDetails")
         const token = generateUserToken(res, userDetails._id)
         console.log(token, "token")
@@ -289,9 +338,9 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
     // update in user model
     const result = await User.findOneAndUpdate(
-        { aadarNumber: otpRecord.aadhar },
-        { registrationStatus: "MOBILE_VERIFIED", mobile: mobile, previousJourney: "AADHAR_VERIFIED", isMobileVerify: true },
-        { new: true }
+        { mobile },
+        { registrationStatus: "MOBILE_VERIFIED", mobile: mobile, isMobileVerify: true },
+        { new: true, upsert: true }
     );
     await postUserLogs(result._id, `User Mobile Verified Successfully!`)
     console.log(result, "result")
@@ -317,15 +366,15 @@ const verifyPan = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     console.log("pan 1")
-    
+
     // Validate that aaadhaar is present in the leads
     if (!pan) {
         res.status(400);
         throw new Error({ success: false, message: "Pan number is required." });
     }
-    
+
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    
+
     console.log("pan 2")
     // Validate the PAN number
     if (!panRegex.test(pan)) {
@@ -333,30 +382,30 @@ const verifyPan = asyncHandler(async (req, res) => {
         throw new Error({ success: false, message: "Invalid PAN!!!" });
     }
     console.log("pan 3")
-    
+
     // Call the get panDetails Function
     const response = await panVerify(userId, pan);
-    
-    console.log("pan 4",response,pan)
+
+    console.log("pan 4", response, pan)
     if (response.data.result_code !== 101) {
         res.status(400);
         throw new Error("3rd party API error!");
     }
-    
-    console.log("pan 5",response,pan)
-    
+
+    console.log("pan 5", response, pan)
+
     // update in user table 
     await User.findByIdAndUpdate(
         userId,
         { registrationStatus: "PAN_VERIFIED", previousJourney: "MOBILE_VERIFIED", PAN: pan, isPanVerify: true },
         { new: true }
     );
-    console.log("pan 6",response,pan)
-    
+    console.log("pan 6", response, pan)
+
     await postUserLogs(userId, `User PAN Verified Successfully!`)
-    
+
     // add pan details in panDetails table
-    console.log("pan 7",response,pan)
+    console.log("pan 7", response, pan)
     await PanDetails.findOneAndUpdate(
         {
             $or: [
@@ -874,7 +923,7 @@ const getLoanList = asyncHandler(async (req, res) => {
 
     const pipeline = [
         {
-            $match: { pan: user.PAN  , isDisbursed:true}
+            $match: { pan: user.PAN, isDisbursed: true }
         },
         {
             $sort: { createdAt: -1 }
@@ -912,7 +961,7 @@ const getLoanList = asyncHandler(async (req, res) => {
                 "camDetails.repaymentAmount": { $gt: 0 } // Filtering repaymentAmount > 0
             }
         },
-       
+
         {
             $project: {
                 loanNo: 1,

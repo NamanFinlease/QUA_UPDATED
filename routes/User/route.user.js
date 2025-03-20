@@ -29,8 +29,8 @@ const uploadFields = upload.fields([
 
 
 // login with aadhar
-router.route("/aadhaar-login/:aadhaar").get(aadhaarOtp);
-router.post("/submit-aadhaar-otp", saveAadhaarDetails);
+router.post("/mobile/get-otp/:mobile", mobileGetOtp);
+router.post("/mobile/verify-otp", verifyOtp);
 
 // Profile APIs    
 router.patch("/personalInfo", authMiddleware, personalInfo);
@@ -63,8 +63,8 @@ router.get("/getJourney", authMiddleware, getJourney)
 
 
 // verify
-router.post("/mobile/get-otp/:mobile", authMiddleware, mobileGetOtp);
-router.post("/mobile/verify-otp", verifyOtp);
+router.route("/aadhaar/:aadhaar").get(authMiddleware,aadhaarOtp);
+router.post("/submit-aadhaar-otp",authMiddleware, saveAadhaarDetails);
 router.post("/verifyPAN/:pan", authMiddleware, verifyPan);
 router.post("/sendEmailOTP", authMiddleware, sendEmailOTP);
 router.post("/verifyEmailOTP", authMiddleware, verifyEmailOTP);

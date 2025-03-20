@@ -100,7 +100,7 @@ const userSchema = new mongoose.Schema(
   {
     aadarNumber: {
       type: String,
-      required: true,
+      // required: true,
       unique: true,
     },
     emailOTP: {
@@ -121,7 +121,11 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
     },
-    mobile: { type: String },
+    mobile: {
+      type: String,
+      unique: true,
+      sparse: true
+    },
     personalDetails: {
       type: personalDetailsSchema,
     },
