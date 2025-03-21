@@ -3,6 +3,7 @@ import * as fs from "fs";
 import path from "path";
 import { dateFormatter } from "./dateFormatter.js";
 import { fileURLToPath } from "url";
+import moment from "moment-timezone";
 
 export function sanctionLetter(
     sanctionDate,
@@ -22,6 +23,16 @@ export function sanctionLetter(
         const source = fs.readFileSync(filePath, "utf-8").toString();
         const template = handlebars.compile(source);
 
+        let localDisbursedDate = moment
+            .tz(camDetails?.disbursalDate, "UTC")
+            .tz("Asia/Kolkata")
+            .format("DD-MM-YYYY");
+
+        let localRepaymentDate = moment
+            .tz(camDetails?.repaymentDate, "UTC")
+            .tz("Asia/Kolkata")
+            .format("DD-MM-YYYY");
+
         let replacements = {
             sanctionDate: `${sanctionDate}`,
             title: `${title}`,
@@ -35,7 +46,7 @@ export function sanctionLetter(
                 camDetails?.loanRecommended
             )}`,
             roi: `${camDetails?.roi}`,
-            disbursalDate: dateFormatter(camDetails?.disbursalDate),
+            disbursalDate: localDisbursedDate,
             repaymentAmount: `${new Intl.NumberFormat().format(
                 camDetails?.repaymentAmount
             )}`,
@@ -44,7 +55,7 @@ export function sanctionLetter(
                 Number(camDetails?.repaymentAmount) -
                     Number(camDetails?.loanRecommended)
             )}`,
-            repaymentDate: dateFormatter(camDetails?.repaymentDate),
+            repaymentDate: localRepaymentDate,
             penalInterest: 2,
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount

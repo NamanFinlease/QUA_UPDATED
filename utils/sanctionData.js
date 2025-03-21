@@ -67,12 +67,12 @@ export const getSanctionData = async (id) => {
                 camDetails?.loanRecommended
             )}`,
             roi: `${camDetails?.roi}`,
-            disbursalDate: dateFormatter(localDisbursedDate),
+            disbursalDate: localDisbursedDate,
             repaymentAmount: `${new Intl.NumberFormat().format(
                 camDetails?.repaymentAmount
             )}`,
             tenure: `${camDetails?.eligibleTenure}`,
-            repaymentDate: dateFormatter(localRepaymentDate),
+            repaymentDate: localRepaymentDate,
             penalInterest: 2,
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
