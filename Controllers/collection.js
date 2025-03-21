@@ -1345,7 +1345,7 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
 
 export const preActiveLeads = asyncHandler(async (req, res) => {
     if (
-        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead"||
         req.activeRole === "admin"
     ) {
         const pipeline = [
@@ -1425,7 +1425,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true,
+                    // "closedDetails.isDisbursed": true,
                 },
             },
             {

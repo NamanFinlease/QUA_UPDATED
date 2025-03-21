@@ -2,6 +2,7 @@ import asyncHandler from "../middleware/asyncHandler.js";
 import Lead from "../models/Leads.js";
 import Application from "../models/Applications.js";
 import Disbursal from "../models/Disbursal.js";
+import Sanction from "../models/Sanction.js";
 
 // @desc Get total number of lead
 // @route GET /api/leads/totalRecords or /api/applications/totalRecords
@@ -30,12 +31,13 @@ export const totalRecords = asyncHandler(async (req, res) => {
             !lead.recommendedBy
     );
 
+
     let heldLeads = leads.filter(
         (lead) => lead.screenerId && lead.onHold && !lead.isRejected
     );
 
     let rejectedLeads = leads.filter(
-        (lead) => lead.screenerId && !lead.onHold && lead.isRejected
+        (lead) =>  lead.isRejected
     );
 
     if (req.activeRole === "screener") {
@@ -106,22 +108,42 @@ export const totalRecords = asyncHandler(async (req, res) => {
         );
     }
 
-    // Sanction Head
-    let newSanctions = applications.filter(
-        (application) =>
-            application.creditManagerId &&
-            !application.onHold &&
-            !application.isRejected &&
-            application.isRecommended
-    ).length;
+
+
+    
+    const query = [
+        { 
+            $match: { 
+                $and: [
+                    { eSignPending: true }, 
+                    { eSigned: false }
+                ]
+            }
+        },
+        { $count: "totalCount" }  // This stage counts the matching documents
+    ];
+    
+    let newSanctions1 = await Sanction.aggregate(query);
+  // Since aggregate() returns an array, access the count like this:
+const totalCount = newSanctions1.length > 0 ? newSanctions1[0].totalCount : 0;
+    
+    let newSanctions = totalCount;
+    // await Sanction.aggregate(query);
+    // console.log(newSanctions.totalCount)
+    // applications.filter(
+    //     (application) =>
+    //         application.creditManagerId &&
+    //         !application.onHold &&
+    //         !application.isRejected &&
+    //         application.isRecommended
+    // ).length;
 
     let sanctioned = applications.filter(
         (application) =>
-            application.creditManagerId &&
-            !application.onHold &&
-            !application.isRejected &&
-            application.isRecommended &&
-            application.isApproved
+           
+            application.isRecommended 
+            // &&
+            // application.isApproved
     ).length;
 
     // Disbursal Manager

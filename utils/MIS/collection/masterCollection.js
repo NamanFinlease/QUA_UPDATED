@@ -269,7 +269,7 @@ export const exportCollectionData = async () => {
                         },
                         "Paid Amount": {
                             $ifNull: [
-                                "$paymentData.totalReceivedAmount",
+                                { $arrayElemAt: ["$successfulPayments.receivedAmount", 0] },
                                 0
                             ]
                         },

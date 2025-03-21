@@ -277,7 +277,7 @@ export const verifyPaymentCalculation = async (
                     {
                         email_address: {
                             address: "collectionhead@qualoan.com",
-                            name: "Badal",
+                            name: "Collection Head",
                         },
                     },
                 ],
