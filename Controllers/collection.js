@@ -273,7 +273,7 @@ export const activeLeads = asyncHandler(async (req, res) => {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true,
+                    // "closedDetails.isDisbursed": true,
                 },
             },
             {
@@ -1344,7 +1344,8 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
 
 export const preActiveLeads = asyncHandler(async (req, res) => {
     if (
-        req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead"||
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead" ||
         req.activeRole === "admin"
     ) {
         const pipeline = [
@@ -1579,7 +1580,7 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true,
+                    // "closedDetails.isDisbursed": true,
                 },
             },
             {
