@@ -9,7 +9,7 @@ import {
 import { onHold, unHold, getHold } from "../Controllers/holdUnhold.js";
 import internalDedupe from "../Controllers/internalDedupe.js";
 import {
-    createLead,
+    // createLead,
     getAllLeads,
     getLead,
     allocateLead,
@@ -19,7 +19,7 @@ import {
     createContactUs,
     getAllContactUsData,
     createLandingPageLead,
-    getAllLandingPageLeads
+    getAllLandingPageLeads,
 } from "../Controllers/leads.js";
 import { viewLogs } from "../Controllers/logs.js";
 import { rejected, getRejected } from "../Controllers/rejected.js";
@@ -44,9 +44,16 @@ export const uploadFields = upload.fields([
 ]);
 
 // Other routes
-router.route("/").post(createLead).get(protect, getAllLeads);
-router.route("/contactUs").post(createContactUs).get(protect, getAllContactUsData);
-router.route("/landingPageData").post(createLandingPageLead).get(protect, getAllLandingPageLeads);
+// router.route("/").post(createLead);
+router.route("/").get(protect, getAllLeads);
+router
+    .route("/contactUs")
+    .post(createContactUs)
+    .get(protect, getAllContactUsData);
+router
+    .route("/landingPageData")
+    .post(createLandingPageLead)
+    .get(protect, getAllLandingPageLeads);
 router.route("/bulk-upload").post(upload.single("csv"), bulkUpload);
 router.get("/totalRecords", protect, totalRecords);
 router.get("/totalRecordsForSupervisor", totalRecordsForSupervisor);

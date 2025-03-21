@@ -24,18 +24,28 @@ export const getSanctionData = async (id) => {
             .add(5, "hours")
             .add(30, "minutes");
 
-        console.log("Date 1: ", localSanctionDate, localDisbursedDate);
+        let localRepaymentDate = moment
+            .utc(camDetails?.repaymentDate)
+            .add(5, "hours")
+            .add(30, "minutes");
 
-        // // Date validation
-        // if (
-        //     localDisbursedDate
-        //         .startOf("day")
-        //         .isBefore(localSanctionDate.startOf("day"))
-        // ) {
-        //     throw new Error(
-        //         "Disbursal Date cannot be in the past. It must be the present date or future date!"
-        //     );
-        // }
+        console.log(
+            "Date 1: ",
+            localSanctionDate,
+            localDisbursedDate,
+            localRepaymentDate
+        );
+
+        // Date validation
+        if (
+            localDisbursedDate
+                .startOf("day")
+                .isBefore(localSanctionDate.startOf("day"))
+        ) {
+            throw new Error(
+                "Disbursal Date cannot be in the past. It must be the present date or future date!"
+            );
+        }
 
         // Create a response object with all common fields
         const response = {
@@ -57,12 +67,12 @@ export const getSanctionData = async (id) => {
                 camDetails?.loanRecommended
             )}`,
             roi: `${camDetails?.roi}`,
-            disbursalDate: dateFormatter(camDetails?.disbursalDate),
+            disbursalDate: localDisbursedDate,
             repaymentAmount: `${new Intl.NumberFormat().format(
                 camDetails?.repaymentAmount
             )}`,
             tenure: `${camDetails?.eligibleTenure}`,
-            repaymentDate: dateFormatter(camDetails?.repaymentDate),
+            repaymentDate: localRepaymentDate,
             penalInterest: 2,
             processingFee: `${new Intl.NumberFormat().format(
                 camDetails?.netAdminFeeAmount
@@ -101,19 +111,28 @@ export const getSanctionData = async (id) => {
         .utc(camDetails?.disbursalDate)
         .add(5, "hours")
         .add(30, "minutes");
+    let localRepaymentDate = moment
+        .utc(camDetails?.repaymentDate)
+        .add(5, "hours")
+        .add(30, "minutes");
 
-    console.log("Date 2: ", localSanctionDate, localDisbursedDate);
+    console.log(
+        "Date 2: ",
+        localSanctionDate,
+        localDisbursedDate,
+        localRepaymentDate
+    );
 
-    // // Date validation
-    // if (
-    //     localDisbursedDate
-    //         .startOf("day")
-    //         .isBefore(localSanctionDate.startOf("day"))
-    // ) {
-    //     throw new Error(
-    //         "Disbursal Date cannot be in the past. It must be the present date or future date!"
-    //     );
-    // }
+    // Date validation
+    if (
+        localDisbursedDate
+            .startOf("day")
+            .isBefore(localSanctionDate.startOf("day"))
+    ) {
+        throw new Error(
+            "Disbursal Date cannot be in the past. It must be the present date or future date!"
+        );
+    }
 
     // Create a response object with all common fields
     const response = {
@@ -135,12 +154,12 @@ export const getSanctionData = async (id) => {
             camDetails?.loanRecommended
         )}`,
         roi: `${camDetails?.roi}`,
-        disbursalDate: camDetails?.disbursalDate,
+        disbursalDate: localDisbursedDate,
         repaymentAmount: `${new Intl.NumberFormat().format(
             camDetails?.repaymentAmount
         )}`,
         tenure: `${camDetails?.eligibleTenure}`,
-        repaymentDate: camDetails?.repaymentDate,
+        repaymentDate: localRepaymentDate,
         penalInterest: 2,
         processingFee: `${new Intl.NumberFormat().format(
             camDetails?.netAdminFeeAmount

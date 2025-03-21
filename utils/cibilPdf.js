@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Parser } from "xml2js";
 import { htmlToPdf } from "./htmlToPdf.js";
+import { stateCode } from "./stateCode.js";
 
 async function cibilPdf(lead, docs) {
     const parser = new Parser();
@@ -11,13 +12,13 @@ async function cibilPdf(lead, docs) {
     const dateInIST = new Date(dateOfBirthUTC).toLocaleDateString("en-CA", {
         timeZone: "Asia/Kolkata", // Specify Indian time zone
     });
+    const state = stateCode(lead.state);
 
     const options = {
         method: "POST",
         url: "https://ists.equifax.co.in/creditreportws/CreditReportWSInquiry/v1.0?wsdl=null",
 
-        data: 
-        `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://services.equifax.com/eport/ws/schemas/1.0">
+        data: `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://services.equifax.com/eport/ws/schemas/1.0">
             <soapenv:Header/>
             <soapenv:Body>
                 <InquiryRequest xmlns="http://services.equifax.com/eport/ws/schemas/1.0">
@@ -45,7 +46,7 @@ async function cibilPdf(lead, docs) {
                         </ns:InquiryAccount>
                     </ns:InquiryCommonAccountDetails>
                     <ns:RequestBody>
-                        <ns:InquiryPurpose>0E</ns:InquiryPurpose>
+                        <ns:InquiryPurpose>05</ns:InquiryPurpose>
                         <ns:TransactionAmount>0</ns:TransactionAmount>
                         <ns:AdditionalSearchField></ns:AdditionalSearchField>
                         <ns:FullName>${lead.fName}${
@@ -56,15 +57,17 @@ async function cibilPdf(lead, docs) {
                         <ns:LastName>${lead.lName}</ns:LastName>
                         <ns:FamilyDetails>
                             <ns:AdditionalNameInfo seq="1">
-                                <ns:AdditionalName>${ lead?.fatherName}</ns:AdditionalName>
+                                <ns:AdditionalName>${
+                                    lead?.fatherName
+                                }</ns:AdditionalName>
                                 <ns:AdditionalNameType>K01</ns:AdditionalNameType>
                             </ns:AdditionalNameInfo>
                             <ns:NoOfDependents></ns:NoOfDependents>
                         </ns:FamilyDetails>
-                        <ns:AddrLine1>NEW DELHI DELHI</ns:AddrLine1>
-                        <ns:City></ns:City>
-                        <ns:State>DL</ns:State>
-                        <ns:Postal>110057</ns:Postal>
+                        <ns:AddrLine1>${lead.city} ${lead.state}</ns:AddrLine1>
+                        <ns:City>${lead.city}</ns:City>
+                        <ns:State>${state}</ns:State>
+                        <ns:Postal>${lead.pinCode}</ns:Postal>
                         <ns:DOB>${dateInIST}</ns:DOB>
                         <ns:Gender>${lead.gender}</ns:Gender>
                         <ns:MaritalStatus></ns:MaritalStatus>

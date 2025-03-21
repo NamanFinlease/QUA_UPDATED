@@ -471,6 +471,7 @@ export const updateCamDetails = asyncHandler(async (req, res) => {
 export const recommendedApplication = asyncHandler(async (req, res) => {
     if (req.activeRole === "creditManager") {
         const { id } = req.params;
+        const { remarks } = req.body;
 
         // Find the application by its ID
         const application = await Application.findById(id)
@@ -537,6 +538,7 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
             // Approve the lead by updating its status
             application.isRecommended = true;
             application.recommendedBy = req.employee._id;
+            application.remarks = remarks;
             await application.save();
             const logs = await postLogs(
                 application.lead._id,
@@ -544,7 +546,8 @@ export const recommendedApplication = asyncHandler(async (req, res) => {
                 `${application.lead.fName}${
                     application.lead.mName && ` ${application.lead.mName}`
                 }${application.lead.lName && ` ${application.lead.lName}`}`,
-                `Application forwarded by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`
+                `Application forwarded by ${application.creditManagerId.fName} ${application.creditManagerId.lName}`,
+                remarks
             );
             return res.json(logs);
         } else {

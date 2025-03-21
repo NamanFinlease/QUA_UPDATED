@@ -4,7 +4,7 @@ const collectionSchema = new mongoose.Schema(
     {
         pan: {
             type: String,
-            required: true
+            required: true,
         },
         leadNo: { type: String, required: true, unique: true, sparse: true },
         loanNo: { type: String, required: true, unique: true, sparse: true },
@@ -20,16 +20,20 @@ const collectionSchema = new mongoose.Schema(
         camDetails: { type: mongoose.Schema.Types.ObjectId, ref: "CamDetail" },
         payment: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
         close: { type: mongoose.Schema.Types.ObjectId, ref: "Close" },
-        collectionExecutiveId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-        preCollectionExecutiveId : {type : mongoose.Schema.Types.ObjectId, ref : "Employee"}
+        collectionExecutiveId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
+        preCollectionExecutiveId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 
+const Collection = mongoose.model("Collection", collectionSchema);
 
-
-const Collection = mongoose.model("Collection", collectionSchema)
-
-export default Collection
+export default Collection;
