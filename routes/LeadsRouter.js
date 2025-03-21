@@ -44,7 +44,7 @@ export const uploadFields = upload.fields([
 ]);
 
 // Other routes
-router.route("/").post(createLead);
+// router.route("/").post(createLead);
 router.route("/").get(protect, getAllLeads);
 router
     .route("/contactUs")
