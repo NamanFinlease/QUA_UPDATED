@@ -350,8 +350,9 @@ export const activeLeads = asyncHandler(async (req, res) => {
         });
     }
 });
-// @desc Get all active leads
-// @route GET /api/collections/active
+
+// @desc Add received payment
+// @route POST /api/collections/updatePayment/:loanNo
 // @access Private
 export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
     if (
@@ -492,10 +493,8 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             );
 
             if (!updatedPayment) {
-                throw Error("Payment record not found");
-                return res
-                    .status(404)
-                    .json({ error: "Payment record not found" });
+                res.status(404);
+                throw new Error("Payment record not found");
             }
 
             // update logs and leadStatus
