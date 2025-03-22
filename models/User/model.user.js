@@ -102,6 +102,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       // required: true,
       unique: true,
+      sparse:true
     },
     emailOTP: {
       type: String,
@@ -117,6 +118,8 @@ const userSchema = new mongoose.Schema(
 
     PAN: {
       type: String,
+      unique:true,
+      sparse:true
     },
     profileImage: {
       type: String,
