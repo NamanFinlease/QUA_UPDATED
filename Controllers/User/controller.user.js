@@ -146,18 +146,6 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
 
 
 
-
-        // if (existingUser) {
-
-        // const token = generateUserToken(res, UserData._id)
-        // console.log("tokenn--->", token)
-        // UserData.authToken = token
-        // await UserData.save();
-        // return res.status(200).json({
-        //     success: true,
-        //     token: token,
-        // });
-        // }
         const dateString = response.data.dateOfBirth; // DD-MM-YYYY
         const parts = dateString.split("-"); // Split the string by '-'
         const isoDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T00:00:00.000Z`);
@@ -165,16 +153,7 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
         console.log(isoDate); // Output: 1998-06-16T00:00:00.000Z
         response.data.dateOfBirth = isoDate
 
-        // const userresponse = await User.findOne({
-        //     // aadarNumber: response.adharNumber,
-        //     // mobile: null,
-        //     // "personalDetails.fullName": details.name,
-        //     // "personalDetails.dob": isoDate,
-        //     // "personalDetails.gender": details.gender,
-        //     // registrationStatus: "AADHAR_VERIFIED",
-        //     // previousJourney: "PAN_VERIFIED"
-        // }
-        // );
+      
 
 
         // Save Aaadhaar details in AadharDetails model
@@ -207,7 +186,7 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
                 "personalDetails.dob": isoDate,
                 "personalDetails.gender": details.gender,
                 aadarNumber: aadhaar_number,
-                authToken: token,
+                // authToken: token,
                 isAadharVerify: true
 
             },
@@ -336,7 +315,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
     const { mobile, otp, isAlreadyRegisterdUser } = req.body;
 
     // Check if both mobile and OTP are provided
-    if (!mobile && !otp) {
+    if (!mobile || !otp) {
         return res.status(400).json({
             success: false,
             message: "Mobile number and OTP are required.",
@@ -355,6 +334,13 @@ const verifyOtp = asyncHandler(async (req, res) => {
         });
     }
 
+    const otpAge = Date.now() - new Date(otpRecord.updatedAt).getTime();
+    if (otpAge > 10 * 60 * 1000) {
+        return res.status(400).json({
+            success: false,
+            message: "OTP has expired. Please request a new OTP.",
+        });
+    }
     // Verify if the provided OTP matches the stored OTP
     if (otpRecord.otp !== otp) {
         return res.status(401).json({
@@ -363,22 +349,15 @@ const verifyOtp = asyncHandler(async (req, res) => {
         });
     }
 
-    const otpAge = Date.now() - new Date(otpRecord.updatedAt).getTime();
-    if (otpAge > 10 * 60 * 1000) {
-        return res.status(400).json({
-            success: false,
-            message: "OTP has expired. Please request a new OTP.",
-        });
-    }
 
     otpRecord.otp = "";
     await otpRecord.save(); // Save the updated OTP record
 
     const userDetails = await User.findOne({ mobile })
     if (userDetails) {
-        console.log(userDetails, "userDetails")
+        // console.log(userDetails, "userDetails")
         const token = generateUserToken(res, userDetails._id)
-        console.log(token, "token")
+        // console.log(token, "token")
         userDetails.authToken = token
         userDetails.isMobileVerify = true
         await userDetails.save()
@@ -393,10 +372,10 @@ const verifyOtp = asyncHandler(async (req, res) => {
     // update in user model
     const result = await User.findOneAndUpdate(
         { mobile },
-        { registrationStatus: "MOBILE_VERIFIED", mobile: mobile, isMobileVerify: true },
+        {$set:{ registrationStatus: "MOBILE_VERIFIED", isMobileVerify: true }},
         { new: true, upsert: true }
     );
-    await postUserLogs(result._id, `User Mobile Verified Successfully!`)
+    await postUserLogs(result._id, `User registered and mobile verified successfully!`)
     console.log(result, "result")
 
 

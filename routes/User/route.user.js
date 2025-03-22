@@ -1,5 +1,5 @@
 import express from "express";
-import { aadhaarOtp, saveAadhaarDetails, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, logout, getLoanList, sendEmailOTP, verifyEmailOTP ,addFormDetails } from "../../Controllers/User/controller.user.js";
+import { aadhaarOtp, saveAadhaarDetails, personalInfo, currentResidence, addIncomeDetails, uploadProfile, getProfile, getProfileDetails, getDashboardDetails, checkLoanElegiblity, logout, getLoanList, sendEmailOTP, verifyEmailOTP, addFormDetails } from "../../Controllers/User/controller.user.js";
 import { verifyOtp, mobileGetOtp, verifyPan } from "../../Controllers/User/controller.user.js";
 import { authMiddleware } from "../../middleware/User/authMiddleware.js";
 import { calculateLoan, addEmploymentInfo, getApplicationStatus, getApplicationDetails, disbursalBankDetails, getDocumentStatus, getDocumentList, documentPreview, getJourney } from "../../Controllers/User/controller.loanApplication.js";
@@ -37,7 +37,7 @@ router.patch("/personalInfo", authMiddleware, personalInfo);
 router.patch("/currentResidence", authMiddleware, currentResidence);
 router.patch("/addIncomeDetails", authMiddleware, addIncomeDetails);
 router.patch("/uploadProfile", authMiddleware, uploadFields, uploadProfile);
-router.patch("/addFormDetails" , authMiddleware , addFormDetails)
+router.patch("/addFormDetails", authMiddleware, addFormDetails)
 
 // Dashboard APIs
 router.get("/getProfile", authMiddleware, getProfile);
@@ -64,8 +64,8 @@ router.get("/getJourney", authMiddleware, getJourney)
 
 // verify
 router.post("/verifyPAN/:pan", authMiddleware, verifyPan);
-router.route("/aadhaar/:aadhaar").get(authMiddleware,aadhaarOtp);
-router.post("/submit-aadhaar-otp",authMiddleware, saveAadhaarDetails);
+router.route("/aadhaar/:aadhaar").get(authMiddleware, aadhaarOtp);
+router.post("/submit-aadhaar-otp", authMiddleware, saveAadhaarDetails);
 router.post("/sendEmailOTP", authMiddleware, sendEmailOTP);
 router.post("/verifyEmailOTP", authMiddleware, verifyEmailOTP);
 
