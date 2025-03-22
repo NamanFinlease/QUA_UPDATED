@@ -12,6 +12,7 @@ import sendNocMail from "./sendEmailNoc.js";
 export const verifyPaymentCalculation = async (
     loanNo,
     transactionId,
+    paymentReceivedOn,
     closingType,
     accountRemarks = "",
     accountEmpId = null,
@@ -98,6 +99,7 @@ export const verifyPaymentCalculation = async (
                 $set: {
                     "paymentHistory.$.isPaymentVerified": true,
                     "paymentHistory.$.paymentUpdateRequest": false,
+                    "paymentHistory.$.paymentReceivedOn": paymentReceivedOn,
                     "paymentHistory.$.paymentVerifiedBy": accountEmpId,
                     "paymentHistory.$.accountRemarks": accountRemarks,
                 },

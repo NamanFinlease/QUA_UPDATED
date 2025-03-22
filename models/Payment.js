@@ -1,16 +1,22 @@
 import mongoose from "mongoose";
 
-
 const paymentHistory = new mongoose.Schema(
     {
         receivedAmount: { type: Number, required: true },
         paymentDate: { type: Date, required: true },
-        paymentMode: { type: String,  enum: ["offline", "online", "paymentGateway"] },
-        transactionId: { type: String, },
-        closingType: { type: String, enum: ["partPayment", "closed", "writeOff", "settled",""] },
+        paymentMode: {
+            type: String,
+            enum: ["offline", "online", "paymentGateway"],
+        },
+        transactionId: { type: String },
+        closingType: {
+            type: String,
+            enum: ["partPayment", "closed", "writeOff", "settled", ""],
+        },
         paymentUpdateRequest: { type: Boolean },
         discount: { type: Number },
         isPaymentVerified: { type: Boolean, default: false },
+        paymentReceivedOn: { type: Date },
         isRejected: { type: Boolean, default: false },
         order_status: { type: String },
         order_id: { type: String },
@@ -19,15 +25,21 @@ const paymentHistory = new mongoose.Schema(
         collectionRemarks: { type: String },
         accountRemarks: { type: String },
         isPartialPaid: { type: Boolean },
-        bankName : {type : String},
+        bankName: { type: String },
         excessAmount: { type: Number, default: 0 },
-        paymentUpdateRequestBy: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-        paymentVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+        paymentUpdateRequestBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
+        paymentVerifiedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Employee",
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
-)
+);
 
 // Explicitly create a unique index on transactionId
 // paymentHistory.index({ transactionId: 1 }, { unique: true });
@@ -35,7 +47,7 @@ const paymentHistory = new mongoose.Schema(
 const paymentSchema = new mongoose.Schema(
     {
         pan: { type: String, required: true },
-        leadNo: { type: String,  },
+        leadNo: { type: String },
         loanNo: { type: String, required: true, unique: true, sparse: true },
         paymentHistory: { type: [paymentHistory], default: [] },
         repaymentDate: { type: Date, required: true },
@@ -50,14 +62,12 @@ const paymentSchema = new mongoose.Schema(
         settledAmount: { type: Number },
         writeOffAmount: { type: Number },
         outstandingAmount: { type: Number },
-
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 
+const Payment = mongoose.model("Payment", paymentSchema);
 
-const Payment = mongoose.model("Payment", paymentSchema)
-
-export default Payment
+export default Payment;

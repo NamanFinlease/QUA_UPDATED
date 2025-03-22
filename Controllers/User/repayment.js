@@ -1,9 +1,9 @@
 import asyncHandler from "../../middleware/asyncHandler.js";
 import Closed from "../../models/Closed.js";
-import generateReceiptId from "../../utils/receiptIDgenerator.js"
-import Repayment from "../../models/repayment.js"
-import CryptoJS from 'crypto-js';
-import dotenv from 'dotenv';
+import generateReceiptId from "../../utils/receiptIDgenerator.js";
+import Repayment from "../../models/repayment.js";
+import CryptoJS from "crypto-js";
+import dotenv from "dotenv";
 import LogHistory from "../../models/LeadLogHistory.js";
 import Collection from "../../models/Collection.js";
 import Payment from "../../models/Payment.js";
@@ -17,78 +17,76 @@ import LeadStatus from "../../models/LeadStatus.js";
 import Close from "../../models/close.js";
 dotenv.config();
 
-
 export const getLoanNumber = asyncHandler(async (req, res) => {
-
-    const userId = req.user._id
-    const userDetails = await User.findById(userId)
-    const { PAN } = userDetails
+    const userId = req.user._id;
+    const userDetails = await User.findById(userId);
+    const { PAN } = userDetails;
 
     const pipeline = [
         {
             $match: {
                 pan: PAN,
-                isActive: true
-            }
+                isActive: true,
+            },
         },
-        
+
         {
             $lookup: {
                 from: "disbursals",
                 localField: "firstActiveLoan.disbursal",
                 foreignField: "_id",
-                as: "disbursalData"
-            }
+                as: "disbursalData",
+            },
         },
         {
-            $unwind: "$disbursalData"
+            $unwind: "$disbursalData",
         },
         {
             $lookup: {
                 from: "sanctions",
                 localField: "disbursalData.sanction",
                 foreignField: "_id",
-                as: "sanctionData"
-            }
+                as: "sanctionData",
+            },
         },
         {
-            $unwind: "$sanctionData"
+            $unwind: "$sanctionData",
         },
         {
             $lookup: {
                 from: "applications",
                 localField: "sanctionData.application",
                 foreignField: "_id",
-                as: "applicationData"
-            }
+                as: "applicationData",
+            },
         },
         {
-            $unwind: "$applicationData"
+            $unwind: "$applicationData",
         },
         {
             $lookup: {
                 from: "leads",
                 localField: "applicationData.lead",
                 foreignField: "_id",
-                as: "leadData"
-            }
+                as: "leadData",
+            },
         },
         {
-            $unwind: "$leadData"
+            $unwind: "$leadData",
         },
         {
             $lookup: {
                 from: "collections",
                 localField: "firstActiveLoan.loanNo",
                 foreignField: "loanNo",
-                as: "collectionData"
-            }
+                as: "collectionData",
+            },
         },
         {
             $unwind: {
                 path: "$collectionData",
-                preserveNullAndEmptyArrays: true
-            }
+                preserveNullAndEmptyArrays: true,
+            },
         },
         {
             $project: {
@@ -104,52 +102,48 @@ export const getLoanNumber = asyncHandler(async (req, res) => {
                 penalty: "$collectionData.totalPenalty",
                 dpd: "$collectionData.dpd",
                 principalAmount: "$collectionData.principalAmount",
-                _id: 0
-            }
-        }
-    ]
-
+                _id: 0,
+            },
+        },
+    ];
 
     const result = await Close.aggregate(pipeline);
 
     if (!result || result.length === 0) {
         return res.status(400).json({
             success: false,
-            message: "Loan is not active or related data could not be found for this PAN."
+            message:
+                "Loan is not active or related data could not be found for this PAN.",
         });
     }
 
     return res.status(200).json({
         success: true,
-        ...result[0]
+        ...result[0],
     });
-
-})
+});
 
 export const payNow = asyncHandler(async (req, res) => {
+    console.log("payment gateway 1");
 
-    console.log('payment gateway 1')
-    
     const { loanNo } = req.body;
-    
-    
-    
+
     const pipeline = [
         {
             $match: {
-                loanNo: loanNo
-            }
+                loanNo: loanNo,
+            },
         },
         {
             $lookup: {
                 from: "leads",
                 localField: "leadNo",
                 foreignField: "leadNo",
-                as: "leadDetails"
-            }
+                as: "leadDetails",
+            },
         },
         {
-            $unwind: "$leadDetails"
+            $unwind: "$leadDetails",
         },
         {
             $project: {
@@ -160,21 +154,21 @@ export const payNow = asyncHandler(async (req, res) => {
                 lName: "$leadDetails.lName",
                 email: "$leadDetails.personalEmail",
                 phone: "$leadDetails.mobile",
-                loanNo: 1
-
-            }
-        }
-    ]
-    console.log('payment gateway 2')
+                loanNo: 1,
+            },
+        },
+    ];
+    console.log("payment gateway 2");
     // fetch amount from collection table from loanNo
-    
-    const collectionDetails = await Collection.aggregate(pipeline)
-    console.log("collectionDetails--->", collectionDetails)
-    const { amount, fName, mName, lName, email, phone, pan } = collectionDetails[0];
-    console.log(" reciptId--->", generateReceiptId())
+
+    const collectionDetails = await Collection.aggregate(pipeline);
+    console.log("collectionDetails--->", collectionDetails);
+    const { amount, fName, mName, lName, email, phone, pan } =
+        collectionDetails[0];
+    console.log(" reciptId--->", generateReceiptId());
     let params = {
         amount: amount * 100,
-        currency: 'INR',
+        currency: "INR",
         callback_url: process.env.PAYTRING_CALLBACK,
         cname: `${fName} ${mName} ${lName}`,
         email,
@@ -184,88 +178,96 @@ export const payNow = asyncHandler(async (req, res) => {
         notes: {
             udf1: pan,
             udf2: loanNo,
-        }
+        },
     };
-    console.log('payment gateway 3')
+    console.log("payment gateway 3");
     // Parameters to send to the payment gateway
-    
+
     // Sort and hash the parameters
-    let sorted_params = Object.keys(params).sort().reduce((acc, key) => {
-        acc[key] = params[key];
-        return acc;
-    }, {});
-    
-    console.log('payment gateway 4')
-    let value_string = Object.values(sorted_params)
-    .filter(value => typeof value !== 'object')
-    .join('|') + `|${process.env.PAYTRING_PROD_KEY}`;
-    
+    let sorted_params = Object.keys(params)
+        .sort()
+        .reduce((acc, key) => {
+            acc[key] = params[key];
+            return acc;
+        }, {});
+
+    console.log("payment gateway 4");
+    let value_string =
+        Object.values(sorted_params)
+            .filter((value) => typeof value !== "object")
+            .join("|") + `|${process.env.PAYTRING_PROD_KEY}`;
+
     const hash = CryptoJS.SHA512(value_string).toString();
     params.hash = hash;
-    
-    console.log("params---->", params)
-    
+
+    console.log("params---->", params);
+
     // Send request to Paytring's API
-    const response = await fetch('https://api.paytring.com/api/v2/order/create', {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${process.env.PAYTRING_PROD_TOKEN}`
-        },
-        body: JSON.stringify(params)
-    });
-    console.log('payment gateway 5',response)
+    const response = await fetch(
+        "https://api.paytring.com/api/v2/order/create",
+        {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Basic ${process.env.PAYTRING_PROD_TOKEN}`,
+            },
+            body: JSON.stringify(params),
+        }
+    );
+    console.log("payment gateway 5", response);
 
     const data = await response.json();
     if (!data.order_id) {
-        return res.status(500).json({ error: 'Failed to create order' });
+        return res.status(500).json({ error: "Failed to create order" });
     }
 
     // Return the order details to the frontend
     return res.status(200).json(data);
-
-})
+});
 
 export const callback = sessionAsyncHandler(async (req, res, session) => {
-    console.log('Callback received:')
+    console.log("Callback received:");
     const callbackResponse = req.body;
-    const logData = await LogHistory.create(
-        {
-            logDate: new Date(),
-            status: "Callback URL hit",
-            leadRemark: `${JSON.stringify(callbackResponse)}`
-        },
-    )
+    const logData = await LogHistory.create({
+        logDate: new Date(),
+        status: "Callback URL hit",
+        leadRemark: `${JSON.stringify(callbackResponse)}`,
+    });
 
     // console.log("logData--->", logData)
-    const { order_id } = req.body
+    const { order_id } = req.body;
     // console.log("received object is ---->", callbackResponse)
-    
-    console.log('callback 2',order_id)
+
+    console.log("callback 2", order_id);
     if (!order_id) {
-        return res.status(400).json({ message: '--Order ID not provided in callback' });
+        return res
+            .status(400)
+            .json({ message: "--Order ID not provided in callback" });
     }
-    
-    console.log("OrderId ----->", order_id)
-    
-    const url = 'https://api.paytring.com/api/v2/order/fetch';
+
+    console.log("OrderId ----->", order_id);
+
+    const url = "https://api.paytring.com/api/v2/order/fetch";
     const options = {
-        method: 'POST',
+        method: "POST",
         headers: {
-            accept: 'text/plain',
-            'content-type': 'application/json',
-            authorization: `Basic ${process.env.PAYTRING_PROD_TOKEN}`
+            accept: "text/plain",
+            "content-type": "application/json",
+            authorization: `Basic ${process.env.PAYTRING_PROD_TOKEN}`,
         },
-        body: JSON.stringify({ key: process.env.PAYTRING_PROD_KEY, id: callbackResponse.order_id, hash: callbackResponse.hash })
+        body: JSON.stringify({
+            key: process.env.PAYTRING_PROD_KEY,
+            id: callbackResponse.order_id,
+            hash: callbackResponse.hash,
+        }),
     };
-    
+
     const response = await fetch(url, options);
     const data = await response.json();
-    console.log('callback 3',data)
-    
-    // console.log("data--->", data);
+    console.log("callback 3", data);
 
+    // console.log("data--->", data);
 
     // //  const {amount} = req.body
     //  let data = {
@@ -279,16 +281,15 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
     //       amount: 101,
     //       created_at: "2025-02-13 12:34:56",
     //       notes: {
-    //         "udf1": "LIOPK3645N", 
-    //         "udf2": "QUALON0001030",  
+    //         "udf1": "LIOPK3645N",
+    //         "udf2": "QUALON0001030",
     //       }
     //     }
     //   }
 
-
     if (!data) {
-        console.log("error")
-        return res.status(500).json({ message: 'Network response was not ok' });
+        console.log("error");
+        return res.status(500).json({ message: "Network response was not ok" });
     }
 
     // Check payment status
@@ -296,65 +297,68 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         // update in database
 
         const repaymentDetails = await Repayment.findOneAndUpdate(
-            { 'details.pg_transaction_id': data.order.pg_transaction_id }, {
-            pan: data.order?.notes?.udf1 ?? "",
-            loanNo: data.order?.notes?.udf2 ?? "",
-            hash: callbackResponse.hash,
-            details: data.order ?? {}
-        },
+            { "details.pg_transaction_id": data.order.pg_transaction_id },
+            {
+                pan: data.order?.notes?.udf1 ?? "",
+                loanNo: data.order?.notes?.udf2 ?? "",
+                hash: callbackResponse.hash,
+                details: data.order ?? {},
+            },
             {
                 upsert: true,
                 new: true,
-                session
-            })
+                session,
+            }
+        );
 
-        const loanNo = data.order?.notes?.udf2 ?? ""
-        let receivedAmount = Number(data.order.amount / 100)
-        let transactionId = data.order.pg_transaction_id
-        let order_status = data.order.order_status
-        let order_id = data.order.order_id
-        let receipt_id = data.order.receipt_id
-        let paymentMethod = data.order.method
-        let paymentMode = "paymentGateway"
-        let closingType = "closed"
-        let remarks
-        let discount = 0
-        let excessAmount = 0
+        const loanNo = data.order?.notes?.udf2 ?? "";
+        let receivedAmount = Number(data.order.amount / 100);
+        let transactionId = data.order.pg_transaction_id;
+        let order_status = data.order.order_status;
+        let order_id = data.order.order_id;
+        let receipt_id = data.order.receipt_id;
+        let paymentMethod = data.order.method;
+        let paymentMode = "paymentGateway";
+        let closingType = "closed";
+        let remarks;
+        let discount = 0;
+        let excessAmount = 0;
         let paymentDate = new Date(data.order.created_at.replace(" ", "T"));
 
-        console.log('loan number-->', loanNo)
-        console.log('received amount from paytring-->', receivedAmount)
-
-       
-       
+        console.log("loan number-->", loanNo);
+        console.log("received amount from paytring-->", receivedAmount);
 
         let isPartialPaid;
-        const collectionData = await Collection.findOne({ loanNo : loanNo })
-
+        const collectionData = await Collection.findOne({ loanNo: loanNo });
 
         if (!collectionData) {
-            res.status(404)
+            res.status(404);
             throw new Error("Collection record not found");
         }
 
-
         if (receivedAmount > collectionData.outstandingAmount) {
             excessAmount = receivedAmount - collectionData.outstandingAmount;
-        } else if (receivedAmount >= Math.floor(collectionData.outstandingAmount) && receivedAmount < collectionData.outstandingAmount) {
+        } else if (
+            receivedAmount >= Math.floor(collectionData.outstandingAmount) &&
+            receivedAmount < collectionData.outstandingAmount
+        ) {
             discount = collectionData.outstandingAmount - receivedAmount;
-        } else if ((receivedAmount < Math.floor(collectionData.outstandingAmount) || closingType === "partPayment")) {
+        } else if (
+            receivedAmount < Math.floor(collectionData.outstandingAmount) ||
+            closingType === "partPayment"
+        ) {
             isPartialPaid = true;
             closingType = "partPayment";
         }
 
-        console.log('received amount after calculation', receivedAmount)
+        console.log("received amount after calculation", receivedAmount);
         // increament amounts when payment status become true-->
         // let updatedPayment;
         // Update Payment Collection --------------
         let updatedPayment = await Payment.findOneAndUpdate(
             {
                 loanNo,
-                'paymentHistory.transactionId': { $ne: transactionId }
+                "paymentHistory.transactionId": { $ne: transactionId },
             },
             {
                 $push: {
@@ -381,87 +385,108 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
             },
             { new: true, runValidators: true, session }
         );
-        console.log('updatedPayment if transactionId is null --->', updatedPayment)
+        console.log(
+            "updatedPayment if transactionId is null --->",
+            updatedPayment
+        );
 
         if (!updatedPayment) {
-            console.log("same transaction id---> , is bloack me nhi jaana chahiye")
+            console.log(
+                "same transaction id---> , is bloack me nhi jaana chahiye"
+            );
             await Payment.findOneAndUpdate(
                 {
                     loanNo,
-                    'paymentHistory.transactionId': transactionId
+                    "paymentHistory.transactionId": transactionId,
                 },
                 {
                     $set: {
-                        'paymentHistory.$.receivedAmount': receivedAmount,
-                        'paymentHistory.$.order_status': data.order.order_status,
-                        'paymentHistory.$.isPaymentVerified': true
-                    }
+                        "paymentHistory.$.receivedAmount": receivedAmount,
+                        "paymentHistory.$.order_status":
+                            data.order.order_status,
+                        "paymentHistory.$.isPaymentVerified": true,
+                    },
                 },
                 {
                     new: true,
                     runValidators: true,
-                    session
+                    session,
                 }
             );
         }
-        console.log('updatedPayment if transactionId is not null --->', updatedPayment)
-      
+        console.log(
+            "updatedPayment if transactionId is not null --->",
+            updatedPayment
+        );
 
         if (order_status === "success") {
-
-            const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, "", null,null, session)
+            const updatedPayment = await verifyPaymentCalculation(
+                loanNo,
+                transactionId,
+                paymentDate,
+                "",
+                null,
+                null,
+                session
+            );
             if (!updatedPayment) {
                 // await session.abortTransaction();
                 throw new Error("Payment didn't update");
                 // return res.status(400).json({ error: `Payment didn't update` });
             }
 
-            console.log("---> updated payment details --->", updatedPayment)
+            console.log("---> updated payment details --->", updatedPayment);
             // Update Logs
-            const collectionData = await Collection.findOne({ loanNo: loanNo }, null,{ session })
-            const lead = await Lead.findOne({ leadNo: collectionData.leadNo },null, { session })
+            const collectionData = await Collection.findOne(
+                { loanNo: loanNo },
+                null,
+                { session }
+            );
+            const lead = await Lead.findOne(
+                { leadNo: collectionData.leadNo },
+                null,
+                { session }
+            );
 
-            // update leadStatus 
-            await LeadStatus.findOneAndUpdate({
-                leadNo: lead.leadNo
-            },
+            // update leadStatus
+            await LeadStatus.findOneAndUpdate(
+                {
+                    leadNo: lead.leadNo,
+                },
                 {
                     stage: "COLLECTION",
-                    subStage: "COLLECTION IN PROCESS"
+                    subStage: "COLLECTION IN PROCESS",
                 },
                 { session }
-            )
+            );
             await postLogs(
                 lead._id,
                 "PAYMENT RECEIVED BY PAYMENT GATEWAY",
-                `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+                `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                    lead.lName && ` ${lead.lName}`
                 }`,
                 ``,
                 ``,
                 session
             );
-
         }
 
-        if(order_status === "failed"){
+        if (order_status === "failed") {
             await LogHistory.create({
                 logDate: new Date(),
                 status: "Payment verification failed By Payment Gateway",
                 leadRemark: `Order ID: ${JSON.stringify(callbackResponse)}`,
             });
-            res.status(400)
-            throw new Error("Payment failed")
+            res.status(400);
+            throw new Error("Payment failed");
         }
 
         // return res.status(200).json({
         //     message: 'Payment verified successfully',
         // });
         // return res.redirect(`https://preprod-web.qualoan.com/verify-repayment`)
-        return res.redirect(`https://qualoan.com/verify-repayment`)
-
-    }
-
-    else {
+        return res.redirect(`https://qualoan.com/verify-repayment`);
+    } else {
         await LogHistory.create({
             logDate: new Date(),
             status: "Payment verification failed By Payment Gateway",
@@ -469,8 +494,7 @@ export const callback = sessionAsyncHandler(async (req, res, session) => {
         });
 
         return res.status(400).json({
-            message: 'Payment verification failed',
+            message: "Payment verification failed",
         });
     }
-
-})
+});

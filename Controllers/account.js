@@ -149,44 +149,65 @@ export const activeLeadsToVerify = asyncHandler(async (req, res) => {
 // @route PATCH /api/accounts/active/verify/:loanNo
 // @access Private
 export const verifyPayment = sessionAsyncHandler(async (req, res, session) => {
-    if (req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
+    if (
+        req.activeRole === "accountExecutive" ||
+        req.activeRole === "accountHead"
+    ) {
         const { loanNo } = req.params;
-        const { remarks, closingType } = req.body
+        const { remarks, closingType, paymentReceivedOn } = req.body;
         let accountEmpId = req.employee._id.toString();
-        const { transactionId } = req.query
+        const { transactionId } = req.query;
 
-        const updatedPayment = await verifyPaymentCalculation(loanNo, transactionId, closingType, remarks, accountEmpId, session)
+        const updatedPayment = await verifyPaymentCalculation(
+            loanNo,
+            transactionId,
+            paymentReceivedOn,
+            closingType,
+            remarks,
+            accountEmpId,
+            session
+        );
         if (!updatedPayment) {
             // await session.abortTransaction();
-            throw new Error("Payment didn't update")
+            throw new Error("Payment didn't update");
             // return res.status(400).json({ error: `Payment didn't update` });
         }
-        const collectionData = await Collection.findOne({ loanNo: loanNo }, null, { session })
-        const lead = await Lead.findOne({ leadNo: collectionData.leadNo }, null, { session })
-        const employee = await Employee.findById(accountEmpId, null, { session })
+        const collectionData = await Collection.findOne(
+            { loanNo: loanNo },
+            null,
+            { session }
+        );
+        const lead = await Lead.findOne(
+            { leadNo: collectionData.leadNo },
+            null,
+            { session }
+        );
+        const employee = await Employee.findById(accountEmpId, null, {
+            session,
+        });
 
-        // update leadStatus 
-        await LeadStatus.findOneAndUpdate({
-            leadNo: lead.leadNo
-        },
+        // update leadStatus
+        await LeadStatus.findOneAndUpdate(
+            {
+                leadNo: lead.leadNo,
+            },
             {
                 stage: "ACCOUNTS",
-                subStage: "ACCOUNTS IN PROCESS"
+                subStage: "ACCOUNTS IN PROCESS",
             },
             { session }
-        )
+        );
         await postLogs(
             lead._id,
             "PAYMENT VERIFIED.",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                lead.lName && ` ${lead.lName}`
             }`,
             `Payment Verfied by ${employee.fName} ${employee.lName}`,
             `${remarks}`,
             session
         );
-        res.json({ message: "Payment verified", })
-
-
+        res.json({ message: "Payment verified" });
     }
 });
 
@@ -250,48 +271,58 @@ export const verifyPayment = sessionAsyncHandler(async (req, res, session) => {
 //     }
 // });
 
-
-//   pending payment verification for a particular loanNo 
+//   pending payment verification for a particular loanNo
 export const getPendingPaymentVerification = asyncHandler(async (req, res) => {
-    const { loanNo } = req.params
+    const { loanNo } = req.params;
     if (!loanNo) {
-        return res.status(400).json({ message: "Loan number is required" })
+        return res.status(400).json({ message: "Loan number is required" });
     }
 
-    if (req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead" || req.activeRole === "accountExecutive" || req.activeRole === "accountHead" || req.activeRole === "admin") {
-
+    if (
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead" ||
+        req.activeRole === "accountExecutive" ||
+        req.activeRole === "accountHead" ||
+        req.activeRole === "admin"
+    ) {
         const pipeline = [
             {
-                $match: { loanNo: loanNo }
+                $match: { loanNo: loanNo },
             },
             { $unwind: "$paymentHistory" },
-
 
             {
                 $project: {
                     _id: 1,
                     loanNo: 1,
                     pan: 1,
-                    paymentHistory: "$paymentHistory"
-                }
-            }
-        ]
+                    paymentHistory: "$paymentHistory",
+                },
+            },
+        ];
 
-        const paymentList = await Payment.aggregate(pipeline)
+        const paymentList = await Payment.aggregate(pipeline);
 
-        return res.status(200).json({ message: "Payment List fetched sucessfully", paymentList })
+        return res
+            .status(200)
+            .json({ message: "Payment List fetched sucessfully", paymentList });
     }
-    return res.status(400).json({ message: "You are not authorized" })
-
-})
+    return res.status(400).json({ message: "You are not authorized" });
+});
 
 // @desc Reject the payment verification if the payment is not received and remove the requested status
 export const rejectPaymentVerification = asyncHandler(async (req, res) => {
-    if (req.activeRole !== "accountExecutive" && req.activeRole !== "accountHead") {
-        res.status(401)
-        throw new Error("You are not authorized for this action!")
+    if (
+        req.activeRole !== "accountExecutive" &&
+        req.activeRole !== "accountHead"
+    ) {
+        res.status(401);
+        throw new Error("You are not authorized for this action!");
     }
-    if (req.activeRole === "accountExecutive" || req.activeRole === "accountHead") {
+    if (
+        req.activeRole === "accountExecutive" ||
+        req.activeRole === "accountHead"
+    ) {
         const { transactionId, remarks } = req.body;
         let accountEmpId = req.employee._id.toString();
 
@@ -308,7 +339,6 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
             }
         );
 
-        
         if (!paymentRecord || !paymentRecord.paymentHistory?.length) {
             res.status(400).json({
                 message: "Loan number not found.",
@@ -321,37 +351,41 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
                 "paymentHistory.transactionId": transactionId,
             },
             {
-
                 $set: {
                     "paymentHistory.$[elem].paymentUpdateRequest": false,
                     "paymentHistory.$[elem].isRejected": true,
                     "paymentHistory.$[elem].isPaymentVerified": true,
                 },
             },
-            { arrayFilters: [{ "elem.transactionId": transactionId }], new: true }
+            {
+                arrayFilters: [{ "elem.transactionId": transactionId }],
+                new: true,
+            }
         );
 
-        console.log("PaymentDetails-->", paymentDetails)
+        console.log("PaymentDetails-->", paymentDetails);
 
-        const employee = await Employee.findById(accountEmpId)
+        const employee = await Employee.findById(accountEmpId);
 
-        // update leadStatus 
-        const lead = await Lead.findOne({ leadNo: paymentRecord.leadNo })
-        await LeadStatus.findOneAndUpdate({
-            leadNo: lead.leadNo
-        },
+        // update leadStatus
+        const lead = await Lead.findOne({ leadNo: paymentRecord.leadNo });
+        await LeadStatus.findOneAndUpdate(
+            {
+                leadNo: lead.leadNo,
+            },
             {
                 stage: "ACCOUNTS",
-                subStage: "ACCOUNTS IN PROCESS"
-            },
-        )
+                subStage: "ACCOUNTS IN PROCESS",
+            }
+        );
         await postLogs(
             lead._id,
             "REJECT PAYMENT BY ACCOUNTS",
-            `${lead.fName}${lead.mName && ` ${lead.mName}`}${lead.lName && ` ${lead.lName}`
+            `${lead.fName}${lead.mName && ` ${lead.mName}`}${
+                lead.lName && ` ${lead.lName}`
             }`,
             `Payment Rejected by ${employee.fName} ${employee.lName}`,
-            `${remarks}`,
+            `${remarks}`
         );
         // Send a success response
         return res.json({
@@ -361,54 +395,56 @@ export const rejectPaymentVerification = asyncHandler(async (req, res) => {
     }
 });
 
-
 // for pending verification bucket
-export const getPendingPaymentVerificationList = asyncHandler(async (req, res) => {
-    if (req.activeRole === "accountExecutive"
-        || req.activeRole === "accountHead"
-        || req.activeRole === "collectionExecutive"
-        || req.activeRole === "collectionHead"
-        || req.activeRole === "admin"
+export const getPendingPaymentVerificationList = asyncHandler(
+    async (req, res) => {
+        if (
+            req.activeRole === "accountExecutive" ||
+            req.activeRole === "accountHead" ||
+            req.activeRole === "collectionExecutive" ||
+            req.activeRole === "collectionHead" ||
+            req.activeRole === "admin"
+        ) {
+            const pipeline = [
+                { $unwind: "$paymentHistory" },
+                {
+                    $match: {
+                        "paymentHistory.isPaymentVerified": false,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "leads",
+                        localField: "leadNo",
+                        foreignField: "leadNo",
+                        as: "leadDetails",
+                    },
+                },
+                { $unwind: "$leadDetails" },
 
-    ) {
-        const pipeline = [
-            { $unwind: "$paymentHistory" },
-            {
-                $match: {
-                    "paymentHistory.isPaymentVerified": false
-                }
-            },
-            {
-                $lookup: {
-                    from: "leads",
-                    localField: "leadNo",
-                    foreignField: "leadNo",
-                    as: "leadDetails"
-                }
-            },
-            { $unwind: "$leadDetails" },
+                {
+                    $project: {
+                        _id: 1,
+                        loanNo: 1,
+                        pan: 1,
+                        receivedAmount: "$paymentHistory.receivedAmount",
+                        paymentDate: "$paymentHistory.paymentDate",
+                        transactionId: "$paymentHistory.transactionId",
+                        fName: "$leadDetails.fName",
+                        mName: "$leadDetails.mName",
+                        lName: "$leadDetails.lName",
+                        email: "$leadDetails.personalEmail",
+                        mobile: "$leadDetails.mobile",
+                    },
+                },
+            ];
 
-            {
-                $project: {
-                    _id: 1,
-                    loanNo: 1,
-                    pan: 1,
-                    receivedAmount: "$paymentHistory.receivedAmount",
-                    paymentDate: "$paymentHistory.paymentDate",
-                    transactionId: "$paymentHistory.transactionId",
-                    fName: "$leadDetails.fName",
-                    mName: "$leadDetails.mName",
-                    lName: "$leadDetails.lName",
-                    email: "$leadDetails.personalEmail",
-                    mobile: "$leadDetails.mobile"
-                }
-            }
-        ];
+            const paymentList = await Payment.aggregate(pipeline);
 
-        const paymentList = await Payment.aggregate(pipeline)
-
-        return res.status(200).json({ message: "Payment List get sucessfully", paymentList })
+            return res
+                .status(200)
+                .json({ message: "Payment List get sucessfully", paymentList });
+        }
+        return res.status(400).json({ message: "You are not authorized" });
     }
-    return res.status(400).json({ message: "You are not authorized" })
-
-})
+);
