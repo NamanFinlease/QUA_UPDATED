@@ -512,12 +512,12 @@ const personalInfo = asyncHandler(async (req, res) => {
 
     let registrationStatus
     let previousJourney
-    if (userDetails.registrationStatus == "PAN_VERIFIED") {
+    if (userDetails.registrationStatus == "AADHAR_VERIFIED") {
         registrationStatus = "PERSONAL_DETAILS",
-            previousJourney = "PAN_VERIFIED"
+            previousJourney = "AADHAR_VERIFIED"
     }
 
-    if (userDetails.registrationStatus != "PAN_VERIFIED") {
+    if (userDetails.registrationStatus != "AADHAR_VERIFIED") {
         registrationStatus = userDetails.registrationStatus,
             previousJourney = userDetails.previousJourney
     }
