@@ -196,7 +196,9 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
         // Respond with a success message
         return res.status(200).json({
             success: true,
-            token: token
+            message:"Aadhaar Verified successfully."
+
+            // token: token
         });
     }
     const code = parseInt(response.responseCode, 10);
@@ -389,7 +391,8 @@ const verifyOtp = asyncHandler(async (req, res) => {
     // OTP matches, verification successful
     return res.status(200).json({
         success: true,
-        message: "OTP verified successfully!",
+        message: "User registered and mobile verified successfully!",
+        token
     });
 });
 
