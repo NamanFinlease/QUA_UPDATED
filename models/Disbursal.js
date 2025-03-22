@@ -31,7 +31,7 @@ const disbursalSchema = new mongoose.Schema(
         },
         paymentMode: {
             type: String,
-            enum: ["offline", "online", "Offline", "Online" , "paymentGateway"],
+            enum: ["offline", "online", "Offline", "Online", "paymentGateway"],
         },
         amount: {
             type: String,
@@ -121,9 +121,12 @@ const disbursalSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        transactionHinstory:{
-            type:Object
-        }
+        transactionHinstory: {
+            type: Object,
+        },
+        remarks: {
+            type: String,
+        },
     },
     { timestamps: true }
 );

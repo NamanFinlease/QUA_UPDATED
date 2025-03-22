@@ -19,7 +19,7 @@ import sanctionRouter from "./routes/SanctionRouter.js";
 import disbursalRouter from "./routes/DisbursalRouter.js";
 import webhookRouter from "./routes/WebhookRouter.js";
 import reportsRouter from "./routes/reportsRouter.js";
-import userRoute from "./routes/User/route.user.js"
+import userRoute from "./routes/User/route.user.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { requireSessionToken } from "./middleware/authMiddleware.js";
 import { calIntCron } from "./utils/executeCron.js";
@@ -101,13 +101,13 @@ app.get(`/otp-success/:id`, (req, res) => {
 
 app.use("/api/mobile", appRouter); // Use the mobile routes
 app.use("/api/employees", employeeRouter); // Use the employee routes
-app.use("/api/user" , userRoute); // user route
+app.use("/api/user", userRoute); // user route
 app.use("/api/leads", leadRouter); // Use the lead routes
 app.use("/api/marketing", marketingRouter); // Use the lead routes
 app.use("/api/applications", applicationRouter); // Use the application routes
 app.use("/api/applicant", applicantRouter); // Use the applicant's routes
 app.use("/api/sanction", sanctionRouter); // Use the sanction letter
-app.use("/api/disbursals", disbursalRouter); // Use the disbursal 
+app.use("/api/disbursals", disbursalRouter); // Use the disbursal
 app.use("/api/verify", verifyRouter); // Use the verify routes sevice to verify PAN and aadhaar
 app.use("/api", webhookRouter); // Use the webhook routes
 app.use("/api/collections", collectionRouter); // Use the collection routes

@@ -273,7 +273,7 @@ export const activeLeads = asyncHandler(async (req, res) => {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true,
+                    // "closedDetails.isDisbursed": true,
                 },
             },
             {
@@ -350,8 +350,9 @@ export const activeLeads = asyncHandler(async (req, res) => {
         });
     }
 });
-// @desc Get all active leads
-// @route GET /api/collections/active
+
+// @desc Add received payment
+// @route POST /api/collections/updatePayment/:loanNo
 // @access Private
 export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
     if (
@@ -492,10 +493,8 @@ export const updatePayment = sessionAsyncHandler(async (req, res, session) => {
             );
 
             if (!updatedPayment) {
-                throw Error("Payment record not found");
-                return res
-                    .status(404)
-                    .json({ error: "Payment record not found" });
+                res.status(404);
+                throw new Error("Payment record not found");
             }
 
             // update logs and leadStatus
@@ -1345,7 +1344,8 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
 
 export const preActiveLeads = asyncHandler(async (req, res) => {
     if (
-        req.activeRole === "collectionExecutive" || req.activeRole === "collectionHead"||
+        req.activeRole === "collectionExecutive" ||
+        req.activeRole === "collectionHead" ||
         req.activeRole === "admin"
     ) {
         const pipeline = [
@@ -1377,7 +1377,7 @@ export const preActiveLeads = asyncHandler(async (req, res) => {
                                             86400000,
                                         ],
                                     },
-                                    -20,
+                                    -5,
                                 ],
                             },
                             {
@@ -1580,7 +1580,7 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
                 $match: {
                     "closedDetails.isActive": true,
                     "closedDetails.isClosed": false,
-                    "closedDetails.isDisbursed": true,
+                    // "closedDetails.isDisbursed": true,
                 },
             },
             {

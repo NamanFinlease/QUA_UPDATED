@@ -218,7 +218,7 @@ export const exportDisbursedData = async () => {
                         populate: [
                             {
                                 path: "lead",
-                                select: "fName mName lName pan aadhaar mobile alternateMobile personalEmail officeEmail recommendedBy createdAt",
+                                select: "fName mName lName pan gender dob aadhaar mobile alternateMobile personalEmail officeEmail recommendedBy createdAt",
                                 populate: {
                                     path: "recommendedBy",
                                     select: "fName mName lName",
@@ -266,7 +266,7 @@ export const exportDisbursedData = async () => {
         const [cams, aadhaars, banks, disbursedDates] = await Promise.all([
             CamDetails.find(
                 { leadId: { $in: leadIds } },
-                "leadId loanRecommended roi eligibleTenure repaymentAmount netAdminFeeAmount adminFeePercentage repaymentDate"
+                "leadId loanRecommended roi actualNetSalary eligibleTenure repaymentAmount netAdminFeeAmount adminFeePercentage repaymentDate"
             ).lean(),
             AadhaarDetails.find(
                 { uniqueId: { $in: aadhaarNumbers } },
@@ -274,7 +274,7 @@ export const exportDisbursedData = async () => {
             ).lean(),
             Bank.find(
                 { borrowerId: { $in: borrowerIds } },
-                "borrowerId bankName beneficiaryName bankAccNo ifscCode"
+                "borrowerId accountType bankName beneficiaryName bankAccNo ifscCode"
             ).lean(),
             Disbursal.find(
                 { loanNo: { $in: loanNumbers }, isDisbursed: true },
@@ -372,6 +372,16 @@ export const exportDisbursedData = async () => {
                     Name: [lead.fName, lead.mName, lead.lName]
                         .filter(Boolean)
                         .join(" "),
+                    Gender: `${
+                        lead?.gender === "M"
+                            ? "Male"
+                            : lead?.gender === "F"
+                            ? "Female"
+                            : "Other"
+                    }`,
+                    DOB: formatDate(lead.dob),
+                    Salary: cam?.actualNetSalary,
+                    "Account Type": bank?.accountType,
                     PAN: lead.pan || "",
                     Aadhaar: lead.aadhaar ? `'${String(lead.aadhaar)}` : "",
                     Mobile: lead.mobile,
