@@ -11,6 +11,7 @@ export const postUserLogs = async (
     session
 ) => {
     try {
+        const time = moment().format("DD/MM/YYYY HH:mm:ss")
         if (session) {
             // Check if the lead is present
             const userDetails = await User.findOne({ _id: userId }).session(session);
@@ -20,7 +21,6 @@ export const postUserLogs = async (
                 throw new Error("User not found!!!");
             }
 
-            const time = moment().format("DD/MM/YYYY HH:mm:ss")
 
             // Create the new log initally
             const createloghistory = new UserLogHistory({
@@ -43,7 +43,7 @@ export const postUserLogs = async (
             // Create the new log initally
             const createloghistory = await UserLogHistory.create({
                 userId: userId,
-                logDate: new Date(),
+                logDate: time,
                 userRemark,
             });
             createloghistory.pan = userDetails.PAN,

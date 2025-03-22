@@ -63,9 +63,9 @@ router.get("/getJourney", authMiddleware, getJourney)
 
 
 // verify
+router.post("/verifyPAN/:pan", authMiddleware, verifyPan);
 router.route("/aadhaar/:aadhaar").get(authMiddleware,aadhaarOtp);
 router.post("/submit-aadhaar-otp",authMiddleware, saveAadhaarDetails);
-router.post("/verifyPAN/:pan", authMiddleware, verifyPan);
 router.post("/sendEmailOTP", authMiddleware, sendEmailOTP);
 router.post("/verifyEmailOTP", authMiddleware, verifyEmailOTP);
 

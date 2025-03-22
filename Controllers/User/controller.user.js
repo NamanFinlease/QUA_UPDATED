@@ -18,50 +18,56 @@ import Close from '../../models/close.js';
 const aadhaarOtp = asyncHandler(async (req, res) => {
 
     const { aadhaar } = req.params;
+    const user = req.user
     // Validate Aaadhaar number (12 digits)
     if (!/^\d{12}$/.test(aadhaar)) {
         return res.status(400).json({
             success: false,
-            message: "Aaadhaar number must be a 12-digit number.",
+            message: "Aadhaar number must be a 12-digit number.",
         });
     }
 
     // check if aadhar is already registered then send OTP by SMS gateway
-    const userDetails = await User.findOne({ aadarNumber: aadhaar })
+    const userDetails = await User.findById(user._id)
+
+    if (!userDetails) {
+        res.status(400)
+        throw new Error("User not found.")
+    }
     // console.log('userDetails in controller-->', userDetails)
 
-    if (userDetails) {
-        if (userDetails && userDetails.mobile) {
-            const mobile = userDetails.mobile
-            const otp = generateRandomNumber();
-            const result = await otpSent(mobile, otp);
+    // if (userDetails) {
+    //     if (userDetails && userDetails.mobile) {
+    //         const mobile = userDetails.mobile
+    //         const otp = generateRandomNumber();
+    //         const result = await otpSent(mobile, otp);
 
-            console.log('result aadhaar otp', result.data)
+    //         console.log('result aadhaar otp', result.data)
 
-            if (result.data.ErrorMessage === "Success") {
-                // Update or create the OTP record for the mobile number
-                await OTP.findOneAndUpdate(
-                    { mobile },
-                    { otp, aadhaar },
-                    { upsert: true, new: true }
-                );
+    //         if (result.data.ErrorMessage === "Success") {
+    //             // Update or create the OTP record for the mobile number
+    //             await OTP.findOneAndUpdate(
+    //                 { mobile },
+    //                 { otp, aadhaar },
+    //                 { upsert: true, new: true }
+    //             );
 
-                return res.status(200).json({ success: true, isAlreadyRegisterdUser: true, mobileNumber: mobile, message: "OTP sent successfully to your register mobile number" });
-            }
+    //             return res.status(200).json({ success: true, isAlreadyRegisterdUser: true, mobileNumber: mobile, message: "OTP sent successfully to your register mobile number" });
+    //         }
 
-            return res
-                .status(500)
-                .json({ success: false, message: "Failed to send OTP" });
+    //         return res
+    //             .status(500)
+    //             .json({ success: false, message: "Failed to send OTP" });
 
-        }
-    }
+    //     }
+    // }
 
 
     // Call the function to generate OTP using Aaadhaar number
     const response = await generateAadhaarOtp(aadhaar);
     // res.render('otpRequest',);
 
-    if (!response || !response.data || !response.data.model) {
+    if (!response || !response.data) {
         return res.status(400).json({ message: "Aadhar API issue" })
 
     }
@@ -69,75 +75,107 @@ const aadhaarOtp = asyncHandler(async (req, res) => {
     return res.status(200).json({
         success: true,
         message: "OTP sent successfully to your Adhaar linked mobile number",
-        isAlreadyRegisterdUser: false,
-        transactionId: response.data.model.transactionId,
-        fwdp: response.data.model.fwdp,
-        codeVerifier: response.data.model.codeVerifier,
+        // isAlreadyRegisterdUser: false,
+        // transactionId: response.data.model.transactionId,
+        // fwdp: response.data.model.fwdp,
+        // codeVerifier: response.data.model.codeVerifier,
     });
 });
 
 const saveAadhaarDetails = asyncHandler(async (req, res) => {
-    const { otp, transactionId, fwdp, codeVerifier } = req.body;
+    const { otp, aadhaar_number, consent } = req.body;
+
+    const user = req.user
+
+
 
     // Check if both OTP and request ID are provided
-    if (!otp || !transactionId || !fwdp || !codeVerifier) {
+    if (!otp || !aadhaar_number || !consent) {
         res.status(400);
         throw new Error("Missing fields.");
     }
 
+    const existingUser = await User.findById(user._id);
+    if (!existingUser) {
+        res.status(401)
+        throw new Error("User is not registered.")
+    }
     // Fetch Aaadhaar details using the provided OTP and request ID
     const response = await verifyAadhaarOtp(
         otp,
-        transactionId,
-        fwdp,
-        codeVerifier
+        aadhaar_number,
+        consent,
     );
 
+
+
     // Check if the response status code is 422 which is for failed verification
-    if (response.code === "200") {
-        const details = response.model;
+    if (response.responseCode === "SRC001") {
+        console.log('response data', response.data)
+
+        const address = {
+            house: response.data.house || "",
+            street: response.data.street || "",
+            landmark: response.data.landmark || "",
+            dist: response.data.district || "",
+            subDist: response.data.subDistrict || "",
+            state: response.data.state || "",
+            country: response.data.country || "",
+            loc: response.data.locality || "",
+            po: response.data.postOfficeName || "",
+            pc: response.data.pincode || "",
+            vtc: response.data.vtcName || "",
+
+        }
+        const details = {
+            name: response.data.name || "",
+            careOf: response.data.careOf || "",
+            dob: response.data.dateOfBirth || "",
+            gender: response.data.gender || "",
+            documentType: response.data.documentType || "",
+            mobile: response.data.mobile || "",
+            email: response.data.email || "",
+            maskedAdharNumber: response.data.maskAadhaarNumber || "",
+            image: response.data.photoBase64 || "",
+            link: response.data.xmlBase64 || "",
+            address,
+        };
         // const name = details.name.split(" ");
         // const aadhaarNumber = details.adharNumber.slice(-4);
-        const uniqueId = `${details.adharNumber}`;
+        const uniqueId = `${aadhaar_number}`;
 
 
-        const existingAadhaar = await User.findOne({
-            aadarNumber: details.adharNumber,
-        });
 
-        if (existingAadhaar) {
-            const UserData = await User.findOneAndUpdate({ aadarNumber: details.adharNumber },
-                { registrationStatus: "AADHAR_VERIFIED" },
-                { new: true }
-            );
-            const token = generateUserToken(res, UserData._id)
-            console.log("tokenn--->", token)
-            UserData.authToken = token
-            await UserData.save();
-            return res.status(200).json({
-                success: true,
-                token: token,
-            });
-        }
-        const dateString = details.dob; // DD-MM-YYYY
+
+        // if (existingUser) {
+
+        // const token = generateUserToken(res, UserData._id)
+        // console.log("tokenn--->", token)
+        // UserData.authToken = token
+        // await UserData.save();
+        // return res.status(200).json({
+        //     success: true,
+        //     token: token,
+        // });
+        // }
+        const dateString = response.data.dateOfBirth; // DD-MM-YYYY
         const parts = dateString.split("-"); // Split the string by '-'
-        const isoDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00.000Z`);
+        const isoDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T00:00:00.000Z`);
 
         console.log(isoDate); // Output: 1998-06-16T00:00:00.000Z
-        details.dob = isoDate
+        response.data.dateOfBirth = isoDate
 
-        const userDetails = await User.create({
-            aadarNumber: details.adharNumber,
-            mobile: null,
-            "personalDetails.fullName": details.name,
-            "personalDetails.dob": isoDate,
-            "personalDetails.gender": details.gender,
-            registrationStatus: "AADHAR_VERIFIED",
-            previousJourney: "MOBILE_VERIFIED"
-        }
-        );
+        // const userresponse = await User.findOne({
+        //     // aadarNumber: response.adharNumber,
+        //     // mobile: null,
+        //     // "personalDetails.fullName": details.name,
+        //     // "personalDetails.dob": isoDate,
+        //     // "personalDetails.gender": details.gender,
+        //     // registrationStatus: "AADHAR_VERIFIED",
+        //     // previousJourney: "PAN_VERIFIED"
+        // }
+        // );
 
-        console.log("")
 
         // Save Aaadhaar details in AadharDetails model
         const aadhaarDetails = await AadhaarDetails.findOne({ uniqueId });
@@ -152,23 +190,39 @@ const saveAadhaarDetails = asyncHandler(async (req, res) => {
             await aadhaarDetails.save();
         }
 
-        await postUserLogs(userDetails._id, `User Register Successfully! with aadhaar`)
+        await postUserLogs(user._id, `Aadhaar verified successfully`)
 
         // generate token 
-        const token = generateUserToken(res, userDetails._id)
+        const token = generateUserToken(res, user._id)
         console.log("tokenn -->2", token)
-        userDetails.authToken = token
-        userDetails.isAadharVerify = true
-        await userDetails.save();
+        // userDetails.authToken = token
+        // userDetails.isAadharVerify = true
+        // await userDetails.save();
+
+        const UserData = await User.findByIdAndUpdate(user._id,
+            {
+                registrationStatus: "AADHAR_VERIFIED",
+                previousJourney: "PAN_VERIFIED",
+                "personalDetails.fullName": details.name,
+                "personalDetails.dob": isoDate,
+                "personalDetails.gender": details.gender,
+                aadarNumber: aadhaar_number,
+                authToken: token,
+                isAadharVerify: true
+
+            },
+
+            { new: true }
+        );
         // Respond with a success message
         return res.status(200).json({
             success: true,
             token: token
         });
     }
-    const code = parseInt(response.code, 10);
+    const code = parseInt(response.responseCode, 10);
     res.status(code);
-    throw new Error(response.msg);
+    throw new Error(response.responseMessage);
 });
 
 const mobileGetOtp = asyncHandler(async (req, res) => {

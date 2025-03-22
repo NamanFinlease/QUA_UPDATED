@@ -9,7 +9,7 @@ const personalDetailsSchema = new mongoose.Schema(
     gender: {
       type: String,
       required: true,
-      enum: ["M", "F"]
+      enum: ["M", "F", "MALE", "FEMALE"]
     },
     dob: {
       type: Date,

@@ -28,7 +28,9 @@ import { sanctioned } from "../Controllers/sanction.js";
 const BATCH_SIZE = 200;
 // const MONGO_URI = 'mongodb+srv://manish:OnlyoneLoan%40007@cluster0.vxzgi.mongodb.net/uveshTesting3?retryWrites=true&w=majority&appName=Cluster0';
 // const MONGO_URI = 'mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QUAloanUpdatedDB?retryWrites=true&w=majority&appName=CRMProject';
-const MONGO_URI = "mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QuaUpgraded?retryWrites=true&w=majority&appName=CRMProject";
+// const MONGO_URI = "mongodb+srv://ajay:zdYryDsVh90hIhMc@crmproject.4u20b.mongodb.net/QuaUpgraded?retryWrites=true&w=majority&appName=CRMProject";
+const MONGO_URI = 'mongodb+srv://STAGINGUSER:mongoStagingPass1234badal@staging.th9vc.mongodb.net/FlowChange2?retryWrites=true&w=majority&appName=STAGING'
+
 const INDEXES = {
   User: [{ pan: 1 }, { aadarNumber: 1 }],
   Lead: [{ pan: 1 }, { createdAt: -1 }],
@@ -43,7 +45,8 @@ const progress = {
   camDetails: { total: 0, processed: 0, errors: 0 },
   payments: { total: 0, processed: 0, errors: 0 },
   collections: { total: 0, processed: 0, errors: 0 },
-  close: { total: 0, processed: 0, errors: 0 }
+  close: { total: 0, processed: 0, errors: 0 },
+  aadhaarDetails: { total: 0, processed: 0, errors: 0 }
 };
 
 // Helpers
@@ -443,9 +446,56 @@ async function migrateCamDetails() {
   logProgress('camDetails');
 }
 
+// Close Migration------------
+async function closeMigration() {
+  try {
+    const closedDocuments = await Closed.find();
+
+    console.log('closed docs', closedDocuments)
+
+    let bulkOps = [];
 
 
+    for (let doc of closedDocuments) {
+      for (let item of doc.data) {
+        const sanction = await Sanction.findOne({ loanNo: item.loanNo });
 
+        bulkOps.push({
+          insertOne: {
+            document: {
+              pan: doc.pan,
+              leadNo: sanction?.leadNo || "",
+              loanNo: item?.loanNo || "",
+              utr: item?.utr || "",
+              disbursal: item?.disbursal || null,
+              isClosed: item?.isClosed || false,
+              isSettled: item?.isSettled || false,
+              isDisbursed: item?.isDisbursed || false,
+              isActive: item?.isActive || false,
+              isWriteOff: item?.isWriteOff || false,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+            },
+          },
+        });
+
+        // Process in batches
+        if (bulkOps.length >= BATCH_SIZE) {
+          await Close.bulkWrite(bulkOps); // Ensure this waits for completion
+          bulkOps.length = 0; // Reset the batch array
+        }
+      }
+    }
+
+    // Insert remaining documents
+    if (bulkOps.length > 0) {
+      await Close.bulkWrite(bulkOps);
+    }
+  } catch (error) {
+    console.error("Migration failed:", error);
+  }
+
+}
 
 // create Payment Collection-------------------------------
 async function createPaymentCollection() {
@@ -585,16 +635,16 @@ async function createPaymentCollection() {
           $project: {
             pan: 1, // Include PAN
             loanNo: doc.LAN,
-            utr:1
+            utr: 1
           }
 
         },
-        
+
       ]
       )
 
-      if(disbursal[0].leadNo === "QUALED0000003770"){
-        console.log('testtttt',disbursal,doc)
+      if (disbursal[0].leadNo === "QUALED0000003770") {
+        console.log('testtttt', disbursal, doc)
       }
 
       console.log('disbursallll', disbursal[0].loanNo, disbursal[0].leadNo)
@@ -668,10 +718,6 @@ async function createPaymentCollection() {
   await Payment.insertMany(paymentFile)
   logProgress('payments');
 }
-
-
-
-
 
 async function createCollectionData() {
   console.log('Starting Creating Collections...');
@@ -811,7 +857,7 @@ async function createCollectionData() {
     let paymentDate = null;
     let closingType = '';
 
-    console.log('loan no',loanNo)
+    console.log('loan no', loanNo)
 
     if (Array.isArray(paymentHistory) && paymentHistory.length > 0) {
       receivedAmount = paymentHistory[0]?.receivedAmount || 0;
@@ -831,18 +877,18 @@ async function createCollectionData() {
     let principalAmount = sanctionedAmount
 
 
-    const elapseDays = ((closingType === "closed" || closingType === "settled")  || closingType === "partPayment") ?
+    const elapseDays = ((closingType === "closed" || closingType === "settled") || closingType === "partPayment") ?
       localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
     if (elapseDays > tenure) {
       dpd = elapseDays - tenure
-    if(leadNo === "QUALED0000003770") console.log('lead number details',elapseDays,tenure,dpd)
+      if (leadNo === "QUALED0000003770") console.log('lead number details', elapseDays, tenure, dpd)
       penalty = Number(Number((sanctionedAmount * (Number(penalRate) / 100)) * dpd).toFixed(2))
       interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * tenure).toFixed(2))
     } else {
       interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays).toFixed(2))
     }
 
-    
+
 
     // const elapseDays1 = ( closingType !== "partPayment") ?
     //   localPaymentDate.diff(localDisbursedDate, "days") + 1 : today.diff(localDisbursedDate, "days") + 1
@@ -854,7 +900,7 @@ async function createCollectionData() {
     //   interest = Number(Number((sanctionedAmount * (Number(roi) / 100)) * elapseDays1).toFixed(2))
     // }
 
-   
+
 
 
     let calculatedData = await calculateReceivedPayment([{
@@ -1158,56 +1204,13 @@ async function verifiedLeads(req, res) {
 
 }
 
-async function closeMigration() {
-  try {
-    const closedDocuments = await Closed.find();
-
-    console.log('closed docs', closedDocuments)
-
-    let bulkOps = [];
 
 
-    for (let doc of closedDocuments) {
-      for (let item of doc.data) {
-        const sanction = await Sanction.findOne({ loanNo: item.loanNo });
-
-        bulkOps.push({
-          insertOne: {
-            document: {
-              pan: doc.pan,
-              leadNo: sanction?.leadNo || "",
-              loanNo: item?.loanNo || "",
-              utr: item?.utr || "",
-              disbursal: item?.disbursal || null,
-              isClosed: item?.isClosed || false,
-              isSettled: item?.isSettled || false,
-              isDisbursed: item?.isDisbursed || false,
-              isActive: item?.isActive || false,
-              isWriteOff: item?.isWriteOff || false,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt,
-            },
-          },
-        });
-
-        // Process in batches
-        if (bulkOps.length >= BATCH_SIZE) {
-          await Close.bulkWrite(bulkOps); // Ensure this waits for completion
-          bulkOps.length = 0; // Reset the batch array
-        }
-      }
-    }
-
-    // Insert remaining documents
-    if (bulkOps.length > 0) {
-      await Close.bulkWrite(bulkOps);
-    }
-  } catch (error) {
-    console.error("Migration failed:", error);
-  }
-
+async function restructureAadhaarData() {
+  console.log('aadhaarData restructing started')
+  const aadhaarDetails = await AadhaarDetails.find()
+  console.log("aadhaarDetails", aadhaarDetails)
 }
-
 async function runMigration() {
   try {
     await mongoose.connect(MONGO_URI);
@@ -1221,6 +1224,7 @@ async function runMigration() {
     // await withRetry(() => createPaymentCollection());
     // await withRetry(() => createCollectionData());
     // await withRetry(() => verifiedLeads());
+    await withRetry(() => restructureAadhaarData());
 
     console.log('\nMigration Summary:');
     // console.log('Users:', progress.users);
@@ -1230,6 +1234,7 @@ async function runMigration() {
     // console.log('Close:', progress.close);
     // console.log('Payments:', progress.payments);
     // console.log('Collection:', progress.collections);
+    console.log('AadhaarDetails:', progress.aadhaarDetails);
 
   } catch (error) {
     console.error('Migration failed:', error);
