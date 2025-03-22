@@ -10,7 +10,7 @@ import Sanction from "../models/Sanction.js";
 export const totalRecords = asyncHandler(async (req, res) => {
     const leads = await Lead.find({});
     const applications = await Application.find({}).populate("lead");
-    const disbursals = await Disbursal.find({});
+    const disbursals = await Disbursal.find({  });
 
     // Screener
     const totalLeads = leads.length;
@@ -150,8 +150,9 @@ const totalCount = newSanctions1.length > 0 ? newSanctions1[0].totalCount : 0;
     const totalDisbursals = disbursals.length;
     const newDisbursals = disbursals.filter(
         (disbursal) =>
-            !disbursal.disbursalManagerId &&
-            !disbursal.isRecommended
+            // !disbursal.disbursalManagerId ,
+        // &&!disbursal.isRecommended && !disbursal.isRejected && 
+            disbursal.sanctionESigned && !disbursal.disbursalManagerId
     ).length;
 
     let allocatedDisbursals = disbursals.filter(
@@ -184,10 +185,16 @@ const totalCount = newSanctions1.length > 0 ? newSanctions1[0].totalCount : 0;
                 disbursal.disbursalManagerId.toString() ===
                 req.employee._id.toString()
         ).length;
+
+        let rejectedDisbursals = disbursals.filter(  (disbursals) => disbursals.isRejected ).length;
+        let holdDisbursals = disbursals.filter( (disbursals) => disbursals.onHold ).length;
+
         return res.json({
             disbursal: {
                 newDisbursals,
-                allocatedDisbursals
+                allocatedDisbursals,
+                rejectedDisbursals,
+                holdDisbursals
             },
         });
     }
@@ -225,9 +232,10 @@ const totalCount = newSanctions1.length > 0 ? newSanctions1[0].totalCount : 0;
             sanctioned,
         },
         disbursal: {
-            totalDisbursals,
+            disbursed,
             newDisbursals,
             allocatedDisbursals: allocatedDisbursals.length,
+            pendingDisbursals : pendingDisbursals,
         },
     });
 });

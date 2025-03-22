@@ -490,9 +490,9 @@ export const getHold = asyncHandler(async (req, res) => {
             },
         });
     } else if (req.activeRole === "disbursalManager") {
-        disbursals = await Disbursal.find(query)
+        disbursals = await Disbursal.find({ onHold : true})
             .skip(skip)
-            .limit(limit)
+            // .limit(limit)
             .populate([
                 {
                     path: "sanction",
@@ -508,6 +508,8 @@ export const getHold = asyncHandler(async (req, res) => {
             .sort({ updatedAt: -1 });
         totalRecords = await Disbursal.countDocuments(query);
 
+        console.log("the total recore ",totalRecords,disbursals)
+
         return res.json({
             heldApplications: {
                 totalRecords,
@@ -517,12 +519,14 @@ export const getHold = asyncHandler(async (req, res) => {
             },
         });
     } else {
-        leads = await Lead.find(query)
+        leads = await Lead.find({ onHold : true})
             .skip(skip)
-            .limit(limit)
+            // .limit(limit) 
             .populate({ path: "heldBy", select: "fName mName lName" })
             .sort({ updatedAt: -1 });
         const totalLeads = leads.length;
+
+        console.log("first,",leads)
 
         applications = await Application.find(query)
             .skip(skip)
