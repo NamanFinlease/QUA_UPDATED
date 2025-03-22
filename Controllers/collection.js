@@ -1221,16 +1221,16 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
     let collectionExecutiveId = req.employee._id.toString();
 
     let query;
-    if (
-        req.activeRole === "collectionExecutive" ||
-        req.activeRole === "collectionHead"
-    ) {
+    if (req.activeRole === "collectionExecutive") {
         query = {
             collectionExecutiveId: new mongoose.Types.ObjectId(
                 collectionExecutiveId
             ),
         };
-    } else if (req.activeRole === "admin") {
+    } else if (
+        req.activeRole === "collectionHead" ||
+        req.activeRole === "admin"
+    ) {
         query = {};
     }
     console.log("collectionExecutive");
@@ -1252,7 +1252,7 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
             $match: {
                 "closedDetails.isActive": true,
                 "closedDetails.isClosed": false,
-                "closedDetails.isDisbursed": true,
+                // "closedDetails.isDisbursed": true,
             },
         },
         {
@@ -1276,6 +1276,17 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
         },
         {
             $unwind: "$disbursalDetails",
+        },
+        {
+            $lookup: {
+                from: "employees",
+                localField: "collectionExecutiveId",
+                foreignField: "_id",
+                as: "collectionExecutive",
+            },
+        },
+        {
+            $unwind: "$collectionExecutive",
         },
         {
             $lookup: {
@@ -1312,6 +1323,13 @@ export const getAllocatedList = asyncHandler(async (req, res) => {
                         "$employeeDetails.fName",
                         " ",
                         "$employeeDetails.lName",
+                    ],
+                },
+                collectionExecutive: {
+                    $concat: [
+                        "$collectionExecutive.fName",
+                        " ",
+                        "$collectionExecutive.lName",
                     ],
                 },
                 sanctionAmount: "$camDetails.loanRecommended",
@@ -1631,6 +1649,17 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
+                    from: "employees",
+                    localField: "preCollectionExecutiveId",
+                    foreignField: "_id",
+                    as: "preCollectionExecutive",
+                },
+            },
+            {
+                $unwind: "$preCollectionExecutive",
+            },
+            {
+                $lookup: {
                     from: "camdetails",
                     localField: "leadNo",
                     foreignField: "leadNo",
@@ -1653,6 +1682,13 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
                             "$employeeDetails.fName",
                             " ",
                             "$employeeDetails.lName",
+                        ],
+                    },
+                    preCollectionExecutive: {
+                        $concat: [
+                            "$preCollectionExecutive.fName",
+                            " ",
+                            "$preCollectionExecutive.lName",
                         ],
                     },
                     sanctionAmount: "$camDetails.loanRecommended",
