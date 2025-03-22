@@ -125,7 +125,20 @@ export const getMasterSheet = async () => {
             },
         },
         { $unwind: { path: "$application", preserveNullAndEmptyArrays: true } },
-
+        {
+            $lookup: {
+                from: "employees",
+                localField: "application.creditManagerId",
+                foreignField: "_id",
+                as: "creditManager",
+            },
+        },
+        {
+            $unwind: {
+                path: "$creditManager",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
         {
             $lookup: {
                 from: "sanctions",
@@ -135,7 +148,20 @@ export const getMasterSheet = async () => {
             },
         },
         { $unwind: { path: "$sanction", preserveNullAndEmptyArrays: true } },
-
+        {
+            $lookup: {
+                from: "employees",
+                localField: "sanction.approvedBy",
+                foreignField: "_id",
+                as: "sanctionHead",
+            },
+        },
+        {
+            $unwind: {
+                path: "$sanctionHead",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
         {
             $lookup: {
                 from: "disbursals",
@@ -145,7 +171,20 @@ export const getMasterSheet = async () => {
             },
         },
         { $unwind: { path: "$disbursal", preserveNullAndEmptyArrays: true } },
-
+        {
+            $lookup: {
+                from: "employees",
+                localField: "disbursal.disbursedBy",
+                foreignField: "_id",
+                as: "disbursalHead",
+            },
+        },
+        {
+            $unwind: {
+                path: "$disbursalHead",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
         {
             $project: {
                 updatedAt: 1,
@@ -166,7 +205,9 @@ export const getMasterSheet = async () => {
                 pinCode: 1,
                 state: 1,
                 city: 1,
-                documents: 1,
+                isAadhaarVerified: 1,
+                isPanVerified: 1,
+                docs: 1,
                 "extraDetails.personalDetails.maritalStatus": 1,
                 "extraDetails.personalDetails.spouseName": 1,
                 "extraDetails.residenceDetails.residenceType": 1,
@@ -212,7 +253,46 @@ export const getMasterSheet = async () => {
                 "applicantBank.bankName": 1,
                 "applicantBank.accountType": 1,
                 "applicantBank.isPennyDropped": 1,
-
+                "camDetails.salaryDate1": 1,
+                "camDetails.salaryDate2": 1,
+                "camDetails.salaryDate3": 1,
+                "camDetails.salaryAmount1": 1,
+                "camDetails.salaryAmount2": 1,
+                "camDetails.salaryAmount3": 1,
+                "camDetails.averageSalary": 1,
+                "camDetails.actualNetSalary": 1,
+                "camDetails.customerType": 1,
+                "camDetails.dedupeCheck": 1,
+                "camDetails.customerCategory": 1,
+                "camDetails.obligations": 1,
+                "camDetails.salaryToIncomeRatio": 1,
+                "camDetails.finalSalaryToIncomeRatioPercentage": 1,
+                "camDetails.roi": 1,
+                "camDetails.adminFeePercentage": 1,
+                "camDetails.eligibleLoan": 1,
+                "camDetails.loanRecommended": 1,
+                "camDetails.eligibleTenure": 1,
+                "camDetails.disbursalDate": 1,
+                "camDetails.repaymentDate": 1,
+                "camDetails.repaymentAmount": 1,
+                "camDetails.netDisbursalAmount": 1,
+                "camDetails.netAdminFeeAmount": 1,
+                "camDetails.remarks": 1,
+                "application.remarks": 1,
+                "creditManager.fName": 1,
+                "creditManager.lName": 1,
+                "sanction.remarks": 1,
+                "sanction.sanctionDate": 1,
+                "sanction.eSigned": 1,
+                "applicant.personalDetails.personalEmail": 1,
+                "sanctionHead.fName": 1,
+                "sanctionHead.lName": 1,
+                "disbursal.disbursedAt": 1,
+                "disbursal.amount": 1,
+                "disbursal.payableAccount": 1,
+                "disbursal.remarks": 1,
+                "disbursalHead.fName": 1,
+                "disbursalHead.lName": 1,
                 // "applicant."
             },
         },
