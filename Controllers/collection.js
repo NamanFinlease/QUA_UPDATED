@@ -1555,14 +1555,27 @@ export const getPreAllocatedList = asyncHandler(async (req, res) => {
         req.activeRole === "collectionHead" ||
         req.activeRole === "admin"
     ) {
-        let preCollectionExecutiveId = req.employee._id.toString();
+        let preCollectionExecutiveId;
+        if (req.activeRole === "collectionExecutive") {
+            preCollectionExecutiveId = req.employee._id.toString();
+        } else if (
+            req.activeRole === "collectionHead" ||
+            req.activeRole === "admin"
+        ) {
+        }
 
         const pipeline = [
             {
                 $match: {
-                    preCollectionExecutiveId: new mongoose.Types.ObjectId(
-                        preCollectionExecutiveId
-                    ),
+                    $or: [
+                        {
+                            preCollectionExecutiveId:
+                                new mongoose.Types.ObjectId(
+                                    preCollectionExecutiveId
+                                ),
+                        }, // Match as ObjectId
+                        { preCollectionExecutiveId: { $exists: true } }, // Match if the field exists
+                    ],
                 },
             },
             {
